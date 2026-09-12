@@ -59,7 +59,7 @@ class PhotoboothController extends Controller
         $this->requirePrereq($request, ['queue']);
 
         $allFrames = Frame::active()->orderBy('sort_order')->get()->keyBy('slug');
-        $categories = Frame::active()->orderBy('sort_order')->get()->pluck('category')->unique()->values()->toArray();
+        $categories = Frame::active()->orderBy('sort_order')->get()->pluck('category')->unique()->filter()->values()->toArray();
 
         return view('frame', [
             'categories' => $categories,
@@ -90,8 +90,11 @@ class PhotoboothController extends Controller
     {
         $this->requirePrereq($request, ['frame']);
 
+        $frame = Frame::where('slug', session('frame'))->first();
+
         return view('foto', [
             'queue' => session('queue'),
+            'photoCount' => $frame?->photo_count ?? 3,
             'step' => 2,
         ]);
     }
@@ -100,8 +103,11 @@ class PhotoboothController extends Controller
     {
         $this->requirePrereq($request, ['frame']);
 
+        $frame = Frame::where('slug', session('frame'))->first();
+        $photoCount = $frame?->photo_count ?? 3;
+
         $data = $request->validate([
-            'photos' => ['required', 'array', 'size:3'],
+            'photos' => ['required', 'array', 'size:'.$photoCount],
             'photos.*' => ['required', 'string'],
         ]);
 
@@ -109,8 +115,9 @@ class PhotoboothController extends Controller
         Storage::disk('public')->deleteDirectory($path);
 
         $saved = [];
-        foreach (['1', '2', '3'] as $i => $key) {
-            $base64 = preg_replace('#^data:image/\w+;base64,#i', '', $data['photos'][$i]);
+        foreach (range(1, $photoCount) as $key) {
+            $index = $key - 1;
+            $base64 = preg_replace('#^data:image/\w+;base64,#i', '', $data['photos'][$index]);
             if (! $base64 || base64_decode($base64, true) === false) {
                 return response()->json(['message' => 'Foto tidak valid.'], 422);
             }
@@ -121,7 +128,7 @@ class PhotoboothController extends Controller
 
         $request->session()->put('photos', $saved);
 
-        $this->log('foto.taken', ['count' => 3]);
+        $this->log('foto.taken', ['count' => $photoCount]);
 
         return response()->json(['redirect' => route('filter')]);
     }
@@ -232,11 +239,17 @@ class PhotoboothController extends Controller
     {
         $this->requirePrereq($request, ['paid']);
 
+        $frameSlug = session('frame', 'kpop');
+        $frame = Frame::where('slug', $frameSlug)->first();
+
         return view('review', [
             'photos' => session('photos', []),
             'filter' => session('filter', 'asli'),
-            'frame' => session('frame', 'kpop'),
-            'frameName' => $this->getFrameName(session('frame', 'kpop')),
+            'frame' => $frameSlug,
+            'frameName' => $this->getFrameName($frameSlug),
+            'frameImage' => $frame?->image_url,
+            'frameSlots' => $frame?->slots ?? [],
+            'photoCount' => $frame?->photo_count ?? 3,
             'total' => $this->total(),
             'queue' => session('queue'),
             'step' => 3,
@@ -264,10 +277,16 @@ class PhotoboothController extends Controller
 
         $this->log('session.completed');
 
+        $frameSlug = session('frame', 'kpop');
+        $frame = Frame::where('slug', $frameSlug)->first();
+
         return view('selesai', [
             'photos' => session('photos', []),
             'filter' => session('filter', 'asli'),
-            'frame' => session('frame', 'kpop'),
+            'frame' => $frameSlug,
+            'frameImage' => $frame?->image_url,
+            'frameSlots' => $frame?->slots ?? [],
+            'photoCount' => $frame?->photo_count ?? 3,
             'email' => session('email'),
             'queue' => session('queue'),
             'step' => 3,

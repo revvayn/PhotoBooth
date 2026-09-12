@@ -6,19 +6,23 @@
 <div class="flex-1 flex flex-col">
     <div class="pb-3 flex items-center justify-between">
         <h2 class="font-display font-bold text-2xl">Sesi Foto</h2>
+        <span class="text-xs text-slate-500">Ambil <strong>{{ $photoCount }} foto</strong></span>
     </div>
 
-    <div class="grid grid-cols-3 gap-3 mb-4" data-shot-thumbs>
-        @foreach (['Kamera 1', 'Kamera 2', 'Kamera 3'] as $i => $label)
-            <div class="rounded-2xl overflow-hidden border border-rose-200 aspect-[3/4] bg-white shadow-sm relative" data-shot-item="{{ $i }}">
+    <div class="grid gap-3 mb-4" data-shot-thumbs data-photo-count="{{ $photoCount }}" style="grid-template-columns: repeat({{ $photoCount }}, minmax(0,1fr))">
+        @for ($i = 0; $i < $photoCount; $i++)
+            <div class="relative rounded-2xl overflow-hidden border border-rose-200 aspect-[3/4] bg-white shadow-sm" data-shot-item="{{ $i }}">
                 <div class="absolute inset-0 flex flex-col items-center justify-center text-center gap-1">
                     <span class="text-3xl">🎞️</span>
-                    <span class="text-xs font-semibold text-slate-500">{{ $label }}</span>
+                    <span class="text-xs font-semibold text-slate-500">Foto {{ $i + 1 }}</span>
                     <span class="text-[10px] text-slate-400" data-shot-status>Menunggu</span>
                 </div>
                 <img class="hidden w-full h-full object-cover" data-shot-img alt="Foto {{ $i + 1 }}">
+                <button type="button" data-retake="{{ $i }}" class="hidden absolute bottom-2 inset-x-0 mx-auto w-fit text-xs font-semibold bg-slate-800/80 text-white backdrop-blur px-4 py-1.5 rounded-full hover:bg-slate-800 transition">
+                    ↻ Ulang Foto Ini
+                </button>
             </div>
-        @endforeach
+        @endfor
     </div>
 
     <div class="relative flex-1 rounded-[2rem] overflow-hidden bg-slate-900 shadow-2xl aspect-square sm:aspect-[4/3]">
@@ -46,17 +50,12 @@
                 📸 Mulai Foto
             </button>
 
-            <div class="flex gap-3 w-full max-w-sm">
-                <a href="{{ route('foto') }}" data-capture-again class="flex-1 text-center rounded-full bg-white/20 text-white backdrop-blur font-semibold px-6 py-3 ring-1 ring-white/40 hover:bg-white/30 transition">
-                    Ulang
-                </a>
-                <a href="{{ route('filter') }}" data-next-btn class="hidden flex-1 text-center rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold px-6 py-3 shadow-lg hover:scale-105 transition-transform">
-                    Lanjut →
-                </a>
-            </div>
+            <a href="{{ route('filter') }}" data-next-btn class="hidden w-full max-w-sm text-center rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold px-6 py-3 shadow-lg hover:scale-105 transition-transform">
+                Lanjut →
+            </a>
         </div>
     </div>
 
-    <p class="text-center text-xs text-slate-500 mt-4">Arahkan ke lensa & jangan bergerak. 3 foto diambil otomatis dengan jeda 3 detik.</p>
+    <p class="text-center text-xs text-slate-500 mt-4">Setelah selesai, kamu bisa mengulang foto tertentu dengan menekan "Ulang Foto Ini" di bawah foto yang diinginkan.</p>
 </div>
 @endsection

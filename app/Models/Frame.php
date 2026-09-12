@@ -9,6 +9,9 @@ class Frame extends Model
     protected $fillable = [
         'name',
         'slug',
+        'image_path',
+        'photo_count',
+        'slots',
         'category',
         'color_class',
         'border_class',
@@ -20,10 +23,21 @@ class Frame extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'photo_count' => 'integer',
+        'slots' => 'array',
     ];
 
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if (! $this->image_path) {
+            return null;
+        }
+
+        return '/storage/'.$this->image_path;
     }
 }

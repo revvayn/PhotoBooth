@@ -62,8 +62,13 @@ function initPhotoSession() {
     const flashOverlay = document.querySelector('[data-flash-overlay]');
     const nextBtn = document.querySelector('[data-next-btn]');
 
+    const photoCountEl = document.querySelector('[data-photo-count]');
+    let photoCount = parseInt(photoCountEl?.dataset.photoCount || '3', 10);
+    if (!photoCount || photoCount < 1) photoCount = 3;
+
     let stream = null;
-    const photos = [];
+    const photos = new Array(photoCount).fill(null);
+    let shooting = false;
 
     const stopStream = () => {
         if (stream) stream.getTracks().forEach((t) => t.stop());
@@ -104,66 +109,112 @@ function initPhotoSession() {
         }
     };
 
+    const updateSlot = (i, dataUrl) => {
+        const item = document.querySelector(`[data-shot-item="${i}"]`);
+        if (!item) return;
+        const img = item.querySelector('[data-shot-img]');
+        const status = item.querySelector('[data-shot-status]');
+        const icon = item.querySelector('.text-3xl');
+        const retake = item.querySelector('[data-retake]');
+        if (icon) icon.classList.add('hidden');
+        if (status) status.textContent = 'Selesai ✓';
+        if (img) {
+            img.src = dataUrl;
+            img.classList.remove('hidden');
+        }
+        if (retake) retake.classList.remove('hidden');
+    };
+
+    const updateNext = () => {
+        if (!nextBtn) return;
+        const done = photos.every(Boolean);
+        nextBtn.classList.toggle('hidden', !done);
+    };
+
+    const takePhoto = async (i) => {
+        if (countdown) {
+            countdown.classList.remove('hidden');
+            countdown.classList.add('flex');
+        }
+
+        for (let n = 3; n >= 1; n--) {
+            if (countdownNum) countdownNum.textContent = n;
+            await wait(700);
+        }
+
+        if (countdown) {
+            countdown.classList.add('hidden');
+            countdown.classList.remove('flex');
+        }
+
+        await showFlash();
+
+        const dataUrl = snapshot();
+        photos[i] = dataUrl;
+        updateSlot(i, dataUrl);
+        updateNext();
+    };
+
     const runShoot = async () => {
+        if (shooting) return;
+        shooting = true;
         if (shootBtn) shootBtn.disabled = true;
 
-        for (let i = 0; i < 3; i++) {
-            if (countdown) countdown.classList.remove('hidden');
-            countdown.classList.add('flex');
-
-            for (let n = 3; n >= 1; n--) {
-                if (countdownNum) countdownNum.textContent = n;
-                await wait(700);
-            }
-
-            if (countdown) {
-                countdown.classList.add('hidden');
-                countdown.classList.remove('flex');
-            }
-
-            await showFlash();
-
-            const dataUrl = snapshot();
-            photos.push(dataUrl);
-
-            const thumb = document.querySelector(`[data-shot-item="${i}"]`);
-            if (thumb) {
-                const img = thumb.querySelector('[data-shot-img]');
-                const status = thumb.querySelector('[data-shot-status]');
-                const icon = thumb.querySelector('span:first-child');
-                if (icon) icon.classList.add('hidden');
-                if (status) status.textContent = 'Selesai ✓';
-                if (img) {
-                    img.src = dataUrl;
-                    img.classList.remove('hidden');
-                }
-            }
-
-            if (i < 2) await wait(1200);
+        for (let i = 0; i < photoCount; i++) {
+            if (photos[i]) continue;
+            await takePhoto(i);
+            if (i < photoCount - 1) await wait(450);
         }
 
-        const res = await fetch('/foto', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-            },
-            body: JSON.stringify({ photos }),
-        });
+        shooting = false;
+        if (shootBtn) shootBtn.disabled = false;
+    };
 
-        if (res.ok) {
-            stopStream();
-            const data = await res.json();
-            if (nextBtn) {
-                nextBtn.classList.remove('hidden');
-                nextBtn.classList.add('flex');
-                nextBtn.href = data.redirect;
+    const submitPhotos = async () => {
+        const valid = photos.filter(Boolean);
+        if (!valid.length) return;
+        if (shootBtn) shootBtn.disabled = true;
+        if (nextBtn) nextBtn.disabled = true;
+
+        try {
+            const res = await fetch('/foto', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                },
+                body: JSON.stringify({ photos: valid }),
+            });
+
+            if (res.ok) {
+                stopStream();
+                const data = await res.json();
+                window.location.href = data.redirect;
+                return;
             }
+        } catch (err) {
+            // fall through
         }
+
+        if (shootBtn) shootBtn.disabled = false;
+        if (nextBtn) nextBtn.disabled = false;
     };
 
     if (shootBtn) shootBtn.addEventListener('click', runShoot);
+    if (nextBtn) nextBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        submitPhotos();
+    });
+
+    document.querySelectorAll('[data-retake]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            if (shooting) return;
+            takePhoto(parseInt(btn.dataset.retake, 10));
+        });
+    });
+
+    updateNext();
 }
 
 /* ---------------- Filter selection ---------------- */
@@ -196,39 +247,34 @@ function initFrameSelect() {
     const options = form.querySelectorAll('[data-frame-option]');
     const cats = form.querySelectorAll('[data-category]');
 
-    cats.forEach((cat) => {
-        cat.addEventListener('click', () => {
-            cats.forEach((c) => {
-                c.classList.remove('bg-rose-500', 'text-white', 'ring-rose-500', 'shadow-md', 'shadow-rose-200');
-                c.classList.add('text-rose-600', 'bg-white/80');
-            });
-            cat.classList.remove('text-rose-600', 'bg-white/80');
-            cat.classList.add('bg-rose-500', 'text-white', 'ring-rose-500', 'shadow-md', 'shadow-rose-200');
+    const selectOption = (opt) => {
+        input.value = opt.dataset.frameOption;
+        options.forEach((o) => o.classList.remove('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100'));
+        opt.classList.add('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100');
+    };
 
-            const slug = cat.dataset.category;
-            options.forEach((o) => {
-                const show = o.dataset.cat === slug;
-                o.classList.toggle('hidden', !show);
-                if (!show) o.classList.remove('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100');
-            });
-
-            const firstVisible = [...options].find((o) => o.dataset.cat === slug);
-            if (firstVisible) {
-                input.value = firstVisible.dataset.frameOption;
-                firstVisible.classList.add('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100');
+    const applyFilter = (slug) => {
+        cats.forEach((c) => {
+            c.classList.remove('bg-rose-500', 'text-white', 'ring-rose-500', 'shadow-md', 'shadow-rose-200');
+            c.classList.add('text-rose-600', 'bg-white/80');
+            if (c.dataset.category === slug) {
+                c.classList.remove('text-rose-600', 'bg-white/80');
+                c.classList.add('bg-rose-500', 'text-white', 'ring-rose-500', 'shadow-md', 'shadow-rose-200');
             }
         });
-    });
 
-    options.forEach((opt) => {
-        opt.addEventListener('click', () => {
-            input.value = opt.dataset.frameOption;
-            options.forEach((o) => {
-                o.classList.remove('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100');
-            });
-            opt.classList.add('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100');
+        options.forEach((o) => {
+            const show = slug === 'semua' || o.dataset.category === slug;
+            o.classList.toggle('hidden', !show);
+            if (!show) o.classList.remove('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100');
         });
-    });
+
+        const firstVisible = [...options].find((o) => !o.classList.contains('hidden'));
+        if (firstVisible) selectOption(firstVisible);
+    };
+
+    cats.forEach((cat) => cat.addEventListener('click', () => applyFilter(cat.dataset.category)));
+    options.forEach((opt) => opt.addEventListener('click', () => selectOption(opt)));
 }
 
 /* ---------------- Print count selection ---------------- */
@@ -301,93 +347,6 @@ function initQr() {
 
 /* ---------------- Frame strip composition ---------------- */
 
-function drawFrames(ctx, frame, W, padding, spacing, photoW, photoH, captionH) {
-    const H = padding + photoH * 3 + spacing * 2 + captionH;
-    ctx.save();
-    ctx.filter = 'none';
-
-    const frameDef = {
-        kpop: {
-            colors: ['#fecdd3', '#f0abfc', '#c4b5fd'],
-            accent: '#fb7185',
-            caption: 'K-POP',
-        },
-        classic: {
-            colors: ['#1c1917', '#d4a017'],
-            accent: '#b45309',
-            caption: 'CLASSIC MOMENTS',
-        },
-        minimalis: {
-            colors: ['#f8fafc'],
-            accent: '#64748b',
-            caption: 'MINIMALIS',
-        },
-        neon: {
-            colors: ['#e879f9', '#22d3ee'],
-            accent: '#d946ef',
-            caption: 'NEON',
-        },
-        estetik: {
-            colors: ['#a7f3d0', '#99f6e4'],
-            accent: '#14b8a6',
-            caption: 'ESTETIK',
-        },
-    }[frame] ?? { colors: ['#fecdd3'], accent: '#fb7185', caption: 'PHOTOBOOTH' };
-
-    // background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, W, H);
-
-    // outer frame band
-    ctx.fillStyle = frameDef.colors[0];
-    ctx.fillRect(0, 0, W, H);
-
-    // accent band
-    if (frameDef.colors[1]) {
-        ctx.fillStyle = frameDef.colors[1];
-        ctx.fillRect(padding - 6, padding - 6, W - (padding - 6) * 2, H - (padding - 6) * 2);
-    }
-
-    // photo area background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(padding, padding, photoW, photoH * 3 + spacing * 2);
-
-    // neon glow decor
-    if (frame === 'neon') {
-        ctx.shadowColor = frameDef.accent;
-        ctx.shadowBlur = 14;
-        ctx.strokeStyle = frameDef.accent;
-        ctx.lineWidth = 4;
-        ctx.strokeRect(padding - 10, padding - 10, photoW + 20, H - (padding - 10) * 2 - captionH + 20);
-        ctx.shadowBlur = 0;
-    }
-
-    // minimalis: thin line
-    if (frame === 'minimalis') {
-        ctx.strokeStyle = '#cbd5e1';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(padding - 8, padding - 8, photoW + 16, H - (padding - 8) * 2 - captionH + 16);
-    }
-
-    // kpop sparkles
-    if (frame === 'kpop') {
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '22px sans-serif';
-        ctx.fillText('✦', padding + 8, H - captionH / 2);
-        ctx.fillText('♥', W - padding - 30, H - captionH / 2);
-        ctx.fillText('➶', W - padding - 60, padding + 14);
-    }
-
-    // caption
-    ctx.font = `bold ${Math.round(captionH * 0.34)}px "Poppins", sans-serif`;
-    ctx.fillStyle = frameDef.accent;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(frameDef.caption, W / 2, H - captionH / 2 - Math.round(captionH * 0.1));
-
-    ctx.restore();
-}
-
 async function loadImages(urls) {
     return Promise.all(
         urls.map(
@@ -403,57 +362,117 @@ async function loadImages(urls) {
     );
 }
 
-async function drawStrip(canvas, photoUrls, filterKey, frameKey) {
+async function buildStripFrame(canvas, photoUrls, filterKey, frameImageUrl, frameSlots) {
     const filter = FILTERS[filterKey] ?? 'none';
-    const frame = frameKey ?? 'kpop';
+    const slots = Array.isArray(frameSlots) && frameSlots.length ? frameSlots : null;
 
-    const W = 360;
-    const padding = { kpop: 26, classic: 30, minimalis: 18, neon: 28, estetik: 24 }[frame] ?? 24;
-    const spacing = 6;
-    const photoW = W - padding * 2;
-    const photoH = Math.round((photoW * 4) / 3);
-    const captionH = 46;
-    const H = padding + photoH * 3 + spacing * 2 + captionH;
+    const baseW = 360;
+    const photos = await loadImages(photoUrls);
+    const frameImg = frameImageUrl ? (await loadImages([frameImageUrl]))[0] : null;
 
-    canvas.width = W * 2;
-    canvas.height = H * 2;
+    const scale = 2;
+    let baseH;
+    if (frameImg) {
+        baseH = Math.round((baseW * frameImg.naturalHeight) / frameImg.naturalWidth);
+    } else if (slots && slots.length) {
+        const top = Math.min(...slots.map((s) => s.y));
+        const bottom = Math.max(...slots.map((s) => s.y + s.h));
+        baseH = Math.round(baseW / (Math.max(slots[0].w, 0.001) / Math.max(bottom - top, 0.001)));
+    } else {
+        baseH = Math.round((baseW * 4) / 3);
+    }
+
+    canvas.width = baseW * scale;
+    canvas.height = baseH * scale;
     const ctx = canvas.getContext('2d');
-    ctx.scale(2, 2);
-
-    const imgs = await loadImages(photoUrls);
-
-    drawFrames(ctx, frame, W, padding, spacing, photoW, photoH, captionH);
+    ctx.scale(scale, scale);
 
     ctx.save();
-    imgs.forEach((img, i) => {
-        if (!img) return;
-        const x = padding;
-        const y = padding + i * (photoH + spacing);
-        const srcAspect = img.naturalWidth / img.naturalHeight;
-        const dstAspect = photoW / photoH;
-
-        let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
-        if (srcAspect > dstAspect) {
-            sw = img.naturalHeight * dstAspect;
-            sx = (img.naturalWidth - sw) / 2;
-        } else {
-            sh = img.naturalWidth / dstAspect;
-            sy = (img.naturalHeight - sh) / 2;
-        }
-
-        ctx.filter = filter;
-        ctx.drawImage(img, sx, sy, sw, sh, x, y, photoW, photoH);
-    });
+    ctx.filter = 'none';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, baseW, baseH);
     ctx.restore();
+
+    if (slots) {
+        ctx.save();
+        photos.forEach((img, i) => {
+            if (!img || !slots[i]) return;
+            const slot = slots[i];
+            const x = slot.x * baseW;
+            const y = slot.y * baseH;
+            const w = slot.w * baseW;
+            const h = slot.h * baseH;
+            const srcAspect = img.naturalWidth / img.naturalHeight;
+            const dstAspect = w / h;
+
+            let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+            if (srcAspect > dstAspect) {
+                sw = img.naturalHeight * dstAspect;
+                sx = (img.naturalWidth - sw) / 2;
+            } else {
+                sh = img.naturalWidth / dstAspect;
+                sy = (img.naturalHeight - sh) / 2;
+            }
+
+            ctx.save();
+            ctx.filter = filter;
+            ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+            ctx.restore();
+        });
+        ctx.restore();
+    } else {
+        // fallback: tanpa slots, susun foto vertikal
+        const padding = 24;
+        const spacing = 6;
+        const captionH = 46;
+        const photoW = baseW - padding * 2;
+        const photoH = Math.round((photoW * 4) / 3);
+
+        ctx.save();
+        ctx.fillStyle = '#f4f4f5';
+        ctx.fillRect(0, 0, baseW, baseH);
+        photos.forEach((img, i) => {
+            if (!img) return;
+            const y = padding + i * (photoH + spacing);
+            const srcAspect = img.naturalWidth / img.naturalHeight;
+            const dstAspect = photoW / photoH;
+            let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+            if (srcAspect > dstAspect) {
+                sw = img.naturalHeight * dstAspect;
+                sx = (img.naturalWidth - sw) / 2;
+            } else {
+                sh = img.naturalWidth / dstAspect;
+                sy = (img.naturalHeight - sh) / 2;
+            }
+            ctx.save();
+            ctx.filter = filter;
+            ctx.drawImage(img, sx, sy, sw, sh, padding, y, photoW, photoH);
+            ctx.restore();
+        });
+        ctx.restore();
+    }
+
+    if (frameImg) {
+        ctx.save();
+        ctx.filter = 'none';
+        ctx.drawImage(frameImg, 0, 0, baseW, baseH);
+        ctx.restore();
+    }
 }
 
 function initStrip() {
     document.querySelectorAll('[data-strip-canvas]').forEach((canvas) => {
         let photos = [];
+        let slots = [];
         try {
             photos = JSON.parse(canvas.dataset.photos || '[]');
         } catch (e) {
             photos = [];
+        }
+        try {
+            slots = JSON.parse(canvas.dataset.frameSlots || '[]');
+        } catch (e) {
+            slots = [];
         }
         if (!photos.length) {
             canvas.style.display = 'none';
@@ -463,7 +482,13 @@ function initStrip() {
             }
             return;
         }
-        drawStrip(canvas, photos, canvas.dataset.filter, canvas.dataset.frame).then(() => {
+        buildStripFrame(
+            canvas,
+            photos,
+            canvas.dataset.filter,
+            canvas.dataset.frameImage,
+            slots
+        ).then(() => {
             const downloadLink = document.querySelector('[data-strip-download]');
             if (downloadLink) {
                 downloadLink.addEventListener('click', (e) => {

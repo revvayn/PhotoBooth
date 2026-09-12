@@ -13,7 +13,9 @@
         <canvas class="w-full h-auto block" data-strip-canvas
                 data-photos='@json($photos)'
                 data-filter="{{ $filter }}"
-                data-frame="{{ $frame }}"></canvas>
+                data-frame="{{ $frame }}"
+                data-frame-image="{{ $frameImage }}"
+                data-frame-slots='@json($frameSlots)'></canvas>
     </div>
 
     @if ($email)

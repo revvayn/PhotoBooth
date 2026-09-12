@@ -26,7 +26,6 @@
                         <th class="text-left px-6 py-3 font-semibold text-slate-600 w-16">No</th>
                         <th class="text-left px-6 py-3 font-semibold text-slate-600">Nama</th>
                         <th class="text-left px-6 py-3 font-semibold text-slate-600">Kategori</th>
-                        <th class="text-left px-6 py-3 font-semibold text-slate-600">Warna</th>
                         <th class="text-center px-6 py-3 font-semibold text-slate-600">Status</th>
                         <th class="text-center px-6 py-3 font-semibold text-slate-600 w-32">Aksi</th>
                     </tr>
@@ -37,19 +36,22 @@
                             <td class="px-6 py-3 text-slate-500">{{ $loop->iteration }}</td>
                             <td class="px-6 py-3">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-300 to-violet-300 flex items-center justify-center text-white text-xs font-bold">
-                                        {{ strtoupper(substr($frame->name, 0, 2)) }}
+                                    <div class="w-12 h-14 bg-white ring-1 ring-slate-200 rounded-lg overflow-hidden shrink-0 flex items-center justify-center">
+                                        @if ($frame->image_url)
+                                            <img src="{{ $frame->image_url }}" alt="{{ $frame->name }}" class="w-full h-full object-contain">
+                                        @else
+                                            <span class="text-slate-300 text-xs">-</span>
+                                        @endif
                                     </div>
-                                    <span class="font-medium text-slate-800">{{ $frame->name }}</span>
+                                    <div>
+                                        <span class="font-medium text-slate-800 block">{{ $frame->name }}</span>
+                                        @if ($frame->photo_count)
+                                            <span class="text-xs text-emerald-600">{{ $frame->photo_count }} area foto</span>
+                                        @endif
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-6 py-3 text-slate-600">{{ $frame->category ?? 'Tanpa kategori' }}</td>
-                            <td class="px-6 py-3">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-4 h-4 rounded-full bg-gradient-to-br from-rose-200 to-slate-300 border border-gray-200"></span>
-                                    <span class="text-slate-600 text-xs">{{ $frame->color_class ?? 'default' }}</span>
-                                </div>
-                            </td>
                             <td class="px-6 py-3 text-center">
                                 @if($frame->is_active)
                                     <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
@@ -87,7 +89,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                            <td colspan="5" class="px-6 py-12 text-center text-slate-400">
                                 <svg class="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                 </svg>
