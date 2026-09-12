@@ -111,7 +111,7 @@ class PhotoboothController extends Controller
             'photos.*' => ['required', 'string'],
         ]);
 
-        $path = 'photos/'.$request->session()->getId();
+                    $path = 'photos/'.$request->session()->getId();
         Storage::disk('public')->deleteDirectory($path);
 
         $saved = [];
@@ -123,7 +123,8 @@ class PhotoboothController extends Controller
             }
             $filename = 'foto-'.$key.'.jpg';
             Storage::disk('public')->put($path.'/'.$filename, base64_decode($base64));
-            $saved[] = Storage::disk('public')->url($path.'/'.$filename);
+            // gunakan URL relatif-akar agar bekerja di mana pun kiosk diakses
+            $saved[] = '/storage/'.$path.'/'.$filename;
         }
 
         $request->session()->put('photos', $saved);

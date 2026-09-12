@@ -30,15 +30,14 @@ class FrameAnalyzer
             throw new RuntimeException('Ukuran PNG frame terlalu kecil.');
         }
 
-        // Downscale untuk analisis cepat (~200px paling besar)
-        $grid = $this->downscale($src, $srcW, $srcH);
+        // Analisis: gunakan resolusi penuh bila wajar, downscale hanya bila sangat besar
+        $grid = $this->prepareGrid($src, $srcW, $srcH);
         imagedestroy($src);
 
         $cols = imagesx($grid);
         $rows = imagesy($grid);
 
         $alphaThreshold = 110; // alpha >= ini dianggap lubang transparan
-        $step = max(1, (int) floor($rows / 120));
 
         $transparent = array_fill(0, $rows, array_fill(0, $cols, false));
         for ($y = 0; $y < $rows; $y++) {
@@ -55,18 +54,26 @@ class FrameAnalyzer
         $components = $this->findComponents($transparent, $cols, $rows);
 
         $totalCells = $cols * $rows;
-        $minArea = max(24, (int) ($totalCells * 0.004));
+        $minArea = max(64, (int) ($totalCells * 0.001));
+
+        // inset kecil agar foto tidak menempel/keluar tepi lubang (dalam piksel grid)
+        $insetX = max(1, (int) floor($cols * 0.012));
+        $insetY = max(1, (int) floor($rows * 0.012));
 
         $slots = [];
         foreach ($components as $comp) {
             if ($comp['area'] < $minArea) {
                 continue;
             }
+            $x = max(0, $comp['x'] + $insetX);
+            $y = max(0, $comp['y'] + $insetY);
+            $w = max(2, $comp['w'] - 2 * $insetX);
+            $h = max(2, $comp['h'] - 2 * $insetY);
             $slots[] = [
-                'x' => round($comp['x'] / $cols, 4),
-                'y' => round($comp['y'] / $rows, 4),
-                'w' => round($comp['w'] / $cols, 4),
-                'h' => round($comp['h'] / $rows, 4),
+                'x' => round($x / $cols, 4),
+                'y' => round($y / $rows, 4),
+                'w' => round($w / $cols, 4),
+                'h' => round($h / $rows, 4),
             ];
         }
 
@@ -84,7 +91,17 @@ class FrameAnalyzer
         return $slots;
     }
 
-    private function downscale($src, int $srcW, int $srcH, int $maxDim = 200)
+    private function prepareGrid($src, int $srcW, int $srcH, int $maxDim = 1800)
+    {
+        // Resolusi penuh bila wajar agar slot presisi piksel; downscale hanya untuk PNG raksasa
+        if (max($srcW, $srcH) <= $maxDim) {
+            return $src;
+        }
+
+        return $this->resample($src, $srcW, $srcH, $maxDim);
+    }
+
+    private function resample($src, int $srcW, int $srcH, int $maxDim)
     {
         $scale = $maxDim / max($srcW, $srcH);
         $cols = max(2, (int) round($srcW * $scale));

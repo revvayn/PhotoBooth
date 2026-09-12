@@ -22,9 +22,10 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        Storage::disk('public')->deleteDirectory('frames');
-
         $analyzer = app(FrameAnalyzer::class);
+
+        // JANGAN hapus seluruh direktori frames: itu menghapus PNG frame
+        // milik user. file canonical ditimpa (overwrite) oleh generatePng().
 
         $definitions = [
             ['name' => 'K-pop Frame', 'slug' => 'kpop', 'category' => 'K-pop', 'caption' => 'K-POP', 'top' => [236, 72, 153], 'bottom' => [192, 132, 252], 'shots' => 3, 'sort_order' => 1],
