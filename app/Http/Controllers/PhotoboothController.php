@@ -76,14 +76,14 @@ class PhotoboothController extends Controller
 
         $data = $request->validate([
             'frames' => ['required', 'array', 'min:1', 'max:'.count($activeSlugs)],
-            'frames.*' => ['required', 'in:'.implode(',', $activeSlugs)],
+            'frames.*' => ['required', 'distinct', 'in:'.implode(',', $activeSlugs)],
             'copy' => ['required', 'in:'.implode(',', array_keys(self::PRICES))],
         ]);
 
         $request->session()->put('frames', array_values(array_unique($data['frames'])));
         $request->session()->put('copy', (int) $data['copy']);
 
-        $frames = Frame::whereIn('slug', $data['frames'])->get();
+        $frames = Frame::whereIn('slug', $request->session()->get('frames', []))->get();
         $this->log('frame.selected', [
             'frames' => $frames->pluck('name')->implode(' + '),
             'copy' => $data['copy'],
@@ -97,9 +97,19 @@ class PhotoboothController extends Controller
     {
         $this->requirePrereq($request, ['frames']);
 
+        $frameSlugs = $request->session()->get('frames', []);
+        $framePhotoCounts = Frame::whereIn('slug', $frameSlugs)
+            ->pluck('photo_count', 'slug')
+            ->filter(fn ($v) => $v > 0)
+            ->isEmpty()
+                ? collect($frameSlugs)->mapWithKeys(fn ($s) => [$s => 1])
+                : Frame::whereIn('slug', $frameSlugs)->pluck('photo_count', 'slug')->filter(fn ($v) => $v > 0);
+
         return view('foto', [
             'queue' => session('queue'),
             'photoCount' => $this->maxPhotoCount(),
+            'frameSlugs' => $frameSlugs,
+            'framePhotoCounts' => $framePhotoCounts,
             'step' => 2,
         ]);
     }
@@ -304,6 +314,13 @@ class PhotoboothController extends Controller
         $frame = Frame::where('slug', $slug)->first();
 
         return $frame?->name ?? ucfirst($slug).' Frame';
+    }
+
+    private function maxPhotoCount(): int
+    {
+        $slugs = session('frames', []);
+
+        return max(1, (int) Frame::whereIn('slug', $slugs)->sum('photo_count'));
     }
 
     /**

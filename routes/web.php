@@ -13,23 +13,20 @@ Route::post('/mulai', [PhotoboothController::class, 'mulai'])->name('mulai');
 
 Route::get('/tutorial', [PhotoboothController::class, 'tutorial'])->name('tutorial');
 
+Route::get('/frame', [PhotoboothController::class, 'frame'])->name('frame');
+Route::post('/frame', [PhotoboothController::class, 'frameStore'])->name('frame.store');
+
 Route::get('/foto', [PhotoboothController::class, 'foto'])->name('foto');
-Route::post('/foto', [PhotoboothController::class, 'fotoStore']);
+Route::post('/foto', [PhotoboothController::class, 'fotoStore'])->name('foto.store');
 
 Route::get('/filter', [PhotoboothController::class, 'filter'])->name('filter');
-Route::post('/filter', [PhotoboothController::class, 'filterStore']);
-
-Route::get('/frame', [PhotoboothController::class, 'frame'])->name('frame');
-Route::post('/frame', [PhotoboothController::class, 'frameStore']);
-
-Route::get('/print', [PhotoboothController::class, 'printCount'])->name('print');
-Route::post('/print', [PhotoboothController::class, 'printStore']);
+Route::post('/filter', [PhotoboothController::class, 'filterStore'])->name('filter.store');
 
 Route::get('/metode', [PhotoboothController::class, 'metode'])->name('metode');
-Route::post('/metode', [PhotoboothController::class, 'metodeStore']);
+Route::post('/metode', [PhotoboothController::class, 'metodeStore'])->name('metode.store');
 
 Route::get('/pembayaran', [PhotoboothController::class, 'pembayaran'])->name('pembayaran');
-Route::post('/pembayaran', [PhotoboothController::class, 'pembayaranStore']);
+Route::post('/pembayaran', [PhotoboothController::class, 'pembayaranStore'])->name('pembayaran.store');
 
 Route::get('/review', [PhotoboothController::class, 'review'])->name('review');
 Route::post('/email', [PhotoboothController::class, 'emailStore'])->name('email.send');

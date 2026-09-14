@@ -10,12 +10,12 @@
     </div>
 
     <div class="flex flex-wrap gap-2 justify-center mb-6">
-        <button type="button" data-category="semua"
+        <button type="button" data-category="semua" data-category-chip
                 class="px-5 py-2 rounded-full text-sm font-semibold transition-all ring-1 ring-rose-200 text-rose-600 bg-white/80 bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200">
             Semua
         </button>
         @foreach ($categories as $cat)
-            <button type="button" data-category="{{ \Illuminate\Support\Str::slug($cat) }}"
+            <button type="button" data-category="{{ \Illuminate\Support\Str::slug($cat) }}" data-category-chip
                     class="px-5 py-2 rounded-full text-sm font-semibold transition-all ring-1 ring-rose-200 text-rose-600 bg-white/80">
                 {{ $cat }}
             </button>
@@ -24,7 +24,9 @@
 
     <form method="POST" action="{{ route('frame') }}" data-frame-form class="flex flex-col flex-1">
         @csrf
-        <input type="hidden" name="frame" id="frame-input" value="{{ $allFrames->keys()->first() }}">
+        <input type="hidden" name="copy" id="copy-input" value="1">
+        <div id="frame-picks" class="hidden"></div>
+        <input type="hidden" name="category" id="category-input" value="semua">
 
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" data-frame-grid>
             @foreach ($allFrames as $frame)

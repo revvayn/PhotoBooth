@@ -242,35 +242,59 @@ function initFilterSelect() {
 function initFrameSelect() {
     const form = document.querySelector('[data-frame-form]');
     if (!form) return;
-
+    const chips = document.querySelectorAll('[data-category-chip]');
     const input = document.getElementById('frame-input');
     const options = form.querySelectorAll('[data-frame-option]');
-    const cats = form.querySelectorAll('[data-category]');
+    const cats = document.querySelectorAll('[data-category-chip]');
 
     const selectOption = (opt) => {
-        input.value = opt.dataset.frameOption;
-        options.forEach((o) => o.classList.remove('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100'));
-        opt.classList.add('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100');
+        const slug = opt.dataset.frameOption;
+        const picks = document.getElementById('frame-picks');
+        const isPicked = opt.classList.contains('ring-2');
+
+        opt.classList.toggle('ring-2', !isPicked);
+        opt.classList.toggle('ring-rose-500', !isPicked);
+        opt.classList.toggle('shadow-lg', !isPicked);
+        opt.classList.toggle('shadow-rose-100', !isPicked);
+
+        let hidden = picks.querySelector('input[value="'+slug+'"]');
+        if (isPicked) {
+            if (hidden) hidden.remove();
+        } else {
+            if (!hidden) {
+                hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'frames[]';
+                hidden.value = slug;
+                picks.appendChild(hidden);
+            }
+        }
     };
 
     const applyFilter = (slug) => {
-        cats.forEach((c) => {
-            c.classList.remove('bg-rose-500', 'text-white', 'ring-rose-500', 'shadow-md', 'shadow-rose-200');
-            c.classList.add('text-rose-600', 'bg-white/80');
-            if (c.dataset.category === slug) {
-                c.classList.remove('text-rose-600', 'bg-white/80');
-                c.classList.add('bg-rose-500', 'text-white', 'ring-rose-500', 'shadow-md', 'shadow-rose-200');
+        cats.forEach((cat) => {
+            const active = cat.dataset.category === slug;
+            cat.classList.toggle('bg-rose-500', active);
+            cat.classList.toggle('text-white', active);
+            cat.classList.toggle('ring-rose-500', active);
+            cat.classList.toggle('shadow-md', active);
+            cat.classList.toggle('shadow-rose-200', active);
+            cat.classList.toggle('bg-white/80', !active);
+            cat.classList.toggle('text-rose-600', !active);
+            cat.classList.toggle('ring-rose-200', !active);
+        });
+
+        options.forEach((opt) => {
+            const show = slug === 'semua' || opt.dataset.category === slug;
+            opt.classList.toggle('hidden', !show);
+        });
+
+        if (slug !== 'semua') {
+            const selected = [...options].find((o) => o.dataset.frameOption === input.value);
+            if (selected && selected.classList.contains('hidden')) {
+                selectOption([...options].find((o) => !o.classList.contains('hidden')));
             }
-        });
-
-        options.forEach((o) => {
-            const show = slug === 'semua' || o.dataset.category === slug;
-            o.classList.toggle('hidden', !show);
-            if (!show) o.classList.remove('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100');
-        });
-
-        const firstVisible = [...options].find((o) => !o.classList.contains('hidden'));
-        if (firstVisible) selectOption(firstVisible);
+        }
     };
 
     cats.forEach((cat) => cat.addEventListener('click', () => applyFilter(cat.dataset.category)));
