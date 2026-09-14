@@ -75,36 +75,40 @@ class PhotoboothController extends Controller
         $activeSlugs = Frame::active()->pluck('slug')->toArray();
 
         $data = $request->validate([
-            'frame' => ['required', 'in:'.implode(',', $activeSlugs)],
+            'frames' => ['required', 'array', 'min:1', 'max:'.count($activeSlugs)],
+            'frames.*' => ['required', 'in:'.implode(',', $activeSlugs)],
+            'copy' => ['required', 'in:'.implode(',', array_keys(self::PRICES))],
         ]);
 
-        $request->session()->put('frame', $data['frame']);
+        $request->session()->put('frames', array_values(array_unique($data['frames'])));
+        $request->session()->put('copy', (int) $data['copy']);
 
-        $frame = Frame::where('slug', $data['frame'])->first();
-        $this->log('frame.selected', ['frame' => $frame?->name ?? $data['frame']]);
+        $frames = Frame::whereIn('slug', $data['frames'])->get();
+        $this->log('frame.selected', [
+            'frames' => $frames->pluck('name')->implode(' + '),
+            'copy' => $data['copy'],
+            'total' => $this->total(),
+        ]);
 
         return redirect()->route('foto');
     }
 
     public function foto(Request $request)
     {
-        $this->requirePrereq($request, ['frame']);
-
-        $frame = Frame::where('slug', session('frame'))->first();
+        $this->requirePrereq($request, ['frames']);
 
         return view('foto', [
             'queue' => session('queue'),
-            'photoCount' => $frame?->photo_count ?? 3,
+            'photoCount' => $this->maxPhotoCount(),
             'step' => 2,
         ]);
     }
 
     public function fotoStore(Request $request)
     {
-        $this->requirePrereq($request, ['frame']);
+        $this->requirePrereq($request, ['frames']);
 
-        $frame = Frame::where('slug', session('frame'))->first();
-        $photoCount = $frame?->photo_count ?? 3;
+        $photoCount = $this->maxPhotoCount();
 
         $data = $request->validate([
             'photos' => ['required', 'array', 'size:'.$photoCount],
@@ -156,32 +160,6 @@ class PhotoboothController extends Controller
         $request->session()->put('filter', $data['filter']);
 
         $this->log('filter.selected', ['filter' => $data['filter']]);
-
-        return redirect()->route('print');
-    }
-
-    public function printCount(Request $request)
-    {
-        $this->requirePrereq($request, ['filter']);
-
-        return view('print', [
-            'prices' => self::PRICES,
-            'basePrice' => self::PRICES[1],
-            'step' => 3,
-        ]);
-    }
-
-    public function printStore(Request $request)
-    {
-        $this->requirePrereq($request, ['filter']);
-
-        $data = $request->validate([
-            'copy' => ['required', 'in:'.implode(',', array_keys(self::PRICES))],
-        ]);
-
-        $request->session()->put('copy', (int) $data['copy']);
-
-        $this->log('print.selected', ['copy' => $data['copy'], 'total' => $this->total()]);
 
         return redirect()->route('metode');
     }

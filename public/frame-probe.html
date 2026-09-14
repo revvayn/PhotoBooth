@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="probe">
+<link rel="stylesheet" href="/build/assets/app-BGSRWvCR.css">
+<title>frame probe</title>
+</head>
+<body>
+<div class="flex-1 flex flex-col">
+    <div class="flex flex-wrap gap-2 justify-center mb-6">
+        <button type="button" data-category="semua"
+                class="px-5 py-2 rounded-full text-sm font-semibold transition-all ring-1 ring-rose-200 text-rose-600 bg-white/80 bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200">Semua</button>
+        <button type="button" data-category="k-pop"
+                class="px-5 py-2 rounded-full text-sm font-semibold transition-all ring-1 ring-rose-200 text-rose-600 bg-white/80">K-pop</button>
+        <button type="button" data-category="estetik"
+                class="px-5 py-2 rounded-full text-sm font-semibold transition-all ring-1 ring-rose-200 text-rose-600 bg-white/80">Estetik</button>
+    </div>
+
+    <form data-frame-form class="flex flex-col flex-1">
+        <input type="hidden" id="frame-input" value="kpop">
+        <div class="grid grid-cols-2 gap-4" data-frame-grid>
+            <button type="button" data-frame-option="kpop" data-category="k-pop"
+                    class="rounded-2xl bg-white/90 p-2 ring-2 ring-rose-500 shadow-lg shadow-rose-100">kpop</button>
+            <button type="button" data-frame-option="classic" data-category="classic"
+                    class="rounded-2xl bg-white/90 p-2">classic</button>
+            <button type="button" data-frame-option="estetik" data-category="estetik"
+                    class="rounded-2xl bg-white/90 p-2">estetik</button>
+            <button type="button" data-frame-option="neo" data-category="estetik"
+                    class="rounded-2xl bg-white/90 p-2">neo</button>
+        </div>
+    </form>
+</div>
+<pre id="out">loading</pre>
+<script type="module" src="/build/assets/app-FjxUuyg8.js"></script>
+<script type="module">
+setTimeout(() => {
+    const out = document.getElementById('out');
+    const form = document.querySelector('[data-frame-form]');
+    const input = document.getElementById('frame-input');
+    const cats = document.querySelectorAll('[data-category]');
+    const opts = document.querySelectorAll('[data-frame-option]');
+    let lines = '';
+
+    // simulasikan klik kategori "estetik"
+    const est = [...cats].find((c) => c.dataset.category === 'estetik');
+    est.click();
+    lines += 'after estetik-cat: input=' + input.value + ' visible=[';
+    [...opts].forEach((o) => { lines += o.classList.contains('hidden') ? '-' : (o.dataset.frameOption + ','); });
+    lines += ']\n';
+
+    // pilih opsi "estetik" (kategori sama) lalu coba ganti ke "neo" (kategori sama)
+    const optEst = [...opts].find((o) => o.dataset.frameOption === 'estetik');
+    optEst.click();
+    lines += 'after click estetik: input=' + input.value + ' ring=' + (optEst.classList.contains('ring-2') ? 'yes' : 'no') + '\n';
+    const optNeo = [...opts].find((o) => o.dataset.frameOption === 'neo');
+    optNeo.click();
+    lines += 'after click neo (ganti): input=' + input.value + ' ringBee=' + (optNeo.classList.contains('ring-2') ? 'yes' : 'no') + ' ringOld=' + (optEst.classList.contains('ring-2') ? 'STILL' : 'no') + '\n';
+
+    // klik kategori "classic" — harus pindah filter ke classic, input pindah ke opsi classic
+    const cla = [...cats].find((c) => c.dataset.category === 'classic');
+    cla.click();
+    lines += 'after classic-cat: input=' + input.value + ' visible=[';
+    [...opts].forEach((o) => { lines += o.classList.contains('hidden') ? '-' : (o.dataset.frameOption + ','); });
+    lines += ']\n';
+
+    out.textContent = lines;
+    fetch('/striptest-echo?r=' + encodeURIComponent(lines)).catch(() => {});
+}, 2500);
+</script>
+</body>
+</html>
