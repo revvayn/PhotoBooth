@@ -42,7 +42,7 @@
     </div>
 
     <div class="mt-6 flex justify-end w-full max-w-lg">
-        <a href="{{ route('frame') }}" class="px-10 py-4 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-lg shadow-lg shadow-rose-200 hover:shadow-xl hover:scale-105 transition-all">
+                <a href="{{ route('spa') }}" class="px-10 py-4 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-lg shadow-lg shadow-rose-200 hover:shadow-xl hover:scale-105 transition-all">
             Lanjut →
         </a>
     </div>
