@@ -9,23 +9,41 @@
         <p class="text-slate-500 text-sm mt-1">Berikut hasil frame yang sudah dibuat</p>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-xl">
-        <div class="mx-auto overflow-hidden rounded-[2rem] shadow-xl shadow-rose-100 ring-1 ring-rose-100 bg-white" data-strip-container>
-            <canvas class="w-full h-auto block" data-strip-canvas
-                    data-photos='@json($photos)'
-                    data-filter="{{ $filter }}"
-                    data-frame="{{ $frame }}"
-                    data-frame-image="{{ $frameImage }}"
-                    data-frame-slots='@json($frameSlots)'></canvas>
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 w-full max-w-3xl items-start">
+        <div class="space-y-6 w-full">
+            @forelse ($items as $item)
+                <div class="mx-auto max-w-sm overflow-hidden rounded-[2rem] shadow-xl shadow-rose-100 ring-1 ring-rose-100 bg-white" data-strip-container>
+                    <canvas class="w-full h-auto block" data-strip-canvas
+                            data-photos='@json($item['photos'] ?? [])'
+                            data-filter="{{ $filter }}"
+                            data-frame="{{ $item['slug'] }}"
+                            data-frame-image="{{ $item['image_url'] }}"
+                            data-frame-slots='@json($item['slots'] ?? [])'></canvas>
+                    <div class="px-5 py-3 flex items-center justify-between text-xs text-slate-500 border-t border-rose-100">
+                        <span class="font-semibold text-slate-700">{{ $item['name'] }}@if ($item['qty'] > 1) ×{{ $item['qty'] }}@endif</span>
+                        <span class="font-bold text-slate-700">Rp. {{ number_format($item['price'] * $item['qty'], 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            @empty
+                <p class="text-center text-slate-400">Belum ada frame yang dipilih.</p>
+            @endforelse
         </div>
 
-        <div class="flex flex-col justify-center gap-4">
+        <div class="flex flex-col justify-center gap-4 lg:sticky lg:top-6">
             <div class="rounded-3xl bg-white/90 backdrop-blur ring-1 ring-rose-100 p-5">
                 <p class="text-xs text-slate-400 mb-1">Ringkasan Pesanan</p>
                 <div class="text-sm text-slate-600 space-y-1">
                     <p>Antrian: <span class="font-bold text-rose-500">{{ $queue }}</span></p>
-                    <p>Frame: <span class="font-semibold">{{ $frameName }}</span></p>
-                    <p>Total: <span class="font-bold">Rp. {{ number_format($total, 0, ',', '.') }}</span></p>
+                    @foreach ($items as $item)
+                        <p class="flex justify-between">
+                            <span>{{ $item['name'] }}@if ($item['qty'] > 1) ×{{ $item['qty'] }}@endif</span>
+                            <span>Rp. {{ number_format($item['price'] * $item['qty'], 0, ',', '.') }}</span>
+                        </p>
+                    @endforeach
+                    <p class="flex justify-between pt-1 mt-1 border-t border-rose-100">
+                        <span class="font-bold text-slate-800">Total</span>
+                        <span class="font-bold text-rose-600">Rp. {{ number_format($total, 0, ',', '.') }}</span>
+                    </p>
                 </div>
             </div>
 

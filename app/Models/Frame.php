@@ -11,6 +11,7 @@ class Frame extends Model
         'slug',
         'image_path',
         'photo_count',
+        'price',
         'slots',
         'category',
         'color_class',
@@ -24,6 +25,7 @@ class Frame extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'photo_count' => 'integer',
+        'price' => 'integer',
         'slots' => 'array',
     ];
 

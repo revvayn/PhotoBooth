@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Storage;
 
 class PhotoboothController extends Controller
 {
-    private const PRICES = [1 => 30000, 2 => 35000, 3 => 40000, 4 => 45000];
-
     private const FILTERS = [
         'asli' => 'Asli',
         'bw' => 'Hitam Putih',
@@ -37,7 +35,8 @@ class PhotoboothController extends Controller
         $request->session()->put('queue', $queue);
         $request->session()->put('started_at', now()->timestamp);
         $request->session()->put('total_seconds', self::SESSION_SECONDS);
-        $request->session()->forget(['photos', 'filter', 'frame', 'copy', 'metode', 'paid', 'email']);
+
+        $this->resetCartSession($request);
 
         $this->log('session.started', ['queue' => $queue]);
 
@@ -64,6 +63,7 @@ class PhotoboothController extends Controller
         return view('frame', [
             'categories' => $categories,
             'allFrames' => $allFrames,
+            'cart' => session('cart', []),
             'step' => 2,
         ]);
     }
@@ -75,18 +75,28 @@ class PhotoboothController extends Controller
         $activeSlugs = Frame::active()->pluck('slug')->toArray();
 
         $data = $request->validate([
-            'frames' => ['required', 'array', 'min:1', 'max:'.count($activeSlugs)],
-            'frames.*' => ['required', 'distinct', 'in:'.implode(',', $activeSlugs)],
-            'copy' => ['required', 'in:'.implode(',', array_keys(self::PRICES))],
+            'cart' => ['required', 'array', 'min:1', 'max:'.count($activeSlugs)],
+            'cart.*' => ['required', 'integer', 'min:1', 'max:20'],
         ]);
 
-        $request->session()->put('frames', array_values(array_unique($data['frames'])));
-        $request->session()->put('copy', (int) $data['copy']);
+        $cart = [];
+        foreach ($data['cart'] as $slug => $qty) {
+            if (in_array($slug, $activeSlugs, true)) {
+                $cart[$slug] = (int) $qty;
+            }
+        }
 
-        $frames = Frame::whereIn('slug', $request->session()->get('frames', []))->get();
+        if (! $cart) {
+            return back()->withErrors(['cart' => 'Pilih minimal satu frame.']);
+        }
+
+        $request->session()->put('cart', $cart);
+        // Frame/key foto berubah => hasil foto lama tidak berlaku lagi.
+        $this->resetCartSession($request, ['cart']);
+
+        $frames = Frame::whereIn('slug', array_keys($cart))->get();
         $this->log('frame.selected', [
-            'frames' => $frames->pluck('name')->implode(' + '),
-            'copy' => $data['copy'],
+            'frames' => $frames->map(fn ($f) => $f->name.' ×'.$cart[$f->slug])->implode(' + '),
             'total' => $this->total(),
         ]);
 
@@ -95,28 +105,19 @@ class PhotoboothController extends Controller
 
     public function foto(Request $request)
     {
-        $this->requirePrereq($request, ['frames']);
-
-        $frameSlugs = $request->session()->get('frames', []);
-        $framePhotoCounts = Frame::whereIn('slug', $frameSlugs)
-            ->pluck('photo_count', 'slug')
-            ->filter(fn ($v) => $v > 0)
-            ->isEmpty()
-                ? collect($frameSlugs)->mapWithKeys(fn ($s) => [$s => 1])
-                : Frame::whereIn('slug', $frameSlugs)->pluck('photo_count', 'slug')->filter(fn ($v) => $v > 0);
+        $this->requirePrereq($request, ['cart']);
 
         return view('foto', [
             'queue' => session('queue'),
+            'items' => $this->cartItems(),
             'photoCount' => $this->maxPhotoCount(),
-            'frameSlugs' => $frameSlugs,
-            'framePhotoCounts' => $framePhotoCounts,
             'step' => 2,
         ]);
     }
 
     public function fotoStore(Request $request)
     {
-        $this->requirePrereq($request, ['frames']);
+        $this->requirePrereq($request, ['cart']);
 
         $photoCount = $this->maxPhotoCount();
 
@@ -125,20 +126,25 @@ class PhotoboothController extends Controller
             'photos.*' => ['required', 'string'],
         ]);
 
-                    $path = 'photos/'.$request->session()->getId();
+        $path = 'photos/'.$request->session()->getId();
         Storage::disk('public')->deleteDirectory($path);
 
         $saved = [];
-        foreach (range(1, $photoCount) as $key) {
-            $index = $key - 1;
-            $base64 = preg_replace('#^data:image/\w+;base64,#i', '', $data['photos'][$index]);
-            if (! $base64 || base64_decode($base64, true) === false) {
-                return response()->json(['message' => 'Foto tidak valid.'], 422);
+        $index = 0;
+        foreach ($this->cartItems() as $item) {
+            $savedItem = [];
+            foreach (range(1, $item['photo_count']) as $key) {
+                $base64 = preg_replace('#^data:image/\w+;base64,#i', '', $data['photos'][$index]);
+                if (! $base64 || base64_decode($base64, true) === false) {
+                    return response()->json(['message' => 'Foto tidak valid.'], 422);
+                }
+                $filename = 'foto-'.($index + 1).'.jpg';
+                Storage::disk('public')->put($path.'/'.$filename, base64_decode($base64));
+                // gunakan URL relatif-akar agar bekerja di mana pun kiosk diakses
+                $savedItem[] = '/storage/'.$path.'/'.$filename;
+                $index++;
             }
-            $filename = 'foto-'.$key.'.jpg';
-            Storage::disk('public')->put($path.'/'.$filename, base64_decode($base64));
-            // gunakan URL relatif-akar agar bekerja di mana pun kiosk diakses
-            $saved[] = '/storage/'.$path.'/'.$filename;
+            $saved[$item['slug']] = $savedItem;
         }
 
         $request->session()->put('photos', $saved);
@@ -154,7 +160,7 @@ class PhotoboothController extends Controller
 
         return view('filter', [
             'filters' => self::FILTERS,
-            'photos' => session('photos', []),
+            'photos' => collect(session('photos', []))->flatten()->values()->all(),
             'step' => 2,
         ]);
     }
@@ -176,7 +182,7 @@ class PhotoboothController extends Controller
 
     public function metode(Request $request)
     {
-        $this->requirePrereq($request, ['copy']);
+        $this->requirePrereq($request, ['filter']);
 
         return view('metode', [
             'total' => $this->total(),
@@ -186,7 +192,7 @@ class PhotoboothController extends Controller
 
     public function metodeStore(Request $request)
     {
-        $this->requirePrereq($request, ['copy']);
+        $this->requirePrereq($request, ['filter']);
 
         $data = $request->validate([
             'metode' => ['required', 'in:cash,qris'],
@@ -228,17 +234,17 @@ class PhotoboothController extends Controller
     {
         $this->requirePrereq($request, ['paid']);
 
-        $frameSlug = session('frame', 'kpop');
-        $frame = Frame::where('slug', $frameSlug)->first();
+        $photos = session('photos', []);
+
+        $items = collect($this->cartItems())->map(function ($item) use ($photos) {
+            $item['photos'] = $photos[$item['slug']] ?? [];
+
+            return $item;
+        });
 
         return view('review', [
-            'photos' => session('photos', []),
+            'items' => $items,
             'filter' => session('filter', 'asli'),
-            'frame' => $frameSlug,
-            'frameName' => $this->getFrameName($frameSlug),
-            'frameImage' => $frame?->image_url,
-            'frameSlots' => $frame?->slots ?? [],
-            'photoCount' => $frame?->photo_count ?? 3,
             'total' => $this->total(),
             'queue' => session('queue'),
             'step' => 3,
@@ -266,16 +272,17 @@ class PhotoboothController extends Controller
 
         $this->log('session.completed');
 
-        $frameSlug = session('frame', 'kpop');
-        $frame = Frame::where('slug', $frameSlug)->first();
+        $photos = session('photos', []);
+
+        $items = collect($this->cartItems())->map(function ($item) use ($photos) {
+            $item['photos'] = $photos[$item['slug']] ?? [];
+
+            return $item;
+        });
 
         return view('selesai', [
-            'photos' => session('photos', []),
+            'items' => $items,
             'filter' => session('filter', 'asli'),
-            'frame' => $frameSlug,
-            'frameImage' => $frame?->image_url,
-            'frameSlots' => $frame?->slots ?? [],
-            'photoCount' => $frame?->photo_count ?? 3,
             'email' => session('email'),
             'queue' => session('queue'),
             'step' => 3,
@@ -294,7 +301,7 @@ class PhotoboothController extends Controller
     {
         $this->requirePrereq($request, ['photos']);
 
-        $first = session('photos')[0];
+        $first = collect(session('photos', []))->flatten()->first();
         $name = 'fotobooth-'.time().'.jpg';
 
         return response()->streamDownload(function () use ($first) {
@@ -302,25 +309,63 @@ class PhotoboothController extends Controller
         }, $name, ['Content-Type' => 'image/jpeg']);
     }
 
-    private function total(): int
+    /**
+     * Item cart (frame unik berurutan sesuai pilihan user)
+     * lengkap dengan harga, qty, jumlah foto, dan slot frame.
+     */
+    private function cartItems(): array
     {
-        $copy = (int) session('copy', 1);
+        $cart = session('cart', []);
+        if (! $cart) {
+            return [];
+        }
 
-        return self::PRICES[$copy] ?? self::PRICES[1];
+        $frames = Frame::whereIn('slug', array_keys($cart))->get()->keyBy('slug');
+
+        $items = [];
+        foreach ($cart as $slug => $qty) {
+            if (! $frames->has($slug)) {
+                continue;
+            }
+            $frame = $frames->get($slug);
+            $items[] = [
+                'slug' => $slug,
+                'name' => $frame->name,
+                'qty' => (int) $qty,
+                'price' => (int) $frame->price,
+                'photo_count' => max(1, (int) $frame->photo_count),
+                'image_url' => $frame->image_url,
+                'slots' => $frame->slots ?? [],
+                'caption' => $frame->caption,
+            ];
+        }
+
+        return $items;
     }
 
-    private function getFrameName(string $slug): string
+    private function total(): int
     {
-        $frame = Frame::where('slug', $slug)->first();
-
-        return $frame?->name ?? ucfirst($slug).' Frame';
+        return array_sum(array_map(
+            fn ($item) => $item['price'] * $item['qty'],
+            $this->cartItems()
+        ));
     }
 
     private function maxPhotoCount(): int
     {
-        $slugs = session('frames', []);
+        return array_sum(array_map(
+            fn ($item) => $item['photo_count'],
+            $this->cartItems()
+        ));
+    }
 
-        return max(1, (int) Frame::whereIn('slug', $slugs)->sum('photo_count'));
+    /**
+     * Bersihkan data sesi yang tidak lagi valid.
+     */
+    private function resetCartSession(Request $request, array $keep = []): void
+    {
+        $forget = ['cart', 'photos', 'filter', 'metode', 'paid', 'email'];
+        $request->session()->forget(array_diff($forget, $keep));
     }
 
     /**

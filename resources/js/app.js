@@ -66,12 +66,50 @@ function initPhotoSession() {
     let photoCount = parseInt(photoCountEl?.dataset.photoCount || '3', 10);
     if (!photoCount || photoCount < 1) photoCount = 3;
 
+    // Global index foto tersusun berurutan sesuai urutan frame di cart.
+    const slotGroups = [...document.querySelectorAll('[data-frame-slots]')];
+    const tabs = [...document.querySelectorAll('[data-frame-tab]')];
+
+    const frames = [];
+    slotGroups.forEach((group, fIdx) => {
+        const count = group.querySelectorAll('[data-shot-item]').length;
+        frames.push({ index: fIdx, start: frames.length ? frames[frames.length - 1].start + frames[frames.length - 1].count : 0, count });
+    });
+
+    if (!frames.length) return;
+    if (!photoCount || photoCount < 1) photoCount = frames.reduce((s, f) => s + f.count, 0);
+
+    const frameOf = (i) => frames.find((f) => i >= f.start && i < f.start + f.count)?.index ?? 0;
+    const frameDone = (f) => photos.slice(f.start, f.start + f.count).every(Boolean);
+
     let stream = null;
     const photos = new Array(photoCount).fill(null);
     let shooting = false;
+    let activeFrame = 0;
 
     const stopStream = () => {
         if (stream) stream.getTracks().forEach((t) => t.stop());
+    };
+
+    const activateTab = (fIdx) => {
+        activeFrame = fIdx;
+        slotGroups.forEach((g, i) => g.classList.toggle('hidden', i !== fIdx));
+        paintTabs();
+    };
+
+    const paintTabs = () => {
+        tabs.forEach((t, i) => {
+            const done = frameDone(frames[i]);
+            const isActive = i === activeFrame;
+            const clazz = done && !isActive
+                ? 'bg-emerald-500 text-white ring-emerald-500 shadow-md shadow-emerald-200'
+                : isActive
+                    ? 'bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200'
+                    : 'bg-white/80 text-rose-600 ring-rose-200';
+            t.className = 'px-4 py-2 rounded-full text-sm font-semibold ring-1 transition-all ' + clazz;
+            const badge = t.querySelector('[data-tab-status]');
+            if (badge) badge.textContent = done ? '✓ Selesai' : (frames[i].count + ' foto');
+        });
     };
 
     navigator.mediaDevices
@@ -114,7 +152,7 @@ function initPhotoSession() {
         if (!item) return;
         const img = item.querySelector('[data-shot-img]');
         const status = item.querySelector('[data-shot-status]');
-        const icon = item.querySelector('.text-3xl');
+        const icon = item.querySelector('.text-2xl, .text-3xl');
         const retake = item.querySelector('[data-retake]');
         if (icon) icon.classList.add('hidden');
         if (status) status.textContent = 'Selesai ✓';
@@ -152,6 +190,7 @@ function initPhotoSession() {
         const dataUrl = snapshot();
         photos[i] = dataUrl;
         updateSlot(i, dataUrl);
+        paintTabs();
         updateNext();
     };
 
@@ -162,6 +201,7 @@ function initPhotoSession() {
 
         for (let i = 0; i < photoCount; i++) {
             if (photos[i]) continue;
+            activateTab(frameOf(i));
             await takePhoto(i);
             if (i < photoCount - 1) await wait(450);
         }
@@ -207,14 +247,19 @@ function initPhotoSession() {
         submitPhotos();
     });
 
+    tabs.forEach((t, i) => t.addEventListener('click', () => activateTab(i)));
+
     document.querySelectorAll('[data-retake]').forEach((btn) => {
         btn.addEventListener('click', () => {
             if (shooting) return;
-            takePhoto(parseInt(btn.dataset.retake, 10));
+            const i = parseInt(btn.dataset.retake, 10);
+            activateTab(frameOf(i));
+            takePhoto(i);
         });
     });
 
     updateNext();
+    paintTabs();
 }
 
 /* ---------------- Filter selection ---------------- */
@@ -237,38 +282,103 @@ function initFilterSelect() {
     });
 }
 
-/* ---------------- Frame selection ---------------- */
+/* ---------------- Frame cart selection ---------------- */
 
-function initFrameSelect() {
+function initFrameCart() {
     const form = document.querySelector('[data-frame-form]');
     if (!form) return;
-    const chips = document.querySelectorAll('[data-category-chip]');
-    const input = document.getElementById('frame-input');
-    const options = form.querySelectorAll('[data-frame-option]');
+
     const cats = document.querySelectorAll('[data-category-chip]');
+    const options = form.querySelectorAll('[data-frame-option]');
+    const picks = document.getElementById('frame-picks');
+    const cartList = form.querySelector('[data-cart-list]');
+    const cartEmpty = form.querySelector('[data-cart-empty]');
+    const cartCount = form.querySelector('[data-cart-count]');
+    const totalEl = form.querySelector('[data-cart-total]');
+    const submitBtn = form.querySelector('[data-cart-submit]');
 
-    const selectOption = (opt) => {
-        const slug = opt.dataset.frameOption;
-        const picks = document.getElementById('frame-picks');
-        const isPicked = opt.classList.contains('ring-2');
+    const fmt = (n) => 'Rp. ' + n.toLocaleString('id-ID');
 
-        opt.classList.toggle('ring-2', !isPicked);
-        opt.classList.toggle('ring-rose-500', !isPicked);
-        opt.classList.toggle('shadow-lg', !isPicked);
-        opt.classList.toggle('shadow-rose-100', !isPicked);
+    const FRAME_INFO = {};
+    options.forEach((opt) => {
+        FRAME_INFO[opt.dataset.frameOption] = {
+            name: opt.dataset.name || opt.dataset.frameOption,
+            price: parseInt(opt.dataset.price || '0', 10),
+            img: opt.querySelector('img')?.src || '',
+        };
+    });
 
-        let hidden = picks.querySelector('input[value="'+slug+'"]');
-        if (isPicked) {
-            if (hidden) hidden.remove();
-        } else {
-            if (!hidden) {
-                hidden = document.createElement('input');
-                hidden.type = 'hidden';
-                hidden.name = 'frames[]';
-                hidden.value = slug;
-                picks.appendChild(hidden);
-            }
-        }
+    const cart = {};
+    options.forEach((opt) => {
+        const qty = parseInt(opt.dataset.qty || '0', 10);
+        if (qty > 0) cart[opt.dataset.frameOption] = qty;
+    });
+
+    const render = () => {
+        options.forEach((opt) => {
+            const slug = opt.dataset.frameOption;
+            const inCart = cart[slug] > 0;
+            const badge = opt.querySelector('[data-add-badge]');
+            opt.classList.toggle('ring-2', inCart);
+            opt.classList.toggle('ring-rose-500', inCart);
+            opt.classList.toggle('shadow-lg', inCart);
+            opt.classList.toggle('shadow-rose-100', inCart);
+            if (badge) badge.classList.toggle('hidden', !inCart);
+        });
+
+        const entries = Object.entries(cart).filter(([, q]) => q > 0);
+
+        cartList.innerHTML = '';
+        if (cartEmpty) cartEmpty.classList.toggle('hidden', entries.length > 0);
+        if (cartCount) cartCount.textContent = entries.length + (entries.length === 1 ? ' item' : ' item');
+
+        entries.forEach(([slug, qty]) => {
+            const info = FRAME_INFO[slug] || { name: slug, price: 0, img: '' };
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2.5';
+            row.innerHTML = `
+                <img src="${info.img}" alt="" class="w-10 h-12 rounded-lg object-contain bg-slate-50 ring-1 ring-slate-100 shrink-0">
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold truncate">${info.name}</p>
+                    <p class="text-xs text-slate-400">@ ${fmt(info.price)}</p>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button type="button" data-cart-dec="${slug}" class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold hover:bg-rose-50 hover:text-rose-600">−</button>
+                    <span class="text-sm font-bold w-4 text-center">${qty}</span>
+                    <button type="button" data-cart-inc="${slug}" class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold hover:bg-rose-50 hover:text-rose-600">+</button>
+                </div>
+                <button type="button" data-cart-remove="${slug}" class="text-slate-300 hover:text-rose-500 text-xl leading-none shrink-0" title="Hapus">×</button>
+            `;
+            cartList.appendChild(row);
+        });
+
+        picks.innerHTML = '';
+        entries.forEach(([slug, qty]) => {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'cart[' + slug + ']';
+            hidden.value = qty;
+            picks.appendChild(hidden);
+        });
+
+        const total = entries.reduce((sum, [s, q]) => sum + (FRAME_INFO[s]?.price ?? 0) * q, 0);
+        if (totalEl) totalEl.textContent = fmt(total);
+        if (submitBtn) submitBtn.disabled = entries.length === 0;
+    };
+
+    const add = (slug) => {
+        cart[slug] = (cart[slug] || 0) + 1;
+        render();
+    };
+
+    const dec = (slug) => {
+        cart[slug] = Math.max(0, (cart[slug] || 0) - 1);
+        render();
+    };
+
+    const remove = (slug) => {
+        delete cart[slug];
+        render();
     };
 
     const applyFilter = (slug) => {
@@ -288,46 +398,21 @@ function initFrameSelect() {
             const show = slug === 'semua' || opt.dataset.category === slug;
             opt.classList.toggle('hidden', !show);
         });
-
-        if (slug !== 'semua') {
-            const selected = [...options].find((o) => o.dataset.frameOption === input.value);
-            if (selected && selected.classList.contains('hidden')) {
-                selectOption([...options].find((o) => !o.classList.contains('hidden')));
-            }
-        }
     };
 
+    options.forEach((opt) => opt.addEventListener('click', () => add(opt.dataset.frameOption)));
     cats.forEach((cat) => cat.addEventListener('click', () => applyFilter(cat.dataset.category)));
-    options.forEach((opt) => opt.addEventListener('click', () => selectOption(opt)));
-}
 
-/* ---------------- Print count selection ---------------- */
-
-function initPrintSelect() {
-    const form = document.querySelector('[data-print-form]');
-    if (!form) return;
-
-    const input = document.getElementById('copy-input');
-    const options = form.querySelectorAll('[data-copy-option]');
-    const totalEl = form.querySelector('[data-total]');
-
-    const fmt = (n) => 'Rp. ' + n.toLocaleString('id-ID');
-
-    options.forEach((opt) => {
-        opt.addEventListener('click', () => {
-            const price = parseInt(opt.dataset.priceLabel ? opt.querySelector('[data-price-label]').dataset.basePrice : opt.dataset.copyOption, 10);
-            input.value = opt.dataset.copyOption;
-            options.forEach((o) => {
-                o.classList.remove('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100');
-            });
-            opt.classList.add('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100');
-            if (totalEl && opt.querySelector('[data-price-label]')) {
-                totalEl.textContent = fmt(parseInt(opt.querySelector('[data-price-label]').dataset.basePrice, 10));
-            } else if (totalEl) {
-                totalEl.textContent = fmt(price);
-            }
-        });
+    cartList.addEventListener('click', (e) => {
+        const inc = e.target.closest('[data-cart-inc]');
+        const decBtn = e.target.closest('[data-cart-dec]');
+        const rm = e.target.closest('[data-cart-remove]');
+        if (inc) add(inc.dataset.cartInc);
+        else if (decBtn) dec(decBtn.dataset.cartDec);
+        else if (rm) remove(rm.dataset.cartRemove);
     });
+
+    render();
 }
 
 /* ---------------- Payment method selection ---------------- */
@@ -485,7 +570,10 @@ async function buildStripFrame(canvas, photoUrls, filterKey, frameImageUrl, fram
 }
 
 function initStrip() {
-    document.querySelectorAll('[data-strip-canvas]').forEach((canvas) => {
+    const downloadLink = document.querySelector('[data-strip-download]');
+
+    const canvases = [...document.querySelectorAll('[data-strip-canvas]')];
+    const ready = canvases.map((canvas) => {
         let photos = [];
         let slots = [];
         try {
@@ -504,27 +592,33 @@ function initStrip() {
             if (container) {
                 container.classList.add('hidden');
             }
-            return;
+            return Promise.resolve(null);
         }
-        buildStripFrame(
+        return buildStripFrame(
             canvas,
             photos,
             canvas.dataset.filter,
             canvas.dataset.frameImage,
             slots
-        ).then(() => {
-            const downloadLink = document.querySelector('[data-strip-download]');
-            if (downloadLink) {
-                downloadLink.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const a = document.createElement('a');
-                    a.href = canvas.toDataURL('image/jpeg', 0.92);
-                    a.download = 'photobooth-' + Date.now() + '.jpg';
-                    a.click();
-                });
-            }
-        });
+        ).then(() => canvas);
     });
+
+    if (downloadLink) {
+        downloadLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            Promise.all(ready).then((built) => {
+                const strips = built.filter(Boolean);
+                strips.forEach((canvas, i) => {
+                    setTimeout(() => {
+                        const a = document.createElement('a');
+                        a.href = canvas.toDataURL('image/jpeg', 0.92);
+                        a.download = 'photobooth-' + (strips.length > 1 ? i + 1 + '-' : '') + Date.now() + '.jpg';
+                        a.click();
+                    }, i * 400);
+                });
+            });
+        });
+    }
 }
 
 /* ---------------- Email form + printing modal ---------------- */
@@ -574,8 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initTimer();
     initPhotoSession();
     initFilterSelect();
-    initFrameSelect();
-    initPrintSelect();
+    initFrameCart();
     initMetodeSelect();
     initQr();
     initStrip();

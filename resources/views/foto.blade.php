@@ -6,23 +6,41 @@
 <div class="flex-1 flex flex-col">
     <div class="pb-3 flex items-center justify-between">
         <h2 class="font-display font-bold text-2xl">Sesi Foto</h2>
-        <span class="text-xs text-slate-500">Ambil <strong>{{ $photoCount }} foto</strong></span>
+        <span class="text-xs text-slate-500">Ambil <strong>{{ $photoCount }} foto</strong> untuk {{ count($items) }} frame</span>
     </div>
 
-    <div class="grid gap-3 mb-4" data-shot-thumbs data-photo-count="{{ $photoCount }}" style="grid-template-columns: repeat({{ $photoCount }}, minmax(0,1fr))">
-        @for ($i = 0; $i < $photoCount; $i++)
-            <div class="relative rounded-2xl overflow-hidden border border-rose-200 aspect-[3/4] bg-white shadow-sm" data-shot-item="{{ $i }}">
-                <div class="absolute inset-0 flex flex-col items-center justify-center text-center gap-1">
-                    <span class="text-3xl">🎞️</span>
-                    <span class="text-xs font-semibold text-slate-500">Foto {{ $i + 1 }}</span>
-                    <span class="text-[10px] text-slate-400" data-shot-status>Menunggu</span>
-                </div>
-                <img class="hidden w-full h-full object-cover" data-shot-img alt="Foto {{ $i + 1 }}">
-                <button type="button" data-retake="{{ $i }}" class="hidden absolute bottom-2 inset-x-0 mx-auto w-fit text-xs font-semibold bg-slate-800/80 text-white backdrop-blur px-4 py-1.5 rounded-full hover:bg-slate-800 transition">
-                    ↻ Ulang Foto Ini
+    @if (count($items) > 1)
+        <div class="flex flex-wrap gap-2 mb-4" data-frame-tabs role="tablist" aria-label="Pilih frame">
+            @foreach ($items as $index => $item)
+                <button type="button" role="tab" data-frame-tab="{{ $index }}" data-photo-count="{{ $item['photo_count'] }}"
+                        class="px-4 py-2 rounded-full text-sm font-semibold ring-1 ring-rose-200 transition-all {{ $index === 0 ? 'bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200' : 'text-rose-600 bg-white/80' }}">
+                    {{ $item['name'] }}@if ($item['qty'] > 1) <span class="opacity-80">×{{ $item['qty'] }}</span>@endif
+                    <span class="ml-1 text-[10px] font-bold opacity-90" data-tab-status>{{ $item['photo_count'] }} foto</span>
                 </button>
+            @endforeach
+        </div>
+    @endif
+
+    <div class="grid gap-3 mb-4" data-shot-thumbs data-photo-count="{{ $photoCount }}">
+        @php($gi = 0)
+        @foreach ($items as $index => $item)
+            <div class="grid gap-3 {{ count($items) > 1 && $index !== 0 ? 'hidden' : '' }}" data-frame-slots="{{ $index }}" style="grid-template-columns: repeat({{ $item['photo_count'] }}, minmax(0,1fr))">
+                @foreach (range(1, $item['photo_count']) as $local)
+                    @php($gidx = $gi++)
+                    <div class="relative rounded-2xl overflow-hidden border border-rose-200 aspect-square sm:aspect-[3/4] bg-white shadow-sm" data-shot-item="{{ $gidx }}">
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center gap-1">
+                            <span class="text-2xl sm:text-3xl">🎞️</span>
+                            <span class="text-xs font-semibold text-slate-500">{{ $item['name'] }} {{ $local }}</span>
+                            <span class="text-[10px] text-slate-400" data-shot-status>Menunggu</span>
+                        </div>
+                        <img class="hidden w-full h-full object-cover" data-shot-img alt="Foto {{ $local }}">
+                        <button type="button" data-retake="{{ $gidx }}" class="hidden absolute bottom-2 inset-x-0 mx-auto w-fit text-xs font-semibold bg-slate-800/80 text-white backdrop-blur px-4 py-1.5 rounded-full hover:bg-slate-800 transition">
+                            ↻ Ulang Foto Ini
+                        </button>
+                    </div>
+                @endforeach
             </div>
-        @endfor
+        @endforeach
     </div>
 
     <div class="relative flex-1 rounded-[2rem] overflow-hidden bg-slate-900 shadow-2xl aspect-square sm:aspect-[4/3]">

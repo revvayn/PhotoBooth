@@ -9,13 +9,22 @@
         <p class="text-slate-500 text-sm mt-1">Berikut hasil frame yang sudah dibuat</p>
     </div>
 
-    <div class="w-full max-w-sm mx-auto overflow-hidden rounded-[2rem] shadow-xl shadow-rose-100 ring-1 ring-rose-100 bg-white" data-strip-container>
-        <canvas class="w-full h-auto block" data-strip-canvas
-                data-photos='@json($photos)'
-                data-filter="{{ $filter }}"
-                data-frame="{{ $frame }}"
-                data-frame-image="{{ $frameImage }}"
-                data-frame-slots='@json($frameSlots)'></canvas>
+    <div class="space-y-6 w-full max-w-sm">
+        @forelse ($items as $item)
+            <div class="mx-auto max-w-sm overflow-hidden rounded-[2rem] shadow-xl shadow-rose-100 ring-1 ring-rose-100 bg-white" data-strip-container>
+                <canvas class="w-full h-auto block" data-strip-canvas
+                        data-photos='@json($item['photos'] ?? [])'
+                        data-filter="{{ $filter }}"
+                        data-frame="{{ $item['slug'] }}"
+                        data-frame-image="{{ $item['image_url'] }}"
+                        data-frame-slots='@json($item['slots'] ?? [])'></canvas>
+                <div class="px-5 py-3 text-center text-xs font-semibold text-slate-500 border-t border-rose-100">
+                    {{ $item['name'] }}@if ($item['qty'] > 1) ×{{ $item['qty'] }}@endif
+                </div>
+            </div>
+        @empty
+            <p class="text-center text-slate-400">Belum ada frame yang dipilih.</p>
+        @endforelse
     </div>
 
     @if ($email)
