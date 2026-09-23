@@ -12,9 +12,9 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-gradient-to-br from-rose-100 via-fuchsia-50 to-violet-100 text-slate-800 font-sans antialiased">
+<body class="h-dvh overflow-hidden bg-gradient-to-br from-rose-100 via-fuchsia-50 to-violet-100 text-slate-800 font-sans antialiased">
 
-    <div class="min-h-screen flex flex-col px-4 sm:px-6 py-5 max-w-5xl mx-auto w-full">
+    <div class="h-dvh overflow-hidden flex flex-col px-4 sm:px-6 py-2 max-w-5xl mx-auto w-full min-h-0">
 
         @if (isset($step))
             <header class="flex items-center justify-between gap-3 mb-5">

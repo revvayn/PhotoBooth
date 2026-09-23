@@ -27,6 +27,55 @@ class PhotoboothController extends Controller
         return view('welcome');
     }
 
+    /**
+     * Kanvas SPA — 1 dokumen penuh berisi SEMUA panel sekaligus (boot/tutorial
+     * DIHAPUS dari alur; root '/' langsung membuka panel pilih frame).
+     * Semua variabel SEMUA partial disiapkan sekaligus karena kanvas men-@include
+     * seluruh partial dalam satu dokumen dan Blade mewariskan SEMUA variabel view
+     * induk ke SEMUA partial (@include mewariskan seluruh variabel view).
+     */
+    public function spa(Request $request)
+    {
+        if (! $request->session()->has('queue')) {
+            $queue = '#'.rand(1000, 9999 );
+            $request->session()->put('queue', $queue);
+            $request->session()->put('started_at', now()->timestamp);
+            $request->session()->put('total_seconds', self::SESSION_SECONDS);
+            $this->resetCartSession($request);
+        }
+
+        $allFrames = Frame::active()->orderBy('sort_order')->get()->keyBy('slug');
+        $categories = Frame::active()->orderBy('sort_order')->get()
+            ->pluck('category')->unique()->filter()->values()->toArray();
+
+        $photos = collect(session('photos', []))->flatten()->values()->all();
+
+        $items = collect($this->cartItems())->map(function ($item) use ($photos) {
+            $item['photos'] = session('photos', [])[$item['slug']] ?? [];
+
+            return $item;
+        })->values()->all();
+
+        return view('layouts.spa', [
+            'queue' => session('queue'),
+            'step' => 1,
+            'categories' => $categories,
+            'allFrames' => $allFrames,
+            'cart' => session('cart', []),
+            'items' => $items,
+            'photoCount' => $this->maxPhotoCount(),
+            'photos' => $photos,
+            'filters' => self::FILTERS,
+            'filter' => session('filter', 'asli'),
+            'total' => $this->total(),
+            'queue' => session('queue'),
+            'email' => session('email'),
+            'metode' => session('metode'),
+            'nmid' => '102020034073193',
+            'merchant' => 'PERKAKASKU',
+        ]);
+    }
+
     public function mulai(Request $request)
     {
         $request->session()->regenerate();
@@ -96,7 +145,7 @@ class PhotoboothController extends Controller
 
         $frames = Frame::whereIn('slug', array_keys($cart))->get();
         $this->log('frame.selected', [
-            'frames' => $frames->map(fn ($f) => $f->name.' ×'.$cart[$f->slug])->implode(' + '),
+            'frames' => $frames->map(fn ($f) => $f->name.' ├ù'.$cart[$f->slug])->implode(' + '),
             'total' => $this->total(),
         ]);
 
