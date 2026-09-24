@@ -1,4 +1,7 @@
 ﻿<div class="flex-1 flex flex-col">
+    <div class="mb-1">
+        <a href="{{ route('spa', ['step' => 'metode']) }}" class="text-xs font-semibold text-slate-400 hover:text-rose-500 transition">← Kembali</a>
+    </div>
     <div class="text-center mb-6">
         <h2 class="font-display font-bold text-3xl">Pembayaran</h2>
         <p class="text-slate-500 text-sm mt-1">Menerima pembayaran melalui</p>

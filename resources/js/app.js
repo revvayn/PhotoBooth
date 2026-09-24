@@ -112,21 +112,76 @@ function initPhotoSession() {
         });
     };
 
-    navigator.mediaDevices
-        .getUserMedia({ video: { width: { ideal: 1024 }, height: { ideal: 768 } }, audio: false })
-        .then((s) => {
+    const camSwitch = document.querySelector('[data-camera-switch]');
+    let currentDeviceId = null;
+
+    const startStream = async (deviceId) => {
+        if (shooting) return false;
+        stopStream();
+        if (loading) loading.classList.remove('hidden');
+        if (errorBox) {
+            errorBox.classList.add('hidden');
+            errorBox.classList.remove('flex');
+        }
+        try {
+            const s = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 1024 },
+                    height: { ideal: 768 },
+                    ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+                },
+                audio: false,
+            });
             stream = s;
             video.srcObject = s;
+            currentDeviceId = deviceId ?? null;
             if (loading) loading.classList.add('hidden');
-        })
-        .catch(() => {
+            return true;
+        } catch (err) {
             if (loading) loading.classList.add('hidden');
             if (errorBox) {
                 errorBox.classList.remove('hidden');
                 errorBox.classList.add('flex');
             }
             if (shootBtn) shootBtn.disabled = true;
+            return false;
+        }
+    };
+
+    const paintCamSwitch = (devices) => {
+        if (!camSwitch) return;
+        if (devices.length < 2) {
+            camSwitch.remove();
+            return;
+        }
+        camSwitch.innerHTML = '';
+        devices.forEach((d, i) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            const active = (d.deviceId || null) === (currentDeviceId || null);
+            btn.className = 'px-4 py-2 rounded-full text-sm font-semibold backdrop-blur transition ' + (active ? 'bg-white text-slate-900 shadow' : 'bg-white/20 text-white hover:bg-white/30');
+            btn.textContent = '📷 ' + (d.label || 'Kamera ' + (i + 1));
+            btn.addEventListener('click', async () => {
+                if ((d.deviceId || null) === (currentDeviceId || null)) return;
+                const ok = await startStream(d.deviceId || null);
+                if (ok) {
+                    currentDeviceId = d.deviceId || null;
+                    paintCamSwitch(devices);
+                }
+            });
+            camSwitch.appendChild(btn);
         });
+    };
+
+    startStream(null).then(() => {
+        if (!navigator.mediaDevices?.enumerateDevices) {
+            if (camSwitch) camSwitch.remove();
+            return;
+        }
+        navigator.mediaDevices.enumerateDevices()
+            .then((all) => paintCamSwitch(all.filter((d) => d.kind === 'videoinput')))
+            .catch(() => { if (camSwitch) camSwitch.remove(); });
+    });
 
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 

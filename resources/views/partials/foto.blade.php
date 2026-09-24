@@ -1,4 +1,7 @@
 ﻿<div class="flex-1 flex flex-col">
+    <div class="mb-1">
+        <a href="{{ route('spa', ['step' => 'frame']) }}" class="text-xs font-semibold text-slate-400 hover:text-rose-500 transition">← Kembali</a>
+    </div>
     <div class="pb-2 flex items-center justify-between">
         <h2 class="font-display font-bold text-xl">Sesi Foto</h2>
         <span class="text-xs text-slate-500">Ambil <strong>{{ $photoCount }} foto</strong> untuk {{ count($items) }} frame</span>
@@ -59,6 +62,7 @@
         <div class="absolute inset-0 bg-white hidden" data-flash-overlay></div>
 
         <div class="absolute inset-x-0 bottom-0 p-3 flex flex-col items-center gap-2">
+            <div class="flex flex-wrap justify-center gap-2" data-camera-switch></div>
             <button type="button" data-shoot-btn class="px-10 py-3 rounded-full bg-white text-slate-900 font-display font-bold text-lg shadow-xl hover:scale-105 transition-transform">
                 ðŸ“¸ Mulai Foto
             </button>
