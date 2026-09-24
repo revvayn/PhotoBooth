@@ -33,7 +33,7 @@
                                     'neon' => 'saturate(1.8) contrast(1.2) hue-rotate(-8deg)',
                                 } }}">
                         @else
-                            <div class="w-full h-full flex items-center justify-center text-3xl">🖼️</div>
+                            <div class="w-full h-full flex items-center justify-center text-slate-300"><x-icon name="photo" class="w-10 h-10" /></div>
                         @endif
                     </div>
                     <div class="py-2 text-center">

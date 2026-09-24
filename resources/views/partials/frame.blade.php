@@ -47,7 +47,7 @@
                             @if ($slotLabel)
                                 <span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">{{ $slotLabel }}</span>
                             @endif
-                            <span data-add-badge class="absolute -top-1 -left-1 w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center shadow {{ $inCart ? '' : 'hidden' }}"></span>
+                            <span data-add-badge class="absolute -top-1 -left-1 w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center shadow {{ $inCart ? '' : 'hidden' }}"><x-icon name="check" class="w-4 h-4 text-white" /></span>
                         </div>
                         <div class="py-2 text-center space-y-0.5">
                             <span class="block text-sm font-semibold">{{ $frame->name }}</span>

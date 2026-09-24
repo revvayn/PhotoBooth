@@ -5,7 +5,7 @@
 @section('content')
 <div class="flex-1 min-h-0 flex flex-col items-center justify-center text-center py-6">
     <div class="animate-bounce-slow w-28 h-28 rounded-[2rem] bg-gradient-to-br from-rose-400 via-fuchsia-500 to-violet-500 flex items-center justify-center shadow-xl shadow-rose-300 mb-6">
-        <span class="text-6xl">📸</span>
+        <span class="text-6xl text-white"><x-icon name="camera" class="w-16 h-16" /></span>
     </div>
 
     <h1 class="font-display font-extrabold text-5xl sm:text-6xl bg-gradient-to-r from-rose-500 to-violet-600 bg-clip-text text-transparent mb-3">
@@ -25,15 +25,15 @@
 
     <div class="grid grid-cols-3 gap-6 mt-8">
         <div class="flex flex-col items-center gap-2">
-            <span class="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600">💳</span>
+            <span class="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600"><x-icon name="card" class="w-6 h-6" /></span>
             <span class="text-xs font-medium text-slate-500">Cek Pembayaran</span>
         </div>
         <div class="flex flex-col items-center gap-2">
-            <span class="w-12 h-12 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-600">🤳</span>
+            <span class="w-12 h-12 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-600"><x-icon name="camera" class="w-6 h-6" /></span>
             <span class="text-xs font-medium text-slate-500">Sesi Foto</span>
         </div>
         <div class="flex flex-col items-center gap-2">
-            <span class="w-12 h-12 rounded-2xl bg-violet-100 flex items-center justify-center text-violet-600">🖨️</span>
+            <span class="w-12 h-12 rounded-2xl bg-violet-100 flex items-center justify-center text-violet-600"><x-icon name="printer" class="w-6 h-6" /></span>
             <span class="text-xs font-medium text-slate-500">Print & Download</span>
         </div>
     </div>

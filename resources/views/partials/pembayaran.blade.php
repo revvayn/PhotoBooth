@@ -10,15 +10,15 @@
     <div class="flex flex-col items-center justify-center flex-1">
         @if ($metode === 'qris')
             <div class="w-full max-w-sm bg-white/95 backdrop-blur rounded-[2rem] shadow-xl shadow-rose-100 ring-1 ring-rose-100 p-5 sm:p-8 text-center">
-                <div class="w-10 h-10 mx-auto rounded-2xl bg-rose-500 text-white flex items-center justify-center text-lg mb-3"></div>
-                <div class="w-40 h-40 sm:w-52 sm:h-52 mx-auto bg-slate-50 rounded-2xl ring-1 ring-slate-200 flex items-center justify-center mb-3" id="qrcode"></div>
+                <div class="w-10 h-10 mx-auto rounded-2xl bg-rose-500 text-white flex items-center justify-center mb-3"><x-icon name="card" class="w-5 h-5 text-white" /></div>
+                <div class="w-40 h-40 sm:w-52 sm:h-52 mx-auto bg-slate-50 rounded-2xl ring-1 ring-slate-200 flex items-center justify-center mb-3" id="qrcode" data-nmid="{{ $nmid }}" data-merchant="{{ $merchant }}"></div>
                 <p class="text-2xl font-display font-bold text-slate-800 mb-1" data-qris-price>Rp. {{ number_format($total, 0, ',', '.') }}</p>
                 <p class="text-xs text-slate-500 leading-relaxed">QR code bisa di foto sebagai invoice pembayaran.</p>
                 <p class="text-xs text-slate-400 mt-2">Antrian <span class="font-bold text-rose-500">{{ $queue }}</span></p>
             </div>
         @else
             <div class="w-full max-w-sm bg-white/95 backdrop-blur rounded-[2rem] shadow-xl shadow-rose-100 ring-1 ring-rose-100 p-8 text-center">
-                <div class="w-10 h-10 mx-auto rounded-2xl from-amber-400 to-emerald-500 bg-gradient-to-br text-white flex items-center justify-center text-lg mb-4"></div>
+                <div class="w-10 h-10 mx-auto rounded-2xl from-amber-400 to-emerald-500 bg-gradient-to-br text-white flex items-center justify-center mb-4"><x-icon name="cash" class="w-5 h-5 text-white" /></div>
                 <p class="text-lg font-semibold text-slate-800 mb-1">{{ $merchant }}</p>
                 <p class="text-xs text-slate-500 mb-6">NMID : {{ $nmid }}</p>
                 <div class="rounded-2xl bg-rose-50 ring-1 ring-rose-100 py-4 px-6 mb-6">

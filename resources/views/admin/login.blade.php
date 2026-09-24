@@ -21,7 +21,7 @@
             {{-- Logo & Title --}}
             <div class="text-center mb-8">
                 <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl mb-4 shadow-lg">
-                    <span class="text-3xl">📸</span>
+                    <span class="text-3xl text-white"><x-icon name="camera" class="w-8 h-8 text-white" /></span>
                 </div>
                 <h1 class="font-heading text-2xl font-bold text-slate-800">Photobooth Admin</h1>
                 <p class="text-slate-500 text-sm mt-1">Masuk ke panel administrasi</p>

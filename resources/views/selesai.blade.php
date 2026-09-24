@@ -29,7 +29,7 @@
     </div>
 
     @if ($email)
-        <p class="text-sm text-slate-500 mt-4">📩 Softfile telah dikirim ke <span class="font-semibold text-slate-700">{{ $email }}</span></p>
+        <p class="text-sm text-slate-500 mt-4"><x-icon name="envelope" class="w-4 h-4 inline-block align-middle" /> Softfile telah dikirim ke <span class="font-semibold text-slate-700">{{ $email }}</span></p>
     @endif
 
     <div class="mt-8 flex flex-col sm:flex-row gap-3 w-full max-w-sm">

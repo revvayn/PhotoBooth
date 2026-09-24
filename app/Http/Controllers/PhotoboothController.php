@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\Frame;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -102,8 +103,11 @@ class PhotoboothController extends Controller
             'total' => $this->total(),
             'email' => session('email'),
             'metode' => session('metode'),
-            'nmid' => '102020034073193',
-            'merchant' => 'PERKAKASKU',
+            'nmid' => Setting::get('qris_nmid', '102020034073193'),
+            'merchant' => Setting::get('qris_merchant', 'PERKAKASKU'),
+            'cam_width' => (int) Setting::get('cam_width', '1024'),
+            'cam_height' => (int) Setting::get('cam_height', '768'),
+            'countdown' => (int) Setting::get('countdown', '3'),
         ]);
     }
 
@@ -330,8 +334,8 @@ class PhotoboothController extends Controller
         return view('pembayaran', [
             'metode' => session('metode'),
             'total' => $this->total(),
-            'nmid' => '102020034073193',
-            'merchant' => 'PERKAKASKU',
+            'nmid' => Setting::get('qris_nmid', '102020034073193'),
+            'merchant' => Setting::get('qris_merchant', 'PERKAKASKU'),
             'queue' => session('queue'),
             'step' => 3,
         ]);

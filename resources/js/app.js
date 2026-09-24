@@ -112,6 +112,12 @@ function initPhotoSession() {
         });
     };
 
+    // Pengaturan kamera dari admin (via panel foto SPA); default aman bila absen.
+    const spaFoto = document.querySelector('[data-spa-panel="foto"]');
+    const camW = parseInt(spaFoto?.dataset.camWidth || '1024', 10) || 1024;
+    const camH = parseInt(spaFoto?.dataset.camHeight || '768', 10) || 768;
+    const countFrom = Math.min(10, Math.max(1, parseInt(spaFoto?.dataset.countdown || '3', 10) || 3));
+
     const camSwitch = document.querySelector('[data-camera-switch]');
     let currentDeviceId = null;
 
@@ -126,8 +132,8 @@ function initPhotoSession() {
         try {
             const s = await navigator.mediaDevices.getUserMedia({
                 video: {
-                    width: { ideal: 1024 },
-                    height: { ideal: 768 },
+                    width: { ideal: camW },
+                    height: { ideal: camH },
                     ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
                 },
                 audio: false,
@@ -148,6 +154,8 @@ function initPhotoSession() {
         }
     };
 
+    const CAM_SVG = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M9 7l1.5-2.5h5L17 7"/></svg>';
+
     const paintCamSwitch = (devices) => {
         if (!camSwitch) return;
         if (devices.length < 2) {
@@ -159,8 +167,11 @@ function initPhotoSession() {
             const btn = document.createElement('button');
             btn.type = 'button';
             const active = (d.deviceId || null) === (currentDeviceId || null);
-            btn.className = 'px-4 py-2 rounded-full text-sm font-semibold backdrop-blur transition ' + (active ? 'bg-white text-slate-900 shadow' : 'bg-white/20 text-white hover:bg-white/30');
-            btn.textContent = '📷 ' + (d.label || 'Kamera ' + (i + 1));
+            btn.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ring-1 transition ' + (active ? 'bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200' : 'bg-white/80 text-rose-600 ring-rose-200 hover:bg-white');
+            btn.innerHTML = CAM_SVG;
+            const lb = document.createElement('span');
+            lb.textContent = d.label || 'Kamera ' + (i + 1);
+            btn.appendChild(lb);
             btn.addEventListener('click', async () => {
                 if ((d.deviceId || null) === (currentDeviceId || null)) return;
                 const ok = await startStream(d.deviceId || null);
@@ -230,7 +241,7 @@ function initPhotoSession() {
             countdown.classList.add('flex');
         }
 
-        for (let n = 3; n >= 1; n--) {
+        for (let n = countFrom; n >= 1; n--) {
             if (countdownNum) countdownNum.textContent = n;
             await wait(700);
         }
@@ -571,7 +582,9 @@ function initQr() {
     const queue = document.querySelector('.text-rose-500')?.textContent ?? '';
     const priceEl = document.querySelector('[data-qris-price]');
     const price = (priceEl?.textContent ?? 'Rp. 30.000').replace(/\D/g, '') || '30000';
-    const payload = `QRIS|PERKAKASKU|102020034073193|${price}|ANTRIAN${queue.replace('#', '')}`;
+    const nmid = box.dataset.nmid || '102020034073193';
+    const merchant = box.dataset.merchant || 'PERKAKASKU';
+    const payload = `QRIS|${merchant}|${nmid}|${price}|ANTRIAN${queue.replace('#', '')}`;
 
     QRCode.toCanvas(box, payload, { width: 208, margin: 2, color: { dark: '#18181b', light: '#fafafa' } })
         .catch((err) => {

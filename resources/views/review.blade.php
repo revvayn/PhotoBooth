@@ -54,7 +54,7 @@
                 <input type="email" name="email" id="email-input" placeholder="email@contoh.com" required
                        class="w-full rounded-2xl bg-slate-50 ring-1 ring-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-rose-400 focus:outline-none">
                 <button type="submit" class="w-full rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold py-3.5 shadow-md hover:scale-[1.02] transition-transform">
-                    📩 Kirim Softfile
+                    <x-icon name="envelope" class="w-5 h-5 inline-block align-middle" /> Kirim Softfile
                 </button>
             </form>
 
@@ -68,7 +68,7 @@
         <div class="bg-white rounded-3xl p-10 text-center max-w-sm mx-4 shadow-2xl">
             <div class="relative w-16 h-16 mx-auto mb-4">
                 <div class="animate-spin w-16 h-16 rounded-full border-4 border-rose-100 border-t-rose-500"></div>
-                <span class="absolute inset-0 flex items-center justify-center text-2xl">🖨️</span>
+                <span class="absolute inset-0 flex items-center justify-center text-slate-600"><x-icon name="printer" class="w-8 h-8" /></span>
             </div>
             <h2 class="font-display font-bold text-xl mb-1">Fotomu sedang di cetak</h2>
             <p class="text-sm text-slate-500">Mohon tunggu</p>

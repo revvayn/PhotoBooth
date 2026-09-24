@@ -28,7 +28,7 @@
                     @php($gidx = $gi++)
                     <div class="relative rounded-xl overflow-hidden border border-rose-200 h-16 w-16 sm:h-auto sm:w-full sm:aspect-square bg-white shadow-sm shrink-0" data-shot-item="{{ $gidx }}">
                         <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                            <span class="text-xl leading-none" data-shot-icon></span>
+                            <span class="text-xl leading-none text-rose-300" data-shot-icon><x-icon name="film" class="w-6 h-6" /></span>
                             <span class="text-[10px] font-semibold text-slate-500 leading-tight">{{ $item['name'] }} {{ $local }}</span>
                             <span class="text-[10px] text-slate-400 leading-tight" data-shot-status>Menunggu</span>
                         </div>
@@ -51,7 +51,7 @@
         </div>
 
         <div class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/85 text-white hidden" data-camera-error>
-            <span class="text-5xl mb-3"></span>
+            <span class="mb-3 text-slate-500"><x-icon name="camera" class="w-12 h-12" /></span>
             <p class="font-semibold">Kamera tidak ditemukan</p>
             <p class="text-sm text-slate-300 mt-1 px-8 text-center">Izinkan akses kamera atau pastikan perangkatmu memiliki webcam.</p>
         </div>
@@ -63,9 +63,8 @@
         <div class="absolute inset-0 bg-white hidden" data-flash-overlay></div>
 
         <div class="absolute inset-x-0 bottom-0 p-3 flex flex-col items-center gap-2">
-            <div class="flex flex-wrap justify-center gap-2" data-camera-switch></div>
             <button type="button" data-shoot-btn class="px-10 py-3 rounded-full bg-white text-slate-900 font-display font-bold text-lg shadow-xl hover:scale-105 transition-transform">
-                Mulai Foto
+                <x-icon name="camera" class="w-5 h-5 inline-block align-middle" /> Mulai Foto
             </button>
 
             <a href="{{ route('spa', ['step' => 'filter']) }}" data-next-btn class="hidden w-full max-w-sm text-center rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold px-6 py-3 shadow-lg hover:scale-105 transition-transform">
@@ -73,5 +72,5 @@
             </a>
         </div>
     </div>
-    </div>
+    <div class="flex flex-wrap justify-center gap-2 pt-1 shrink-0" data-camera-switch></div>
 </div>

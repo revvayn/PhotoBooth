@@ -19,7 +19,7 @@
         <header class="flex items-center justify-between gap-4 shrink-0">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-400 to-violet-500 flex items-center justify-center shadow-md shadow-rose-200">
-                    <span class="text-white text-lg">📸</span>
+                    <span class="text-white"><x-icon name="camera" class="w-5 h-5 text-white" /></span>
                 </div>
                 <div class="leading-tight">
                     <h1 class="font-display font-bold text-slate-800">Photobooth</h1>
@@ -50,7 +50,7 @@
             <section data-spa-panel="frame" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ ($step ?? 'frame') === 'frame' ? '' : 'hidden' }}">
                 @include('partials.frame', ['step' => 1])
             </section>
-            <section data-spa-panel="foto" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ ($step ?? 'frame') === 'foto' ? '' : 'hidden' }}">
+            <section data-spa-panel="foto" data-cam-width="{{ $cam_width ?? 1024 }}" data-cam-height="{{ $cam_height ?? 768 }}" data-countdown="{{ $countdown ?? 3 }}" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ ($step ?? 'frame') === 'foto' ? '' : 'hidden' }}">
                 @include('partials.foto', ['step' => 2])
             </section>
             <section data-spa-panel="filter" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ ($step ?? 'frame') === 'filter' ? '' : 'hidden' }}">
@@ -69,7 +69,7 @@
 
         <div class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm" data-timeout-overlay>
             <div class="bg-white rounded-3xl p-8 text-center max-w-sm mx-4 shadow-2xl">
-                <div class="text-5xl mb-3">⏰</div>
+                <div class="mb-3 text-slate-400"><x-icon name="clock" class="w-12 h-12" /></div>
                 <h2 class="font-display font-bold text-xl mb-1">Waktu Sesi Habis</h2>
                 <p class="text-sm text-slate-500 mb-5">Silakan ulangi sesi dari awal ya.</p>
                 <a href="{{ route('home') }}" class="inline-block rounded-full bg-rose-500 text-white font-semibold px-8 py-3 hover:bg-rose-600">Kembali ke Awal</a>

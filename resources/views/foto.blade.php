@@ -29,13 +29,13 @@
                     @php($gidx = $gi++)
                     <div class="relative rounded-2xl overflow-hidden border border-rose-200 aspect-square sm:aspect-[3/4] bg-white shadow-sm" data-shot-item="{{ $gidx }}">
                         <div class="absolute inset-0 flex flex-col items-center justify-center text-center gap-1">
-                            <span class="text-2xl sm:text-3xl">🎞️</span>
+                            <span class="text-2xl sm:text-3xl text-slate-300"><x-icon name="film" class="w-8 h-8" /></span>
                             <span class="text-xs font-semibold text-slate-500">{{ $item['name'] }} {{ $local }}</span>
                             <span class="text-[10px] text-slate-400" data-shot-status>Menunggu</span>
                         </div>
                         <img class="hidden w-full h-full object-cover" data-shot-img alt="Foto {{ $local }}">
                         <button type="button" data-retake="{{ $gidx }}" class="hidden absolute bottom-2 inset-x-0 mx-auto w-fit text-xs font-semibold bg-slate-800/80 text-white backdrop-blur px-4 py-1.5 rounded-full hover:bg-slate-800 transition">
-                            ↻ Ulang Foto Ini
+                            <x-icon name="camera" class="w-4 h-4 inline-block align-middle" /> Ulang Foto Ini
                         </button>
                     </div>
                 @endforeach
@@ -52,7 +52,7 @@
         </div>
 
         <div class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/85 text-white hidden" data-camera-error>
-            <span class="text-5xl mb-3">📷</span>
+            <span class="mb-3 text-slate-500"><x-icon name="camera" class="w-12 h-12" /></span>
             <p class="font-semibold">Kamera tidak ditemukan</p>
             <p class="text-sm text-slate-300 mt-1 px-8 text-center">Izinkan akses kamera atau pastikan perangkatmu memiliki webcam.</p>
         </div>
@@ -65,7 +65,7 @@
 
         <div class="absolute inset-x-0 bottom-0 p-4 flex flex-col items-center gap-3">
             <button type="button" data-shoot-btn class="px-10 py-4 rounded-full bg-white text-slate-900 font-display font-bold text-lg shadow-xl hover:scale-105 transition-transform">
-                📸 Mulai Foto
+                <x-icon name="camera" class="w-5 h-5 inline-block align-middle" /> Mulai Foto
             </button>
 
             <a href="{{ route('filter') }}" data-next-btn class="hidden w-full max-w-sm text-center rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold px-6 py-3 shadow-lg hover:scale-105 transition-transform">

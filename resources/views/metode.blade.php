@@ -16,13 +16,13 @@
         <div class="grid grid-cols-2 gap-4 mb-8">
             <button type="button" data-metode-option="qris"
                     class="flex flex-col items-center gap-3 rounded-3xl bg-white/90 backdrop-blur p-8 ring-2 ring-rose-500 shadow-lg shadow-rose-100 transition-all hover:shadow-xl">
-                <span class="text-5xl">📱</span>
+                <span class="text-5xl text-rose-500"><x-icon name="qr" class="w-12 h-12" /></span>
                 <span class="font-display font-bold text-xl">QRIS</span>
                 <span class="text-xs text-slate-400">Scan pembayaran</span>
             </button>
             <button type="button" data-metode-option="cash"
                     class="flex flex-col items-center gap-3 rounded-3xl bg-white/90 backdrop-blur p-8 ring-1 ring-rose-100 transition-all hover:shadow-xl">
-                <span class="text-5xl">💰</span>
+                <span class="text-5xl text-rose-500"><x-icon name="cash" class="w-12 h-12" /></span>
                 <span class="font-display font-bold text-xl">CASH</span>
                 <span class="text-xs text-slate-400">Bayar tunai di kasir</span>
             </button>
