@@ -80,5 +80,20 @@
             <div class="w-full h-full bg-white"></div>
         </div>
     </div>
+
+    <script>
+        // Jaring pengaman atomik: dokumen ini selalu me-render tepat satu panel
+        // tanpa 'hidden'. Bila nol panel tampil (dokumen basi/inkonsisten),
+        // tampilkan panel sesuai dot aktif, jatuh ke frame.
+        document.addEventListener('DOMContentLoaded', () => {
+            const panels = [...document.querySelectorAll('[data-spa-panel]')];
+            if (!panels.length) return;
+            if (panels.some((p) => !p.classList.contains('hidden'))) return;
+            const active = document.querySelector('[data-spa-step-dot].bg-rose-500');
+            const key = (active && active.dataset.spaStepDot) || 'frame';
+            const target = panels.find((p) => p.dataset.spaPanel === key) || panels[0];
+            target.classList.remove('hidden');
+        });
+    </script>
 </body>
 </html>

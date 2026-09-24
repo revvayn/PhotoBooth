@@ -89,7 +89,7 @@ class PhotoboothController extends Controller
             return $item;
         })->values()->all();
 
-        return view('layouts.spa', [
+        return response()->view('layouts.spa', [
             'queue' => session('queue'),
             'step' => $step,
             'categories' => $categories,
@@ -108,7 +108,7 @@ class PhotoboothController extends Controller
             'cam_width' => (int) Setting::get('cam_width', '1024'),
             'cam_height' => (int) Setting::get('cam_height', '768'),
             'countdown' => (int) Setting::get('countdown', '3'),
-        ]);
+        ])->header('Cache-Control', 'no-store, max-age=0');
     }
 
     public function mulai(Request $request)
