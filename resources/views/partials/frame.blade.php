@@ -1,4 +1,4 @@
-﻿<div class="flex-1 flex flex-col">
+﻿<div class="flex-1 min-h-0 flex flex-col">
     <div class="mb-1">
         <a href="{{ route('tutorial') }}" class="text-xs font-semibold text-slate-400 hover:text-rose-500 transition">← Kembali</a>
     </div>

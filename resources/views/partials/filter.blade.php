@@ -1,9 +1,9 @@
-﻿<div class="flex-1 flex flex-col">
+﻿<div class="flex-1 min-h-0 flex flex-col">
     <div class="mb-1">
         <a href="{{ route('spa', ['step' => 'foto']) }}" class="text-xs font-semibold text-slate-400 hover:text-rose-500 transition">← Kembali</a>
     </div>
-    <div class="text-center mb-6">
-        <h2 class="font-display font-bold text-3xl">Pilih Filter</h2>
+    <div class="text-center mb-3">
+        <h2 class="font-display font-bold text-2xl">Pilih Filter</h2>
         <p class="text-slate-500 text-sm mt-1">Sesuaikan dengan selera anda</p>
     </div>
 
@@ -12,12 +12,12 @@
         <input type="hidden" name="from_spa" value="1">
         <input type="hidden" name="filter" id="filter-input" value="asli">
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
             @foreach ($filters as $key => $label)
                 @php($preview = $photos[0] ?? '')
                 <button type="button" data-filter-option="{{ $key }}"
                         class="group rounded-2xl bg-white/90 backdrop-blur p-2 ring-1 ring-rose-100 transition-all hover:shadow-md {{ $key === 'asli' ? 'ring-2 ring-rose-500 shadow-lg shadow-rose-100' : '' }}">
-                    <div class="aspect-[3/4] rounded-xl overflow-hidden bg-slate-100 relative">
+                    <div class="aspect-square rounded-xl overflow-hidden bg-slate-100 relative">
                         @if ($preview)
                             <img src="{{ $preview }}" alt="{{ $label }}"
                                  class="w-full h-full object-cover transition-transform group-hover:scale-105"
@@ -42,8 +42,8 @@
             @endforeach
         </div>
 
-        <div class="mt-auto pt-8 flex justify-end">
-            <button type="submit" class="px-12 py-4 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-lg shadow-lg shadow-rose-200 hover:scale-105 transition-transform">
+        <div class="mt-auto pt-4 flex justify-end">
+            <button type="submit" class="px-10 py-3 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-lg shadow-lg shadow-rose-200 hover:scale-105 transition-transform">
                 Lanjut â†’
             </button>
         </div>

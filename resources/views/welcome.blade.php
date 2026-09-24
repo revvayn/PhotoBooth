@@ -3,7 +3,7 @@
 @section('title', 'Selamat Datang — Photobooth')
 
 @section('content')
-<div class="flex-1 flex flex-col items-center justify-center text-center py-10">
+<div class="flex-1 min-h-0 flex flex-col items-center justify-center text-center py-6">
     <div class="animate-bounce-slow w-28 h-28 rounded-[2rem] bg-gradient-to-br from-rose-400 via-fuchsia-500 to-violet-500 flex items-center justify-center shadow-xl shadow-rose-300 mb-6">
         <span class="text-6xl">📸</span>
     </div>
@@ -23,7 +23,7 @@
         </button>
     </form>
 
-    <div class="grid grid-cols-3 gap-6 mt-14">
+    <div class="grid grid-cols-3 gap-6 mt-8">
         <div class="flex flex-col items-center gap-2">
             <span class="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600">💳</span>
             <span class="text-xs font-medium text-slate-500">Cek Pembayaran</span>

@@ -17,7 +17,7 @@
     <div class="h-dvh overflow-hidden flex flex-col px-4 sm:px-6 py-2 max-w-5xl mx-auto w-full min-h-0">
 
         @if (isset($step))
-            <header class="flex items-center justify-between gap-3 mb-5">
+            <header class="flex items-center justify-between gap-3 mb-3 shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-400 to-violet-500 flex items-center justify-center shadow-md shadow-rose-200">
                         <span class="text-white text-lg">📸</span>
@@ -37,7 +37,7 @@
                 </div>
             </header>
 
-            <nav class="grid grid-cols-3 gap-2 sm:gap-3 mb-8" aria-label="Langkah">
+            <nav class="grid grid-cols-3 gap-2 sm:gap-3 mb-4 shrink-0" aria-label="Langkah">
                 @foreach ([
                     ['n' => 1, 'label' => 'Cek Pembayaran'],
                     ['n' => 2, 'label' => 'Sesi Foto'],
@@ -60,7 +60,7 @@
             </nav>
         @endif
 
-        <main class="flex-1 flex flex-col">
+        <main class="flex-1 min-h-0 flex flex-col overflow-y-auto">
             @yield('content')
 
             <div class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm" data-timeout-overlay>
@@ -73,7 +73,7 @@
             </div>
         </main>
 
-        <footer class="text-center text-xs text-slate-400 mt-8">
+        <footer class="text-center text-xs text-slate-400 mt-3 shrink-0">
             © {{ date('Y') }} Photobooth · PERKAKASKU
         </footer>
     </div>
