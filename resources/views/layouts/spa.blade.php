@@ -39,10 +39,10 @@
                 ['key' => 'pembayaran', 'label' => 'Bayar'],
                 ['key' => 'review', 'label' => 'Review'],
             ] as $s)
-                <span class="flex flex-col items-center gap-0.5 w-10 sm:w-12">
+                <a href="{{ route('spa', ['step' => $s['key']]) }}" class="flex flex-col items-center gap-0.5 w-10 sm:w-12 hover:opacity-80 transition">
                     <span data-spa-step-dot="{{ $s['key'] }}" class="w-7 h-7 rounded-full text-[11px] font-bold flex items-center justify-center ring-2 {{ ($step ?? 'frame') === $s['key'] ? 'ring-rose-500 bg-rose-500 text-white shadow-md shadow-rose-200' : 'ring-rose-200 bg-white/80 text-slate-400' }}">{{ $loop->iteration }}</span>
                     <span class="text-[9px] sm:text-[10px] font-semibold {{ ($step ?? 'frame') === $s['key'] ? 'text-rose-600' : 'text-slate-400' }}">{{ $s['label'] }}</span>
-                </span>
+                </a>
             @endforeach
         </nav>
 

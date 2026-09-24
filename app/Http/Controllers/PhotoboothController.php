@@ -48,6 +48,31 @@ class PhotoboothController extends Controller
         if (! in_array($step, $validSteps, true)) {
             $step = 'frame';
         }
+
+        // Samakan preseden requirePrereq: tahap hanya bisa dibuka jika data
+        // prasyaratnya ada di sesi; permintaan melompat dijepit ke tahap
+        // terjauh yang datanya lengkap (mis. sesi baru selalu jatuh ke frame).
+        $needs = [
+            'frame' => [],
+            'foto' => ['cart'],
+            'filter' => ['photos'],
+            'metode' => ['filter'],
+            'pembayaran' => ['metode'],
+            'review' => ['paid'],
+        ];
+        $max = 0;
+        foreach ($validSteps as $i => $key) {
+            foreach ($needs[$key] as $k) {
+                if (! $request->session()->has($k)) {
+                    break 2;
+                }
+            }
+            $max = $i;
+        }
+        $idx = array_search($step, $validSteps, true);
+        if ($idx === false || $idx > $max) {
+            $step = $validSteps[$max];
+        }
         $request->session()->put('spa_step', $step);
 
         $allFrames = Frame::active()->orderBy('sort_order')->get()->keyBy('slug');
