@@ -19,13 +19,14 @@
         </div>
     @endif
 
-    <div class="grid gap-2 mb-2" data-shot-thumbs data-photo-count="{{ $photoCount }}">
+    <div class="flex-1 min-h-0 flex flex-col sm:flex-row gap-2 items-center sm:items-stretch justify-center">
+    <div class="order-2 sm:order-1 flex sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto sm:overflow-x-hidden shrink-0 w-full sm:w-24 min-h-0 sm:max-h-full pb-1 sm:pb-0" data-shot-thumbs data-photo-count="{{ $photoCount }}">
         @php($gi = 0)
         @foreach ($items as $index => $item)
-            <div class="grid gap-2 {{ count($items) > 1 && $index !== 0 ? 'hidden' : '' }}" data-frame-slots="{{ $index }}" style="grid-template-columns: repeat({{ $item['photo_count'] }}, minmax(0,1fr))">
+            <div class="flex gap-2 sm:flex-col sm:w-full shrink-0 {{ count($items) > 1 && $index !== 0 ? 'hidden' : '' }}" data-frame-slots="{{ $index }}">
                 @foreach (range(1, $item['photo_count']) as $local)
                     @php($gidx = $gi++)
-                    <div class="relative rounded-xl overflow-hidden border border-rose-200 h-16 sm:h-20 bg-white shadow-sm" data-shot-item="{{ $gidx }}">
+                    <div class="relative rounded-xl overflow-hidden border border-rose-200 h-16 w-16 sm:h-auto sm:w-full sm:aspect-square bg-white shadow-sm shrink-0" data-shot-item="{{ $gidx }}">
                         <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
                             <span class="text-xl leading-none" data-shot-icon>ðŸŽžï¸</span>
                             <span class="text-[10px] font-semibold text-slate-500 leading-tight">{{ $item['name'] }} {{ $local }}</span>
@@ -41,7 +42,7 @@
         @endforeach
     </div>
 
-    <div class="relative flex-1 min-h-0 rounded-[2rem] overflow-hidden bg-slate-900 shadow-2xl">
+    <div class="order-1 sm:order-2 relative rounded-[2rem] overflow-hidden bg-slate-900 shadow-2xl w-full sm:w-auto sm:h-full aspect-square shrink-0 max-w-full min-h-0">
         <video id="camera" class="w-full h-full object-cover" autoplay playsinline muted></video>
 
         <div class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/70 text-white hidden" data-camera-loading>
@@ -71,5 +72,6 @@
                 Lanjut â†’
             </a>
         </div>
+    </div>
     </div>
 </div>

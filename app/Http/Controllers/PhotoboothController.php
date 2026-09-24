@@ -266,6 +266,10 @@ class PhotoboothController extends Controller
             // Kunci asing diabaikan saat baca (allowlist di photoFilter),
             // jadi cukup simpan apa adanya yang lolos validasi nilai.
             $request->session()->put('filters', $data['filters']);
+            // WAJIB: kunci 'filter' tunggal tetap diisi (default = pilihan
+            // pertama) karena prereq tahap metode + clamp SPA mengeceknya.
+            $first = reset($data['filters']);
+            $request->session()->put('filter', $first ?: 'asli');
 
             $this->log('filter.selected', ['mode' => 'per-photo', 'count' => count($data['filters'])]);
         } else {
