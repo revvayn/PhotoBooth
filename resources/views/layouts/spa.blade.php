@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- SPA-KANVAS build 74652ed+ : bila tulisan ini tak ada di view-source, tab Anda basi -->
 <html lang="id">
 <head>
     <meta charset="utf-8">
