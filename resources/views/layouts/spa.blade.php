@@ -47,22 +47,22 @@
         </nav>
 
         <main class="flex-1 min-h-0 flex flex-col overflow-hidden" data-spa-main>
-            <section data-spa-panel="frame" class="min-h-0 flex-1 flex flex-col overflow-y-auto {{ ($step ?? 'frame') === 'frame' ? '' : 'hidden' }}">
+            <section data-spa-panel="frame" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ ($step ?? 'frame') === 'frame' ? '' : 'hidden' }}">
                 @include('partials.frame', ['step' => 1])
             </section>
-            <section data-spa-panel="foto" class="min-h-0 flex-1 flex flex-col overflow-y-auto {{ ($step ?? 'frame') === 'foto' ? '' : 'hidden' }}">
+            <section data-spa-panel="foto" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ ($step ?? 'frame') === 'foto' ? '' : 'hidden' }}">
                 @include('partials.foto', ['step' => 2])
             </section>
-            <section data-spa-panel="filter" class="min-h-0 flex-1 flex flex-col overflow-y-auto {{ ($step ?? 'frame') === 'filter' ? '' : 'hidden' }}">
+            <section data-spa-panel="filter" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ ($step ?? 'frame') === 'filter' ? '' : 'hidden' }}">
                 @include('partials.filter', ['step' => 3])
             </section>
-            <section data-spa-panel="metode" class="min-h-0 flex-1 flex flex-col overflow-y-auto {{ ($step ?? 'frame') === 'metode' ? '' : 'hidden' }}">
+            <section data-spa-panel="metode" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ ($step ?? 'frame') === 'metode' ? '' : 'hidden' }}">
                 @include('partials.metode', ['step' => 4])
             </section>
-            <section data-spa-panel="pembayaran" class="min-h-0 flex-1 flex flex-col overflow-y-auto {{ ($step ?? 'frame') === 'pembayaran' ? '' : 'hidden' }}">
+            <section data-spa-panel="pembayaran" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ ($step ?? 'frame') === 'pembayaran' ? '' : 'hidden' }}">
                 @include('partials.pembayaran', ['step' => 5])
             </section>
-            <section data-spa-panel="review" class="min-h-0 flex-1 flex flex-col overflow-y-auto {{ ($step ?? 'frame') === 'review' ? '' : 'hidden' }}">
+            <section data-spa-panel="review" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ ($step ?? 'frame') === 'review' ? '' : 'hidden' }}">
                 @include('partials.review', ['step' => 6])
             </section>
         </main>
