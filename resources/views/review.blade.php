@@ -15,6 +15,7 @@
                 <div class="mx-auto max-w-sm overflow-hidden rounded-[2rem] shadow-xl shadow-rose-100 ring-1 ring-rose-100 bg-white" data-strip-container>
                     <canvas class="w-full h-auto block" data-strip-canvas
                             data-photos='@json($item['photos'] ?? [])'
+                            data-filters='@json($item['filter_map'] ?? [])'
                             data-filter="{{ $filter }}"
                             data-frame="{{ $item['slug'] }}"
                             data-frame-image="{{ $item['image_url'] }}"

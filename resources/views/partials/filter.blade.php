@@ -4,47 +4,49 @@
     </div>
     <div class="text-center mb-3">
         <h2 class="font-display font-bold text-2xl">Pilih Filter</h2>
-        <p class="text-slate-500 text-sm mt-1">Sesuaikan dengan selera anda</p>
+        <p class="text-slate-500 text-sm mt-1">Foto sudah masuk frame — ketuk filter di tiap foto, boleh beda-beda</p>
     </div>
 
-    <form method="POST" action="{{ route('filter') }}" data-filter-form class="flex flex-col flex-1">
+    <form method="POST" action="{{ route('filter') }}" data-filter-form class="flex flex-col flex-1 min-h-0">
         @csrf
         <input type="hidden" name="from_spa" value="1">
-        <input type="hidden" name="filter" id="filter-input" value="asli">
 
-        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
-            @foreach ($filters as $key => $label)
-                @php($preview = $photos[0] ?? '')
-                <button type="button" data-filter-option="{{ $key }}"
-                        class="group rounded-2xl bg-white/90 backdrop-blur p-2 ring-1 ring-rose-100 transition-all hover:shadow-md {{ $key === 'asli' ? 'ring-2 ring-rose-500 shadow-lg shadow-rose-100' : '' }}">
-                    <div class="aspect-square rounded-xl overflow-hidden bg-slate-100 relative">
-                        @if ($preview)
-                            <img src="{{ $preview }}" alt="{{ $label }}"
-                                 class="w-full h-full object-cover transition-transform group-hover:scale-105"
-                                 style="filter: {{ match ($key) {
-                                    'asli' => 'none',
-                                    'bw' => 'grayscale(1)',
-                                    'vintage' => 'sepia(0.55) contrast(1.05) brightness(0.95)',
-                                    'warm' => 'sepia(0.35) saturate(1.4) brightness(1.05)',
-                                    'cool' => 'hue-rotate(180deg) saturate(0.75)',
-                                    'fade' => 'contrast(0.9) brightness(1.12) saturate(0.7)',
-                                    'contrast' => 'contrast(1.5) saturate(1.2)',
-                                    'neon' => 'saturate(1.8) contrast(1.2) hue-rotate(-8deg)',
-                                } }}">
-                        @else
-                            <div class="w-full h-full flex items-center justify-center text-3xl">ðŸ–¼ï¸</div>
-                        @endif
+        <div class="flex-1 min-h-0 overflow-y-auto space-y-3 pb-2 pr-0.5">
+            @forelse ($items as $item)
+                @php($slug = $item['slug'])
+                <div class="rounded-3xl bg-white/80 ring-1 ring-rose-100 p-3" data-filter-item="{{ $slug }}">
+                    <p class="text-xs font-bold text-slate-600 mb-2">{{ $item['name'] }}</p>
+                    <div class="mx-auto max-w-[210px] overflow-hidden rounded-2xl ring-1 ring-rose-100 bg-white" data-strip-container>
+                        <canvas class="w-full h-auto block" data-strip-canvas
+                                data-photos='@json(array_values($item['photos'] ?? []))'
+                                data-filters='@json($item['filter_map'] ?? [])'
+                                data-filter="asli"
+                                data-frame="{{ $slug }}"
+                                data-frame-image="{{ $item['image_url'] }}"
+                                data-frame-slots='@json($item['slots'] ?? [])'></canvas>
                     </div>
-                    <div class="py-2 text-center">
-                        <span class="text-sm font-semibold" data-filter-label>{{ $label }}</span>
-                    </div>
-                </button>
-            @endforeach
+                    @foreach (array_values($item['photos'] ?? []) as $local => $photo)
+                        <div class="mt-2 flex items-center gap-2" data-filter-photo="{{ $slug }}:{{ $local }}">
+                            <img src="{{ $photo }}" class="w-9 h-9 rounded-lg object-cover ring-1 ring-rose-100 shrink-0" alt="Foto {{ $local + 1 }}">
+                            <span class="text-xs font-bold text-slate-500 shrink-0">Foto {{ $local + 1 }}</span>
+                            <input type="hidden" name="filters[{{ $slug }}:{{ $local }}]" value="{{ ($item['filter_map'] ?? [])[$local] ?? 'asli' }}" data-filter-value>
+                            <div class="flex flex-wrap gap-1">
+                                @foreach ($filters as $key => $label)
+                                    <button type="button" data-filter-chip="{{ $key }}"
+                                            class="px-2 py-1 rounded-full text-[10px] font-bold ring-1 transition {{ (($item['filter_map'] ?? [])[$local] ?? 'asli') === $key ? 'bg-rose-500 text-white ring-rose-500' : 'bg-white text-slate-500 ring-rose-100' }}">{{ $label }}</button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @empty
+                <p class="text-center text-slate-400">Belum ada foto. Kembali dan selesaikan sesi foto dulu.</p>
+            @endforelse
         </div>
 
-        <div class="mt-auto pt-4 flex justify-end">
+        <div class="pt-3 flex justify-end shrink-0">
             <button type="submit" class="px-10 py-3 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-lg shadow-lg shadow-rose-200 hover:scale-105 transition-transform">
-                Lanjut â†’
+                Lanjut →
             </button>
         </div>
     </form>

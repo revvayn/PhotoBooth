@@ -325,6 +325,10 @@ function initPhotoSession() {
 /* ---------------- Filter selection ---------------- */
 
 function initFilterSelect() {
+    // Panel filter SPA punya editor per-foto sendiri (initFilterEditor);
+    // jalur lama di bawah hanya untuk halaman /filter non-SPA.
+    if (document.querySelector('[data-spa-panel="filter"]')) return;
+
     const form = document.querySelector('[data-filter-form]');
     if (!form) return;
 
@@ -339,6 +343,67 @@ function initFilterSelect() {
             });
             opt.classList.add('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100');
         });
+    });
+}
+
+/* ---------------- Filter per-foto (panel SPA) ---------------- */
+
+function initFilterEditor() {
+    const panel = document.querySelector('[data-spa-panel="filter"]');
+    if (!panel) return;
+    const form = panel.querySelector('[data-filter-form]');
+    if (!form) return;
+
+    panel.querySelectorAll('[data-filter-item]').forEach((block) => {
+        const canvas = block.querySelector('[data-strip-canvas]');
+        if (!canvas) return;
+
+        let photos = [];
+        let slots = [];
+        try {
+            photos = JSON.parse(canvas.dataset.photos || '[]');
+        } catch (e) {
+            photos = [];
+        }
+        try {
+            slots = JSON.parse(canvas.dataset.frameSlots || '[]');
+        } catch (e) {
+            slots = [];
+        }
+        const frameImage = canvas.dataset.frameImage;
+
+        const paint = () => {
+            const map = {};
+            block.querySelectorAll('[data-filter-photo]').forEach((row) => {
+                const parts = (row.dataset.filterPhoto || '').split(':');
+                const local = parseInt(parts.pop(), 10);
+                const input = row.querySelector('[data-filter-value]');
+                const val = input ? input.value : 'asli';
+                if (!Number.isNaN(local)) map[local] = val;
+                row.querySelectorAll('[data-filter-chip]').forEach((chip) => {
+                    const on = chip.dataset.filterChip === val;
+                    chip.classList.toggle('bg-rose-500', on);
+                    chip.classList.toggle('text-white', on);
+                    chip.classList.toggle('ring-rose-500', on);
+                    chip.classList.toggle('bg-white', !on);
+                    chip.classList.toggle('text-slate-500', !on);
+                    chip.classList.toggle('ring-rose-100', !on);
+                });
+            });
+            const arr = photos.map((_, i) => map[i] ?? 'asli');
+            buildStripFrame(canvas, photos, arr, frameImage, slots);
+        };
+
+        block.querySelectorAll('[data-filter-chip]').forEach((chip) => {
+            chip.addEventListener('click', () => {
+                const row = chip.closest('[data-filter-photo]');
+                const input = row ? row.querySelector('[data-filter-value]') : null;
+                if (input) input.value = chip.dataset.filterChip;
+                paint();
+            });
+        });
+
+        paint();
     });
 }
 
@@ -532,7 +597,11 @@ async function loadImages(urls) {
 }
 
 async function buildStripFrame(canvas, photoUrls, filterKey, frameImageUrl, frameSlots) {
-    const filter = FILTERS[filterKey] ?? 'none';
+    // filterKey: string (satu filter utk semua, kompatibel lama) atau
+    // array per-index foto (jalur per-foto).
+    const isPerPhoto = Array.isArray(filterKey);
+    const filter = isPerPhoto ? 'none' : (FILTERS[filterKey] ?? 'none');
+    const filterAt = (i) => (isPerPhoto ? (FILTERS[filterKey[i]] ?? 'none') : filter);
     const slots = Array.isArray(frameSlots) && frameSlots.length ? frameSlots : null;
 
     const baseW = 360;
@@ -584,7 +653,7 @@ async function buildStripFrame(canvas, photoUrls, filterKey, frameImageUrl, fram
             }
 
             ctx.save();
-            ctx.filter = filter;
+            ctx.filter = filterAt(i);
             ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
             ctx.restore();
         });
@@ -614,7 +683,7 @@ async function buildStripFrame(canvas, photoUrls, filterKey, frameImageUrl, fram
                 sy = (img.naturalHeight - sh) / 2;
             }
             ctx.save();
-            ctx.filter = filter;
+            ctx.filter = filterAt(i);
             ctx.drawImage(img, sx, sy, sw, sh, padding, y, photoW, photoH);
             ctx.restore();
         });
@@ -654,10 +723,21 @@ function initStrip() {
             }
             return Promise.resolve(null);
         }
+        // Prioritas: peta per-foto (data-filters, JSON {index: key}),
+        // jatuh kembali ke filter tunggal (data-filter, kompatibel lama).
+        let filterArg = canvas.dataset.filter;
+        try {
+            const parsed = JSON.parse(canvas.dataset.filters || 'null');
+            if (parsed && typeof parsed === 'object') {
+                filterArg = photos.map((_, i) => parsed[i] ?? parsed[String(i)] ?? 'asli');
+            }
+        } catch (e) {
+            // abaikan, pakai filter tunggal
+        }
         return buildStripFrame(
             canvas,
             photos,
-            canvas.dataset.filter,
+            filterArg,
             canvas.dataset.frameImage,
             slots
         ).then(() => canvas);
@@ -728,6 +808,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initTimer();
     initPhotoSession();
     initFilterSelect();
+    initFilterEditor();
     initFrameCart();
     initMetodeSelect();
     initQr();

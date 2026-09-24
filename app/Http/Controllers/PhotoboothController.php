@@ -83,6 +83,7 @@ class PhotoboothController extends Controller
 
         $items = collect($this->cartItems())->map(function ($item) use ($photos) {
             $item['photos'] = session('photos', [])[$item['slug']] ?? [];
+            $item['filter_map'] = $this->itemFilterMap($item['slug'], $item['photos']);
 
             return $item;
         })->values()->all();
@@ -254,13 +255,29 @@ class PhotoboothController extends Controller
     {
         $this->requirePrereq($request, ['photos']);
 
-        $data = $request->validate([
-            'filter' => ['required', 'in:'.implode(',', array_keys(self::FILTERS))],
-        ]);
+        $keys = array_keys(self::FILTERS);
 
-        $request->session()->put('filter', $data['filter']);
+        if ($request->has('filters')) {
+            // Jalur SPA: peta filter per-foto ['slug:index' => key].
+            $data = $request->validate([
+                'filters' => ['required', 'array'],
+                'filters.*' => ['required', 'in:'.implode(',', $keys)],
+            ]);
+            // Kunci asing diabaikan saat baca (allowlist di photoFilter),
+            // jadi cukup simpan apa adanya yang lolos validasi nilai.
+            $request->session()->put('filters', $data['filters']);
 
-        $this->log('filter.selected', ['filter' => $data['filter']]);
+            $this->log('filter.selected', ['mode' => 'per-photo', 'count' => count($data['filters'])]);
+        } else {
+            // Jalur lama: satu filter global untuk semua foto.
+            $data = $request->validate([
+                'filter' => ['required', 'in:'.implode(',', $keys)],
+            ]);
+
+            $request->session()->put('filter', $data['filter']);
+
+            $this->log('filter.selected', ['filter' => $data['filter']]);
+        }
 
         if ($request->boolean('from_spa')) {
             $request->session()->put('spa_step', 'metode');
@@ -341,6 +358,7 @@ class PhotoboothController extends Controller
 
         $items = collect($this->cartItems())->map(function ($item) use ($photos) {
             $item['photos'] = $photos[$item['slug']] ?? [];
+            $item['filter_map'] = $this->itemFilterMap($item['slug'], $item['photos']);
 
             return $item;
         });
@@ -379,6 +397,7 @@ class PhotoboothController extends Controller
 
         $items = collect($this->cartItems())->map(function ($item) use ($photos) {
             $item['photos'] = $photos[$item['slug']] ?? [];
+            $item['filter_map'] = $this->itemFilterMap($item['slug'], $item['photos']);
 
             return $item;
         });
@@ -452,6 +471,33 @@ class PhotoboothController extends Controller
             fn ($item) => $item['price'] * $item['qty'],
             $this->cartItems()
         ));
+    }
+
+    /**
+     * Filter per-foto: session 'filters' berformat ['slug:index' => key].
+     * Jatuh kembali ke filter global sesi lalu 'asli' (kompatibel alur lama).
+     */
+    private function photoFilter(string $slug, int $index): string
+    {
+        $map = session('filters', []);
+        $key = (is_array($map) && array_key_exists($slug.':'.$index, $map))
+            ? $map[$slug.':'.$index]
+            : session('filter', 'asli');
+
+        return array_key_exists($key, self::FILTERS) ? $key : 'asli';
+    }
+
+    /**
+     * Peta filter per foto lokal sebuah item: [localIndex => key].
+     */
+    private function itemFilterMap(string $slug, array $photos): array
+    {
+        $map = [];
+        foreach (array_values($photos) as $i => $photo) {
+            $map[$i] = $this->photoFilter($slug, $i);
+        }
+
+        return $map;
     }
 
     private function maxPhotoCount(): int
