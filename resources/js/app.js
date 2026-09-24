@@ -140,6 +140,11 @@ function initPhotoSession() {
             });
             stream = s;
             video.srcObject = s;
+            try {
+                await video.play();
+            } catch (e) {
+                // autoplay ditolak browser; user menekan Mulai Foto untuk memicu play ulang
+            }
             currentDeviceId = deviceId ?? null;
             if (loading) loading.classList.add('hidden');
             return true;
@@ -198,6 +203,8 @@ function initPhotoSession() {
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
     const snapshot = () => {
+        // Video belum siap (lebar 0) => jangan hasilkan frame hitam.
+        if (!video.videoWidth || !video.videoHeight) return null;
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth || 640;
         canvas.height = video.videoHeight || 480;
@@ -255,6 +262,7 @@ function initPhotoSession() {
         await showFlash();
 
         const dataUrl = snapshot();
+        if (!dataUrl) return;
         photos[i] = dataUrl;
         updateSlot(i, dataUrl);
         paintTabs();
@@ -263,6 +271,24 @@ function initPhotoSession() {
 
     const runShoot = async () => {
         if (shooting) return;
+        // Pastikan video benar-benar berjalan sebelum memotret.
+        try {
+            await video.play();
+        } catch (e) {
+            // abaikan, lanjut cek dimensi
+        }
+        await new Promise((res) => {
+            if (video.videoWidth) return res();
+            video.addEventListener('loadedmetadata', res, { once: true });
+            setTimeout(res, 2500);
+        });
+        if (!video.videoWidth) {
+            if (errorBox) {
+                errorBox.classList.remove('hidden');
+                errorBox.classList.add('flex');
+            }
+            return;
+        }
         shooting = true;
         if (shootBtn) shootBtn.disabled = true;
 
