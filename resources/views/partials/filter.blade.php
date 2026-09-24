@@ -6,6 +6,7 @@
 
     <form method="POST" action="{{ route('filter') }}" data-filter-form class="flex flex-col flex-1">
         @csrf
+        <input type="hidden" name="from_spa" value="1">
         <input type="hidden" name="filter" id="filter-input" value="asli">
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">

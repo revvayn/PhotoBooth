@@ -23,43 +23,46 @@
                 </div>
                 <div class="leading-tight">
                     <h1 class="font-display font-bold text-slate-800">Photobooth</h1>
-                    <p class="text-xs text-slate-500" data-session-timer>
+                    <p class="text-xs text-slate-500" data-session-timer data-total="{{ (int) session('total_seconds', 300) }}">
                         <span class="font-bold text-rose-500" data-session-timer-min>00</span>:<span data-session-timer-sec>00</span>
                     </p>
                 </div>
             </div>
         </header>
 
-        <nav class="flex items-center gap-2 sm:gap-3 my-3 shrink-0" data-spa-stepper>
+        <nav class="flex items-start justify-center gap-1 sm:gap-2 my-2 shrink-0" data-spa-stepper>
             @foreach ([
-                ['key' => 'frame', 'label' => 'Pilih Frame'],
-                ['key' => 'foto', 'label' => 'Sesi Foto'],
+                ['key' => 'frame', 'label' => 'Frame'],
+                ['key' => 'foto', 'label' => 'Foto'],
                 ['key' => 'filter', 'label' => 'Filter'],
                 ['key' => 'metode', 'label' => 'Metode'],
-                ['key' => 'pembayaran', 'label' => 'Pembayaran'],
+                ['key' => 'pembayaran', 'label' => 'Bayar'],
                 ['key' => 'review', 'label' => 'Review'],
             ] as $s)
-                <span data-spa-step-dot="{{ $s['key'] }}" class="w-8 h-8 rounded-full text-xs font-bold flex items-center justify-center ring-2 ring-rose-200 bg-white/80 text-slate-400">{{ $loop->iteration }}</span>
+                <span class="flex flex-col items-center gap-0.5 w-10 sm:w-12">
+                    <span data-spa-step-dot="{{ $s['key'] }}" class="w-7 h-7 rounded-full text-[11px] font-bold flex items-center justify-center ring-2 {{ ($step ?? 'frame') === $s['key'] ? 'ring-rose-500 bg-rose-500 text-white shadow-md shadow-rose-200' : 'ring-rose-200 bg-white/80 text-slate-400' }}">{{ $loop->iteration }}</span>
+                    <span class="text-[9px] sm:text-[10px] font-semibold {{ ($step ?? 'frame') === $s['key'] ? 'text-rose-600' : 'text-slate-400' }}">{{ $s['label'] }}</span>
+                </span>
             @endforeach
         </nav>
 
-        <main class="flex-1 min-h-0 flex flex-col" data-spa-main>
-            <section data-spa-panel="frame" class="min-h-0 flex-1 flex flex-col hidden">
+        <main class="flex-1 min-h-0 flex flex-col overflow-hidden" data-spa-main>
+            <section data-spa-panel="frame" class="min-h-0 flex-1 flex flex-col overflow-y-auto {{ ($step ?? 'frame') === 'frame' ? '' : 'hidden' }}">
                 @include('partials.frame', ['step' => 1])
             </section>
-            <section data-spa-panel="foto" class="min-h-0 flex-1 flex flex-col hidden">
+            <section data-spa-panel="foto" class="min-h-0 flex-1 flex flex-col overflow-y-auto {{ ($step ?? 'frame') === 'foto' ? '' : 'hidden' }}">
                 @include('partials.foto', ['step' => 2])
             </section>
-            <section data-spa-panel="filter" class="min-h-0 flex-1 flex flex-col hidden">
+            <section data-spa-panel="filter" class="min-h-0 flex-1 flex flex-col overflow-y-auto {{ ($step ?? 'frame') === 'filter' ? '' : 'hidden' }}">
                 @include('partials.filter', ['step' => 3])
             </section>
-            <section data-spa-panel="metode" class="min-h-0 flex-1 flex flex-col hidden">
+            <section data-spa-panel="metode" class="min-h-0 flex-1 flex flex-col overflow-y-auto {{ ($step ?? 'frame') === 'metode' ? '' : 'hidden' }}">
                 @include('partials.metode', ['step' => 4])
             </section>
-            <section data-spa-panel="pembayaran" class="min-h-0 flex-1 flex flex-col hidden">
+            <section data-spa-panel="pembayaran" class="min-h-0 flex-1 flex flex-col overflow-y-auto {{ ($step ?? 'frame') === 'pembayaran' ? '' : 'hidden' }}">
                 @include('partials.pembayaran', ['step' => 5])
             </section>
-            <section data-spa-panel="review" class="min-h-0 flex-1 flex flex-col hidden">
+            <section data-spa-panel="review" class="min-h-0 flex-1 flex flex-col overflow-y-auto {{ ($step ?? 'frame') === 'review' ? '' : 'hidden' }}">
                 @include('partials.review', ['step' => 6])
             </section>
         </main>

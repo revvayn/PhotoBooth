@@ -28,11 +28,10 @@ class PhotoboothController extends Controller
     }
 
     /**
-     * Kanvas SPA — 1 dokumen penuh berisi SEMUA panel sekaligus (boot/tutorial
-     * DIHAPUS dari alur; root '/' langsung membuka panel pilih frame).
-     * Semua variabel SEMUA partial disiapkan sekaligus karena kanvas men-@include
-     * seluruh partial dalam satu dokumen dan Blade mewariskan SEMUA variabel view
-     * induk ke SEMUA partial (@include mewariskan seluruh variabel view).
+     * Kanvas SPA — 1 dokumen penuh berisi SEMUA panel sekaligus.
+     * Alur boot: '/' (Mulai) -> POST /mulai -> /tutorial -> /spa.
+     * Panel yang tampil ditentukan server via ?step= / session spa_step
+     * (default 'frame') agar tiap tahap selalu ter-render penuh dengan data sesi.
      */
     public function spa(Request $request)
     {
@@ -43,6 +42,13 @@ class PhotoboothController extends Controller
             $request->session()->put('total_seconds', self::SESSION_SECONDS);
             $this->resetCartSession($request);
         }
+
+        $validSteps = ['frame', 'foto', 'filter', 'metode', 'pembayaran', 'review'];
+        $step = $request->query('step', $request->session()->get('spa_step', 'frame'));
+        if (! in_array($step, $validSteps, true)) {
+            $step = 'frame';
+        }
+        $request->session()->put('spa_step', $step);
 
         $allFrames = Frame::active()->orderBy('sort_order')->get()->keyBy('slug');
         $categories = Frame::active()->orderBy('sort_order')->get()
@@ -58,7 +64,7 @@ class PhotoboothController extends Controller
 
         return view('layouts.spa', [
             'queue' => session('queue'),
-            'step' => 1,
+            'step' => $step,
             'categories' => $categories,
             'allFrames' => $allFrames,
             'cart' => session('cart', []),
@@ -68,7 +74,6 @@ class PhotoboothController extends Controller
             'filters' => self::FILTERS,
             'filter' => session('filter', 'asli'),
             'total' => $this->total(),
-            'queue' => session('queue'),
             'email' => session('email'),
             'metode' => session('metode'),
             'nmid' => '102020034073193',
@@ -149,6 +154,12 @@ class PhotoboothController extends Controller
             'total' => $this->total(),
         ]);
 
+        if ($request->boolean('from_spa')) {
+            $request->session()->put('spa_step', 'foto');
+
+            return redirect()->route('spa', ['step' => 'foto']);
+        }
+
         return redirect()->route('foto');
     }
 
@@ -226,6 +237,12 @@ class PhotoboothController extends Controller
 
         $this->log('filter.selected', ['filter' => $data['filter']]);
 
+        if ($request->boolean('from_spa')) {
+            $request->session()->put('spa_step', 'metode');
+
+            return redirect()->route('spa', ['step' => 'metode']);
+        }
+
         return redirect()->route('metode');
     }
 
@@ -251,6 +268,12 @@ class PhotoboothController extends Controller
 
         $this->log('metode.selected', ['metode' => $data['metode']]);
 
+        if ($request->boolean('from_spa')) {
+            $request->session()->put('spa_step', 'pembayaran');
+
+            return redirect()->route('spa', ['step' => 'pembayaran']);
+        }
+
         return redirect()->route('pembayaran');
     }
 
@@ -275,6 +298,12 @@ class PhotoboothController extends Controller
         $request->session()->put('paid', true);
 
         $this->log('pembayaran.confirmed', ['total' => $this->total(), 'metode' => session('metode')]);
+
+        if ($request->boolean('from_spa')) {
+            $request->session()->put('spa_step', 'review');
+
+            return redirect()->route('spa', ['step' => 'review']);
+        }
 
         return redirect()->route('review');
     }

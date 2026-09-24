@@ -29,6 +29,7 @@
         <div class="mt-8 flex justify-end w-full max-w-sm">
             <form method="POST" action="{{ route('pembayaran') }}" class="flex-1">
                 @csrf
+                <input type="hidden" name="from_spa" value="1">
                 <button type="submit" class="w-full px-12 py-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-display font-bold text-lg shadow-lg shadow-emerald-200 hover:scale-105 transition-transform">
                     âœ“ Sudah Bayar, Lanjut â†’
                 </button>

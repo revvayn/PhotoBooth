@@ -6,6 +6,7 @@
 
     <form method="POST" action="{{ route('frame') }}" data-frame-form class="flex flex-col flex-1">
         @csrf
+        <input type="hidden" name="from_spa" value="1">
         <div id="frame-picks" class="hidden"></div>
 
         <div class="flex flex-wrap gap-2 justify-center mb-6">

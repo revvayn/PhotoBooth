@@ -6,6 +6,7 @@
 
     <form method="POST" action="{{ route('metode') }}" class="w-full max-w-lg">
         @csrf
+        <input type="hidden" name="from_spa" value="1">
         <input type="hidden" name="metode" id="metode-input" value="qris">
 
         <div class="grid grid-cols-2 gap-4 mb-8">

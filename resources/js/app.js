@@ -230,6 +230,11 @@ function initPhotoSession() {
             if (res.ok) {
                 stopStream();
                 const data = await res.json();
+                // Di dalam kanvas SPA (/spa): tetap di satu halaman, pindah ke panel filter.
+                if (document.querySelector('[data-spa-main]')) {
+                    window.location.href = '/spa?step=filter';
+                    return;
+                }
                 window.location.href = data.redirect;
                 return;
             }
