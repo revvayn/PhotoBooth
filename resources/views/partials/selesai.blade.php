@@ -14,7 +14,7 @@
                         data-frame-image="{{ $item['image_url'] }}"
                         data-frame-slots='@json($item['slots'] ?? [])'></canvas>
                 <div class="px-5 py-3 text-center text-xs font-semibold text-slate-500 border-t border-rose-100">
-                    {{ $item['name'] }}@if ($item['qty'] > 1) Ã—{{ $item['qty'] }}@endif
+                    {{ $item['name'] }}@if ($item['qty'] > 1) x{{ $item['qty'] }}@endif
                 </div>
             </div>
         @empty
@@ -23,12 +23,12 @@
     </div>
 
     @if ($email)
-        <p class="text-sm text-slate-500 mt-4">ðŸ“© Softfile telah dikirim ke <span class="font-semibold text-slate-700">{{ $email }}</span></p>
+        <p class="text-sm text-slate-500 mt-4">Softfile telah dikirim ke <span class="font-semibold text-slate-700">{{ $email }}</span></p>
     @endif
 
     <div class="mt-8 flex flex-col sm:flex-row gap-3 w-full max-w-sm">
         <a href="{{ route('softfile.download') }}" data-strip-download class="flex-1 text-center rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold px-8 py-4 shadow-lg shadow-rose-200 hover:scale-105 transition-transform">
-            â¬‡ï¸ Download Softfile
+            Download Softfile
         </a>
 
         <form method="POST" action="{{ route('selesai.store') }}" class="flex-1">

@@ -47,7 +47,7 @@
                             @if ($slotLabel)
                                 <span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">{{ $slotLabel }}</span>
                             @endif
-                            <span data-add-badge class="absolute -top-1 -left-1 w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center shadow {{ $inCart ? '' : 'hidden' }}">âœ“</span>
+                            <span data-add-badge class="absolute -top-1 -left-1 w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center shadow {{ $inCart ? '' : 'hidden' }}"></span>
                         </div>
                         <div class="py-2 text-center space-y-0.5">
                             <span class="block text-sm font-semibold">{{ $frame->name }}</span>
@@ -74,7 +74,7 @@
 
                 <button type="submit" data-cart-submit disabled
                         class="mt-4 w-full px-6 py-3.5 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold shadow-lg shadow-rose-200 disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform">
-                    Lanjut ke Sesi Foto â†’
+                    Lanjut ke Sesi Foto
                 </button>
             </aside>
         </div>

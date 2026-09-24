@@ -15,13 +15,13 @@
         <div class="grid grid-cols-2 gap-3 sm:gap-4 mb-5">
             <button type="button" data-metode-option="qris"
                     class="flex flex-col items-center gap-2 rounded-3xl bg-white/90 backdrop-blur p-5 sm:p-8 ring-2 ring-rose-500 shadow-lg shadow-rose-100 transition-all hover:shadow-xl">
-                <span class="text-4xl sm:text-5xl">ðŸ“±</span>
+                <span class="text-4xl sm:text-5xl"></span>
                 <span class="font-display font-bold text-lg sm:text-xl">QRIS</span>
                 <span class="text-xs text-slate-400">Scan pembayaran</span>
             </button>
             <button type="button" data-metode-option="cash"
                     class="flex flex-col items-center gap-2 rounded-3xl bg-white/90 backdrop-blur p-5 sm:p-8 ring-1 ring-rose-100 transition-all hover:shadow-xl">
-                <span class="text-4xl sm:text-5xl">ðŸ’°</span>
+                <span class="text-4xl sm:text-5xl"></span>
                 <span class="font-display font-bold text-lg sm:text-xl">CASH</span>
                 <span class="text-xs text-slate-400">Bayar tunai di kasir</span>
             </button>
@@ -34,7 +34,7 @@
 
         <div class="flex justify-end">
             <button type="submit" class="px-10 py-3 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-lg shadow-lg shadow-rose-200 hover:scale-105 transition-transform">
-                Lanjut â†’
+                Lanjut
             </button>
         </div>
     </form>

@@ -19,7 +19,7 @@
                             data-frame-image="{{ $item['image_url'] }}"
                             data-frame-slots='@json($item['slots'] ?? [])'></canvas>
                     <div class="px-5 py-3 flex items-center justify-between text-xs text-slate-500 border-t border-rose-100">
-                        <span class="font-semibold text-slate-700">{{ $item['name'] }}@if ($item['qty'] > 1) Ã—{{ $item['qty'] }}@endif</span>
+                        <span class="font-semibold text-slate-700">{{ $item['name'] }}@if ($item['qty'] > 1) x{{ $item['qty'] }}@endif</span>
                         <span class="font-bold text-slate-700">Rp. {{ number_format($item['price'] * $item['qty'], 0, ',', '.') }}</span>
                     </div>
                 </div>
@@ -35,7 +35,7 @@
                     <p>Antrian: <span class="font-bold text-rose-500">{{ $queue }}</span></p>
                     @foreach ($items as $item)
                         <p class="flex justify-between">
-                            <span>{{ $item['name'] }}@if ($item['qty'] > 1) Ã—{{ $item['qty'] }}@endif</span>
+                            <span>{{ $item['name'] }}@if ($item['qty'] > 1) x{{ $item['qty'] }}@endif</span>
                             <span>Rp. {{ number_format($item['price'] * $item['qty'], 0, ',', '.') }}</span>
                         </p>
                     @endforeach
@@ -52,12 +52,12 @@
                 <input type="email" name="email" id="email-input" placeholder="email@contoh.com" required
                        class="w-full rounded-2xl bg-slate-50 ring-1 ring-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-rose-400 focus:outline-none">
                 <button type="submit" class="w-full rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold py-3.5 shadow-md hover:scale-[1.02] transition-transform">
-                    ðŸ“© Kirim Softfile
+                    Kirim Softfile
                 </button>
             </form>
 
             <a href="{{ route('selesai') }}" class="rounded-full bg-white ring-1 ring-rose-200 text-rose-600 font-semibold py-3.5 text-center hover:bg-rose-50 transition">
-                Lewati, langsung selesai â†’
+                Lewati, langsung selesai
             </a>
         </div>
     </div>
@@ -66,7 +66,7 @@
         <div class="bg-white rounded-3xl p-10 text-center max-w-sm mx-4 shadow-2xl">
             <div class="relative w-16 h-16 mx-auto mb-4">
                 <div class="animate-spin w-16 h-16 rounded-full border-4 border-rose-100 border-t-rose-500"></div>
-                <span class="absolute inset-0 flex items-center justify-center text-2xl">ðŸ–¨ï¸</span>
+                <span class="absolute inset-0 flex items-center justify-center text-2xl"></span>
             </div>
             <h2 class="font-display font-bold text-xl mb-1">Fotomu sedang di cetak</h2>
             <p class="text-sm text-slate-500">Mohon tunggu</p>

@@ -176,7 +176,7 @@ class PhotoboothController extends Controller
 
         $frames = Frame::whereIn('slug', array_keys($cart))->get();
         $this->log('frame.selected', [
-            'frames' => $frames->map(fn ($f) => $f->name.' ├ù'.$cart[$f->slug])->implode(' + '),
+            'frames' => $frames->map(fn ($f) => $f->name.' x'.$cart[$f->slug])->implode(' + '),
             'total' => $this->total(),
         ]);
 
