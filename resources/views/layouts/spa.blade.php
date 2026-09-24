@@ -113,6 +113,14 @@
                         + ' | mainH=' + (main ? main.offsetHeight : -1)
                         + ' | vw=' + window.innerWidth + 'x' + window.innerHeight
                         + ' | js=jalan';
+                    // Putaran 2: isi DOM hidup (anak, h2, video, display, scroll).
+                    const kids = foto ? foto.children.length : -1;
+                    const htmllen = foto ? (foto.innerHTML || '').length : -1;
+                    const h2 = foto && foto.querySelector('h2') ? foto.querySelector('h2').textContent.trim().slice(0, 12) : 'TIDAK-ADA';
+                    const vid = foto && foto.querySelector('#camera') ? 'ada' : 'TIDAK-ADA';
+                    const disp = foto ? getComputedStyle(foto).display : '-';
+                    const soli = foto ? (foto.scrollHeight + '/' + foto.clientHeight) : '-';
+                    el.textContent += ' || DOM anak=' + kids + ' html=' + htmllen + ' h2=[' + h2 + '] video=' + vid + ' disp=' + disp + ' scroll=' + soli;
                 } catch (e) {
                     const el = document.getElementById('spa-diag');
                     if (el) el.textContent = 'DIAG error: ' + e;
