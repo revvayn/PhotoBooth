@@ -96,5 +96,30 @@
             target.classList.remove('hidden');
         });
     </script>
+    <div id="spa-diag" style="position:fixed;left:8px;bottom:8px;z-index:9999;background:#111;color:#0f0;font:11px/1.5 monospace;padding:6px 8px;border-radius:8px;max-width:92vw;white-space:pre-wrap;">DIAG: menunggu…</div>
+    <script>
+        // Diagnostik sementara: laporkan fakta render apa adanya.
+        (function () {
+            function report() {
+                try {
+                    const panels = [...document.querySelectorAll('[data-spa-panel]')];
+                    const vis = panels.filter((p) => !p.classList.contains('hidden'));
+                    const foto = document.querySelector('[data-spa-panel="foto"]');
+                    const main = document.querySelector('[data-spa-main]');
+                    const el = document.getElementById('spa-diag');
+                    if (!el) return;
+                    el.textContent = 'DIAG panels=' + panels.length + ' vis=' + vis.length
+                        + ' | fotoH=' + (foto ? foto.offsetHeight : -1)
+                        + ' | mainH=' + (main ? main.offsetHeight : -1)
+                        + ' | vw=' + window.innerWidth + 'x' + window.innerHeight
+                        + ' | js=jalan';
+                } catch (e) {
+                    const el = document.getElementById('spa-diag');
+                    if (el) el.textContent = 'DIAG error: ' + e;
+                }
+            }
+            document.addEventListener('DOMContentLoaded', () => { setTimeout(report, 800); setTimeout(report, 3000); });
+        })();
+    </script>
 </body>
 </html>
