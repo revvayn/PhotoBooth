@@ -167,9 +167,10 @@ function initPhotoSession() {
             const btn = document.createElement('button');
             btn.type = 'button';
             const active = (d.deviceId || null) === (currentDeviceId || null);
-            btn.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ring-1 transition ' + (active ? 'bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200' : 'bg-white/80 text-rose-600 ring-rose-200 hover:bg-white');
+            btn.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ring-1 transition min-w-0 max-w-[240px] ' + (active ? 'bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200' : 'bg-white/80 text-rose-600 ring-rose-200 hover:bg-white');
             btn.innerHTML = CAM_SVG;
             const lb = document.createElement('span');
+            lb.className = 'truncate';
             lb.textContent = d.label || 'Kamera ' + (i + 1);
             btn.appendChild(lb);
             btn.addEventListener('click', async () => {

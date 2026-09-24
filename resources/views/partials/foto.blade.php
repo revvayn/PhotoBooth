@@ -72,5 +72,6 @@
             </a>
         </div>
     </div>
+    </div>
     <div class="flex flex-wrap justify-center gap-2 pt-1 shrink-0" data-camera-switch></div>
 </div>
