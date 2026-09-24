@@ -1,6 +1,6 @@
 ﻿<div class="flex-1 flex flex-col">
-    <div class="text-center mb-6">
-        <h2 class="font-display font-bold text-3xl">Pilih Frame</h2>
+    <div class="text-center mb-3">
+        <h2 class="font-display font-bold text-2xl">Pilih Frame</h2>
         <p class="text-slate-500 text-sm mt-1">Klik frame untuk menambah ke keranjang, atur jumlah lalu lanjut sesi foto</p>
     </div>
 

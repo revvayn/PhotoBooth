@@ -62,10 +62,6 @@ function initPhotoSession() {
     const flashOverlay = document.querySelector('[data-flash-overlay]');
     const nextBtn = document.querySelector('[data-next-btn]');
 
-    const photoCountEl = document.querySelector('[data-photo-count]');
-    let photoCount = parseInt(photoCountEl?.dataset.photoCount || '3', 10);
-    if (!photoCount || photoCount < 1) photoCount = 3;
-
     // Global index foto tersusun berurutan sesuai urutan frame di cart.
     const slotGroups = [...document.querySelectorAll('[data-frame-slots]')];
     const tabs = [...document.querySelectorAll('[data-frame-tab]')];
@@ -77,6 +73,10 @@ function initPhotoSession() {
     });
 
     if (!frames.length) return;
+
+    // Total = jumlah slot SEMUA frame (wadah thumbs), bukan tab pertama.
+    const photoCountEl = document.querySelector('[data-shot-thumbs][data-photo-count]');
+    let photoCount = parseInt(photoCountEl?.dataset.photoCount || '0', 10);
     if (!photoCount || photoCount < 1) photoCount = frames.reduce((s, f) => s + f.count, 0);
 
     const frameOf = (i) => frames.find((f) => i >= f.start && i < f.start + f.count)?.index ?? 0;
@@ -152,7 +152,7 @@ function initPhotoSession() {
         if (!item) return;
         const img = item.querySelector('[data-shot-img]');
         const status = item.querySelector('[data-shot-status]');
-        const icon = item.querySelector('.text-2xl, .text-3xl');
+        const icon = item.querySelector('[data-shot-icon]');
         const retake = item.querySelector('[data-retake]');
         if (icon) icon.classList.add('hidden');
         if (status) status.textContent = 'Selesai ✓';
