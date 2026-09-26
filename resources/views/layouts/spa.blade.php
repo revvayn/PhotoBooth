@@ -107,6 +107,12 @@
             document.querySelectorAll('link[rel="stylesheet"][href*="/build/assets/"]').forEach((l) => { css = l.href.split('/').pop(); });
             const vis = [...document.querySelectorAll('[data-spa-panel]')].filter((p) => !p.classList.contains('hidden')).map((p) => p.dataset.spaPanel).join(',');
             el.textContent = 'js:' + js + ' css:' + css + ' vis:' + (vis || 'KOSONG');
+            const target = [...document.querySelectorAll('[data-spa-panel]')].find((p) => !p.classList.contains('hidden'));
+            if (target) {
+                const kids = [...target.querySelectorAll('h2, a, button, video, img, canvas, input, p')];
+                const painted = kids.filter((e) => e.offsetHeight > 0 && e.offsetWidth > 0).length;
+                el.textContent += ' show:' + target.dataset.spaPanel + '=' + painted + '/' + kids.length + 'h=' + target.offsetHeight;
+            }
         })();
     </script>
 </body>
