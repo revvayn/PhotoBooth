@@ -114,6 +114,9 @@
                 el.textContent += ' show:' + target.dataset.spaPanel + '=' + painted + '/' + kids.length + 'h=' + target.offsetHeight;
                 const q = (s) => { const n = target.querySelector(s); return n ? (n.offsetWidth + 'x' + n.offsetHeight) : '-'; };
                 el.textContent += ' els:back=' + q('a[href*="step=frame"],a[href*="tutorial"]') + ',h2=' + q('h2') + ',thumbs=' + q('[data-shot-thumbs]') + ',cam=' + q('#camera') + ',shoot=' + q('[data-shoot-btn]');
+                const vv = target.querySelector('#camera');
+                const tr = vv && vv.srcObject ? vv.srcObject.getVideoTracks() : [];
+                el.textContent += ' vid=' + (vv ? (vv.readyState + '/' + vv.videoWidth + 'x' + vv.videoHeight) : 'NOVIDEO') + ' trk=' + tr.map((x) => x.readyState + (x.muted ? 'M' : '') + (x.enabled ? '' : 'D')).join(',');
                 el.textContent += ' t=' + Date.now().toString(36);
             }
         })();
