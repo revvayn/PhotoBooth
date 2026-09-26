@@ -96,46 +96,5 @@
             target.classList.remove('hidden');
         });
     </script>
-    <div id="spa-diag" style="position:fixed;left:8px;bottom:8px;z-index:9999;background:#111;color:#0f0;font:11px/1.5 monospace;padding:6px 8px;border-radius:8px;max-width:92vw;white-space:pre-wrap;">DIAG: menunggu…</div>
-    <script>
-        // Diagnostik sementara: laporkan fakta render apa adanya.
-        (function () {
-            function report() {
-                try {
-                    const panels = [...document.querySelectorAll('[data-spa-panel]')];
-                    const vis = panels.filter((p) => !p.classList.contains('hidden'));
-                    const foto = document.querySelector('[data-spa-panel="foto"]');
-                    const main = document.querySelector('[data-spa-main]');
-                    const el = document.getElementById('spa-diag');
-                    if (!el) return;
-                    el.textContent = 'DIAG panels=' + panels.length + ' vis=' + vis.length
-                        + ' | fotoH=' + (foto ? foto.offsetHeight : -1)
-                        + ' | mainH=' + (main ? main.offsetHeight : -1)
-                        + ' | vw=' + window.innerWidth + 'x' + window.innerHeight
-                        + ' | js=jalan';
-                    // Putaran 2: isi DOM hidup (anak, h2, video, display, scroll).
-                    const kids = foto ? foto.children.length : -1;
-                    const htmllen = foto ? (foto.innerHTML || '').length : -1;
-                    const h2 = foto && foto.querySelector('h2') ? foto.querySelector('h2').textContent.trim().slice(0, 12) : 'TIDAK-ADA';
-                    const vid = foto && foto.querySelector('#camera') ? 'ada' : 'TIDAK-ADA';
-                    const disp = foto ? getComputedStyle(foto).display : '-';
-                    const soli = foto ? (foto.scrollHeight + '/' + foto.clientHeight) : '-';
-                    el.textContent += ' || DOM anak=' + kids + ' html=' + htmllen + ' h2=[' + h2 + '] video=' + vid + ' disp=' + disp + ' scroll=' + soli;
-                    // Putaran 3: status kamera hidup (video, stream, overlay).
-                    const vid2 = foto ? foto.querySelector('#camera') : null;
-                    const vs = vid2 && vid2.srcObject ? vid2.srcObject.getVideoTracks() : [];
-                    const cdo = foto ? foto.querySelector('[data-countdown]') : null;
-                    el.textContent += ' || CAM vw=' + (vid2 ? (vid2.videoWidth + 'x' + vid2.videoHeight) : 'NOVIDEO')
-                        + ' rs=' + (vid2 ? vid2.readyState : '-')
-                        + ' tracks=' + vs.length + (vs.length ? ':' + vs.map((t) => t.readyState + '/' + (t.enabled ? 'on' : 'off')).join(',') : '')
-                        + ' cd=' + (cdo ? (cdo.classList.contains('hidden') ? 'hidden' : 'TAMPIL') : '-');
-                } catch (e) {
-                    const el = document.getElementById('spa-diag');
-                    if (el) el.textContent = 'DIAG error: ' + e;
-                }
-            }
-            document.addEventListener('DOMContentLoaded', () => { setTimeout(report, 800); setTimeout(report, 3000); });
-        })();
-    </script>
 </body>
 </html>
