@@ -112,6 +112,9 @@
                 const kids = [...target.querySelectorAll('h2, a, button, video, img, canvas, input, p')];
                 const painted = kids.filter((e) => e.offsetHeight > 0 && e.offsetWidth > 0).length;
                 el.textContent += ' show:' + target.dataset.spaPanel + '=' + painted + '/' + kids.length + 'h=' + target.offsetHeight;
+                const q = (s) => { const n = target.querySelector(s); return n ? (n.offsetWidth + 'x' + n.offsetHeight) : '-'; };
+                el.textContent += ' els:back=' + q('a[href*="step=frame"],a[href*="tutorial"]') + ',h2=' + q('h2') + ',thumbs=' + q('[data-shot-thumbs]') + ',cam=' + q('#camera') + ',shoot=' + q('[data-shoot-btn]');
+                el.textContent += ' t=' + Date.now().toString(36);
             }
         })();
     </script>
