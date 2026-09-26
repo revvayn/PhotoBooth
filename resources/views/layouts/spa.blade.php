@@ -96,5 +96,17 @@
             target.classList.remove('hidden');
         });
     </script>
+    <div id="build-tag" style="position:fixed;right:8px;bottom:8px;z-index:9999;background:#111;color:#ff0;font:10px monospace;padding:4px 6px;border-radius:6px;">build: memuat…</div>
+    <script>
+        // Sementara: tampilkan aset build yang benar-benar dimuat tab ini.
+        (function () {
+            const el = document.getElementById('build-tag');
+            if (!el) return;
+            let js = '-', css = '-';
+            document.querySelectorAll('script[src*="/build/assets/"]').forEach((s) => { js = s.src.split('/').pop(); });
+            document.querySelectorAll('link[rel="stylesheet"][href*="/build/assets/"]').forEach((l) => { css = l.href.split('/').pop(); });
+            el.textContent = 'js:' + js + ' css:' + css;
+        })();
+    </script>
 </body>
 </html>
