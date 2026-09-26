@@ -138,6 +138,12 @@ function initPhotoSession() {
 
     const camSwitch = document.querySelector('[data-camera-switch]');
     let currentDeviceId = null;
+    let autoTried = false;
+
+    const withTimeout = (p, ms, label) => Promise.race([
+        p,
+        new Promise((_, rej) => setTimeout(() => rej(new Error(label || 'timeout')), ms)),
+    ]);
 
     const startStream = async (deviceId) => {
         if (shooting) return false;
@@ -146,23 +152,24 @@ function initPhotoSession() {
         if (loading) loading.classList.remove('hidden');
         hideError();
         try {
-            const s = await navigator.mediaDevices.getUserMedia({
+            const s = await withTimeout(navigator.mediaDevices.getUserMedia({
                 video: {
                     width: { ideal: camW },
                     height: { ideal: camH },
                     ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
                 },
                 audio: false,
-            });
+            }), 10000, 'camera-timeout');
             stream = s;
             video.srcObject = s;
             try {
-                await video.play();
+                await withTimeout(video.play(), 4000, 'play-timeout');
             } catch (e) {
                 // autoplay ditolak browser; user menekan Mulai Foto untuk memicu play ulang
             }
             currentDeviceId = deviceId ?? null;
             if (loading) loading.classList.add('hidden');
+            if (shootBtn) shootBtn.disabled = false;
             return true;
         } catch (err) {
             if (loading) loading.classList.add('hidden');
@@ -223,6 +230,23 @@ function initPhotoSession() {
                             paintCamSwitch(cams);
                         }
                     }
+                }
+                // Bila stream masih mati (menggantung/tanpa dimensi), coba semua
+                // kamera fisik-dulu satu per satu; jangan diam tanpa kabar.
+                const hasVideo = () => !!video.videoWidth;
+                if (!hasVideo() && !autoTried) {
+                    autoTried = true;
+                    const score = (d) => (/virtual|obs|manycam|snap|xsplit|droidcam|ivcam|vcam/i.test(d.label || '') ? 1 : 0);
+                    const ordered = [...cams].sort((a, b) => score(a) - score(b));
+                    for (const d of ordered) {
+                        const ok = await startStream(d.deviceId || null);
+                        if (ok && hasVideo()) {
+                            currentDeviceId = d.deviceId || null;
+                            paintCamSwitch(cams);
+                            break;
+                        }
+                    }
+                    if (!hasVideo()) showError('Kamera tidak merespons, coba pilih kamera lain.');
                 }
             })
             .catch(() => { if (camSwitch) camSwitch.remove(); });
