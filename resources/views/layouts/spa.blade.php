@@ -121,6 +121,14 @@
                     const disp = foto ? getComputedStyle(foto).display : '-';
                     const soli = foto ? (foto.scrollHeight + '/' + foto.clientHeight) : '-';
                     el.textContent += ' || DOM anak=' + kids + ' html=' + htmllen + ' h2=[' + h2 + '] video=' + vid + ' disp=' + disp + ' scroll=' + soli;
+                    // Putaran 3: status kamera hidup (video, stream, overlay).
+                    const vid2 = foto ? foto.querySelector('#camera') : null;
+                    const vs = vid2 && vid2.srcObject ? vid2.srcObject.getVideoTracks() : [];
+                    const cdo = foto ? foto.querySelector('[data-countdown]') : null;
+                    el.textContent += ' || CAM vw=' + (vid2 ? (vid2.videoWidth + 'x' + vid2.videoHeight) : 'NOVIDEO')
+                        + ' rs=' + (vid2 ? vid2.readyState : '-')
+                        + ' tracks=' + vs.length + (vs.length ? ':' + vs.map((t) => t.readyState + '/' + (t.enabled ? 'on' : 'off')).join(',') : '')
+                        + ' cd=' + (cdo ? (cdo.classList.contains('hidden') ? 'hidden' : 'TAMPIL') : '-');
                 } catch (e) {
                     const el = document.getElementById('spa-diag');
                     if (el) el.textContent = 'DIAG error: ' + e;
