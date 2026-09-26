@@ -196,7 +196,22 @@ function initPhotoSession() {
             return;
         }
         navigator.mediaDevices.enumerateDevices()
-            .then((all) => paintCamSwitch(all.filter((d) => d.kind === 'videoinput')))
+            .then(async (all) => {
+                const cams = all.filter((d) => d.kind === 'videoinput');
+                paintCamSwitch(cams);
+                // Jangan default ke kamera virtual (OBS/dll yang output-nya hitam):
+                // bila masih di default browser, pindah ke kamera fisik pertama.
+                if (currentDeviceId === null) {
+                    const physical = cams.find((d) => !/virtual|obs|manycam|snap|xsplit|droidcam|ivcam|vcam/i.test(d.label || ''));
+                    if (physical && cams.length > 1) {
+                        const ok = await startStream(physical.deviceId || null);
+                        if (ok) {
+                            currentDeviceId = physical.deviceId || null;
+                            paintCamSwitch(cams);
+                        }
+                    }
+                }
+            })
             .catch(() => { if (camSwitch) camSwitch.remove(); });
     });
 
@@ -244,6 +259,7 @@ function initPhotoSession() {
     };
 
     const takePhoto = async (i) => {
+        if (countdownNum) countdownNum.textContent = countFrom;
         if (countdown) {
             countdown.classList.remove('hidden');
             countdown.classList.add('flex');

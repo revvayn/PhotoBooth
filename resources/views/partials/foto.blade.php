@@ -45,22 +45,22 @@
     <div class="order-1 sm:order-2 relative rounded-[2rem] overflow-hidden bg-slate-900 shadow-2xl shrink-0 max-w-full w-[min(100%,calc(100dvh_-_260px),720px)] aspect-square min-h-0">
         <video id="camera" class="w-full h-full object-cover" autoplay playsinline muted></video>
 
-        <div class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/70 text-white hidden" data-camera-loading>
+        <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/70 text-white hidden" data-camera-loading>
             <span class="animate-spin w-10 h-10 border-4 border-white/30 border-t-white rounded-full mb-3"></span>
             <p class="text-sm font-medium">Mempersiapkan kamera...</p>
         </div>
 
-        <div class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/85 text-white hidden" data-camera-error>
+        <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/85 text-white hidden" data-camera-error>
             <span class="mb-3 text-slate-500"><x-icon name="camera" class="w-12 h-12" /></span>
             <p class="font-semibold">Kamera tidak ditemukan</p>
             <p class="text-sm text-slate-300 mt-1 px-8 text-center">Izinkan akses kamera atau pastikan perangkatmu memiliki webcam.</p>
         </div>
 
-        <div class="absolute inset-0 flex items-center justify-center hidden" data-countdown>
+        <div class="absolute inset-0 z-10 flex items-center justify-center hidden" data-countdown>
             <span class="font-display font-extrabold text-[9rem] sm:text-[12rem] leading-none text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)] animate-bounce" data-countdown-num>3</span>
         </div>
 
-        <div class="absolute inset-0 bg-white hidden" data-flash-overlay></div>
+        <div class="absolute inset-0 z-10 bg-white hidden" data-flash-overlay></div>
 
         <div class="absolute inset-x-0 bottom-0 p-3 flex flex-col items-center gap-2">
             <button type="button" data-shoot-btn class="px-10 py-3 rounded-full bg-white text-slate-900 font-display font-bold text-lg shadow-xl hover:scale-105 transition-transform">
