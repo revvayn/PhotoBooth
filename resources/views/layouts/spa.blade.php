@@ -105,7 +105,8 @@
             let js = '-', css = '-';
             document.querySelectorAll('script[src*="/build/assets/"]').forEach((s) => { js = s.src.split('/').pop(); });
             document.querySelectorAll('link[rel="stylesheet"][href*="/build/assets/"]').forEach((l) => { css = l.href.split('/').pop(); });
-            el.textContent = 'js:' + js + ' css:' + css;
+            const vis = [...document.querySelectorAll('[data-spa-panel]')].filter((p) => !p.classList.contains('hidden')).map((p) => p.dataset.spaPanel).join(',');
+            el.textContent = 'js:' + js + ' css:' + css + ' vis:' + (vis || 'KOSONG');
         })();
     </script>
 </body>
