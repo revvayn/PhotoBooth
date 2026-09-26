@@ -52,7 +52,7 @@
 
         <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/85 text-white hidden" data-camera-error>
             <span class="mb-3 text-slate-500"><x-icon name="camera" class="w-12 h-12" /></span>
-            <p class="font-semibold">Kamera tidak ditemukan</p>
+            <p class="font-semibold" data-error-title>Kamera tidak ditemukan</p>
             <p class="text-sm text-slate-300 mt-1 px-8 text-center">Izinkan akses kamera atau pastikan perangkatmu memiliki webcam.</p>
         </div>
 

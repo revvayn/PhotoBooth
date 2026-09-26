@@ -95,6 +95,20 @@ function initPhotoSession() {
         if (stream) stream.getTracks().forEach((t) => t.stop());
     };
 
+    const showError = (msg) => {
+        if (!errorBox) return;
+        const title = errorBox.querySelector('[data-error-title]');
+        if (title) title.textContent = msg || 'Kamera tidak ditemukan';
+        errorBox.classList.remove('hidden');
+        errorBox.classList.add('flex');
+    };
+
+    const hideError = () => {
+        if (!errorBox) return;
+        errorBox.classList.add('hidden');
+        errorBox.classList.remove('flex');
+    };
+
     const activateTab = (fIdx) => {
         activeFrame = fIdx;
         slotGroups.forEach((g, i) => g.classList.toggle('hidden', i !== fIdx));
@@ -130,10 +144,7 @@ function initPhotoSession() {
         stopStream();
         video.classList.add('invisible');
         if (loading) loading.classList.remove('hidden');
-        if (errorBox) {
-            errorBox.classList.add('hidden');
-            errorBox.classList.remove('flex');
-        }
+        hideError();
         try {
             const s = await navigator.mediaDevices.getUserMedia({
                 video: {
@@ -155,10 +166,7 @@ function initPhotoSession() {
             return true;
         } catch (err) {
             if (loading) loading.classList.add('hidden');
-            if (errorBox) {
-                errorBox.classList.remove('hidden');
-                errorBox.classList.add('flex');
-            }
+            showError();
             if (shootBtn) shootBtn.disabled = true;
             return false;
         }
@@ -304,24 +312,26 @@ function initPhotoSession() {
             setTimeout(res, 2500);
         });
         if (!video.videoWidth) {
-            if (errorBox) {
-                errorBox.classList.remove('hidden');
-                errorBox.classList.add('flex');
-            }
+            showError();
             return;
         }
         shooting = true;
         if (shootBtn) shootBtn.disabled = true;
+        hideError();
 
-        for (let i = 0; i < photoCount; i++) {
-            if (photos[i]) continue;
-            activateTab(frameOf(i));
-            await takePhoto(i);
-            if (i < photoCount - 1) await wait(450);
+        try {
+            for (let i = 0; i < photoCount; i++) {
+                if (photos[i]) continue;
+                activateTab(frameOf(i));
+                await takePhoto(i);
+                if (i < photoCount - 1) await wait(450);
+            }
+        } catch (err) {
+            showError('Gagal memotret, coba lagi.');
+        } finally {
+            shooting = false;
+            if (shootBtn) shootBtn.disabled = false;
         }
-
-        shooting = false;
-        if (shootBtn) shootBtn.disabled = false;
     };
 
     const submitPhotos = async () => {
