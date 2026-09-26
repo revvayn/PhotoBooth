@@ -43,7 +43,7 @@
     </div>
 
     <div class="order-1 sm:order-2 relative isolate rounded-[2rem] overflow-hidden bg-slate-900 shadow-2xl shrink-0 max-w-full w-[min(100%,calc(100dvh_-_260px),720px)] aspect-square min-h-0">
-        <video id="camera" class="w-full h-full object-cover invisible" autoplay playsinline muted></video>
+        <video id="camera" class="w-full h-full object-cover hidden" autoplay playsinline muted></video>
 
         <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/70 text-white hidden" data-camera-loading>
             <span class="animate-spin w-10 h-10 border-4 border-white/30 border-t-white rounded-full mb-3"></span>
