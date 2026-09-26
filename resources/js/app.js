@@ -54,6 +54,10 @@ function initPhotoSession() {
     const video = document.querySelector('[data-camera]') ?? document.getElementById('camera');
     if (!video) return;
 
+    // Video disembunyikan sampai benar-benar mengalir (event playing),
+    // agar lapisan video mati tak pernah meracuni komposisi panel.
+    video.addEventListener('playing', () => video.classList.remove('invisible'));
+
     const loading = document.querySelector('[data-camera-loading]');
     const errorBox = document.querySelector('[data-camera-error]');
     const shootBtn = document.querySelector('[data-shoot-btn]');
@@ -124,6 +128,7 @@ function initPhotoSession() {
     const startStream = async (deviceId) => {
         if (shooting) return false;
         stopStream();
+        video.classList.add('invisible');
         if (loading) loading.classList.remove('hidden');
         if (errorBox) {
             errorBox.classList.add('hidden');
