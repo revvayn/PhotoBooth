@@ -324,26 +324,26 @@ function initPhotoSession() {
 
     const runShoot = async () => {
         if (shooting) return;
-        // Pastikan video benar-benar berjalan sebelum memotret.
-        try {
-            await video.play();
-        } catch (e) {
-            // abaikan, lanjut cek dimensi
-        }
-        await new Promise((res) => {
-            if (video.videoWidth) return res();
-            video.addEventListener('loadedmetadata', res, { once: true });
-            setTimeout(res, 2500);
-        });
-        if (!video.videoWidth) {
-            showError();
-            return;
-        }
         shooting = true;
         if (shootBtn) shootBtn.disabled = true;
-        hideError();
-
         try {
+            // Pastikan video benar-benar berjalan sebelum memotret.
+            try {
+                await video.play();
+            } catch (e) {
+                // abaikan, lanjut cek dimensi
+            }
+            await new Promise((res) => {
+                if (video.videoWidth) return res();
+                video.addEventListener('loadedmetadata', res, { once: true });
+                setTimeout(res, 2500);
+            });
+            if (!video.videoWidth) {
+                showError();
+                return;
+            }
+            hideError();
+
             for (let i = 0; i < photoCount; i++) {
                 if (photos[i]) continue;
                 activateTab(frameOf(i));
