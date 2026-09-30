@@ -34,6 +34,21 @@ class PhotoboothController extends Controller
      * Panel yang tampil ditentukan server via ?step= / session spa_step
      * (default 'frame') agar tiap tahap selalu ter-render penuh dengan data sesi.
      */
+    /**
+     * Versi aset build aktif (untuk deteksi tab basi di klien).
+     */
+    public function version()
+    {
+        $manifest = json_decode(@file_get_contents(public_path('build/manifest.json')), true) ?: [];
+        $js = $manifest['resources/js/app.js']['file'] ?? null;
+        $css = $manifest['resources/css/app.css']['file'] ?? null;
+
+        return response()->json([
+            'js' => $js ? basename($js) : null,
+            'css' => $css ? basename($css) : null,
+        ])->header('Cache-Control', 'no-store, max-age=0');
+    }
+
     public function spa(Request $request)
     {
         if (! $request->session()->has('queue')) {

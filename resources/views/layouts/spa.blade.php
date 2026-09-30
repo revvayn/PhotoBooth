@@ -127,6 +127,17 @@
             catch (e) { el.textContent += ' ls=FAIL'; }
             window.addEventListener('error', (e) => { el.textContent += ' JSErr=' + String(e.message || e).slice(0, 60); });
             window.addEventListener('unhandledrejection', (e) => { el.textContent += ' REJ=' + String((e.reason && e.reason.message) || e.reason || e).slice(0, 60); });
+            fetch('/spa-version', { cache: 'no-store' }).then((r) => r.json()).then((v) => {
+                let cur_js = '-', cur_css = '-';
+                document.querySelectorAll('script[src*="/build/assets/"]').forEach((s) => { cur_js = s.src.split('/').pop(); });
+                document.querySelectorAll('link[rel="stylesheet"][href*="/build/assets/"]').forEach((l) => { cur_css = l.href.split('/').pop(); });
+                if ((v.js && cur_js !== v.js) || (v.css && cur_css !== v.css)) {
+                    el.style.background = '#b91c1c';
+                    el.textContent += ' TAB-BASI-TUTUP-TAB-INI';
+                } else {
+                    el.textContent += ' TAB-SEGAR';
+                }
+            }).catch(() => {});
         })();
     </script>
 </body>

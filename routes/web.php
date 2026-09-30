@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PhotoboothController::class, 'welcome'])->name('home');
 Route::get('/spa', [PhotoboothController::class, 'spa'])->name('spa');
+Route::get('/spa-version', [PhotoboothController::class, 'version'])->name('spa.version');
 Route::post('/mulai', [PhotoboothController::class, 'mulai'])->name('mulai');
 
 Route::get('/tutorial', [PhotoboothController::class, 'tutorial'])->name('tutorial');
