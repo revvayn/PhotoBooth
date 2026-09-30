@@ -114,11 +114,19 @@
                 el.textContent += ' show:' + target.dataset.spaPanel + '=' + painted + '/' + kids.length + 'h=' + target.offsetHeight;
                 const q = (s) => { const n = target.querySelector(s); return n ? (n.offsetWidth + 'x' + n.offsetHeight) : '-'; };
                 el.textContent += ' els:back=' + q('a[href*="step=frame"],a[href*="tutorial"]') + ',h2=' + q('h2') + ',thumbs=' + q('[data-shot-thumbs]') + ',cam=' + q('#camera') + ',shoot=' + q('[data-shoot-btn]');
+                el.textContent += ' t=' + Date.now().toString(36);
                 const vv = target.querySelector('#camera');
                 const tr = vv && vv.srcObject ? vv.srcObject.getVideoTracks() : [];
                 el.textContent += ' vid=' + (vv ? (vv.readyState + '/' + vv.videoWidth + 'x' + vv.videoHeight) : 'NOVIDEO') + ' trk=' + tr.map((x) => x.readyState + (x.muted ? 'M' : '') + (x.enabled ? '' : 'D')).join(',');
-                el.textContent += ' t=' + Date.now().toString(36);
+                const hid = (s) => { const n = target.querySelector(s) || document.querySelector(s); return n ? (n.classList.contains('hidden') ? 1 : 0) : '-'; };
+                el.textContent += ' ov=load' + hid('[data-camera-loading]') + '/err' + hid('[data-camera-error]') + '/cd' + hid('[data-countdown]');
+                const h2 = target.querySelector('h2');
+                if (h2) { const c = getComputedStyle(h2); el.textContent += ' h2css=' + c.display + '/' + c.visibility + '/' + c.opacity + '/' + c.fontSize; }
             }
+            try { localStorage.setItem('__t', '1'); el.textContent += ' ls=' + (localStorage.getItem('__t') === '1' ? 'ok' : 'FAIL'); localStorage.removeItem('__t'); }
+            catch (e) { el.textContent += ' ls=FAIL'; }
+            window.addEventListener('error', (e) => { el.textContent += ' JSErr=' + String(e.message || e).slice(0, 60); });
+            window.addEventListener('unhandledrejection', (e) => { el.textContent += ' REJ=' + String((e.reason && e.reason.message) || e.reason || e).slice(0, 60); });
         })();
     </script>
 </body>
