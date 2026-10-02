@@ -51,7 +51,7 @@
             <section data-spa-panel="frame" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ ($step ?? 'frame') === 'frame' ? '' : 'hidden' }}">
                 @include('partials.frame', ['step' => 1])
             </section>
-            <section data-spa-panel="foto" data-cam-width="{{ $cam_width ?? 1024 }}" data-cam-height="{{ $cam_height ?? 768 }}" data-countdown="{{ $countdown ?? 3 }}" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ ($step ?? 'frame') === 'foto' ? '' : 'hidden' }}">
+            <section data-spa-panel="foto" data-cam-width="{{ $cam_width ?? 1024 }}" data-cam-height="{{ $cam_height ?? 768 }}" data-cam-countdown="{{ $countdown ?? 3 }}" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ ($step ?? 'frame') === 'foto' ? '' : 'hidden' }}">
                 @include('partials.foto', ['step' => 2])
             </section>
             <section data-spa-panel="filter" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ ($step ?? 'frame') === 'filter' ? '' : 'hidden' }}">
@@ -119,7 +119,7 @@
                 const tr = vv && vv.srcObject ? vv.srcObject.getVideoTracks() : [];
                 el.textContent += ' vid=' + (vv ? (vv.readyState + '/' + vv.videoWidth + 'x' + vv.videoHeight) : 'NOVIDEO') + ' trk=' + tr.map((x) => x.readyState + (x.muted ? 'M' : '') + (x.enabled ? '' : 'D')).join(',');
                 const hid = (s) => { const n = target.querySelector(s) || document.querySelector(s); return n ? (n.classList.contains('hidden') ? 1 : 0) : '-'; };
-                el.textContent += ' ov=load' + hid('[data-camera-loading]') + '/err' + hid('[data-camera-error]') + '/cd' + hid('[data-countdown]');
+                el.textContent += ' ov=load' + hid('[data-camera-loading]') + '/err' + hid('[data-camera-error]') + '/cd' + hid('[data-countdown-overlay]');
                 const h2 = target.querySelector('h2');
                 if (h2) { const c = getComputedStyle(h2); el.textContent += ' h2css=' + c.display + '/' + c.visibility + '/' + c.opacity + '/' + c.fontSize; }
             }

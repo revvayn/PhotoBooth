@@ -56,8 +56,8 @@
             <p class="text-sm text-slate-300 mt-1 px-8 text-center">Izinkan akses kamera atau pastikan perangkatmu memiliki webcam.</p>
         </div>
 
-        <div class="absolute inset-0 z-10 flex items-center justify-center hidden" data-countdown>
-            <span class="font-display font-extrabold text-[9rem] sm:text-[12rem] leading-none text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)] animate-bounce" data-countdown-num>3</span>
+        <div class="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/40 hidden" data-countdown-overlay>
+            <span class="font-display font-extrabold text-[9rem] sm:text-[12rem] leading-none text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)] tabular-nums" data-countdown-num>3</span>
         </div>
 
         <div class="absolute inset-0 z-10 bg-white hidden" data-flash-overlay></div>

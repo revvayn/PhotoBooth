@@ -97,6 +97,33 @@ class FrameCartFlowTest extends TestCase
         $this->get('/pembayaran')->assertSee('150.000');
     }
 
+    public function test_spa_foto_countdown_overlay_is_not_the_panel(): void
+    {
+        $this->post('/mulai');
+        $this->post('/frame', ['cart' => ['kpop' => 1], 'from_spa' => 1]);
+
+        $html = $this->get('/spa?step=foto')->assertOk()->getContent();
+
+        $this->assertStringContainsString('data-cam-countdown=', $html);
+        $this->assertStringContainsString('data-countdown-overlay', $html);
+        $this->assertDoesNotMatchRegularExpression(
+            '/data-spa-panel="foto"[^>]*\bdata-countdown=/',
+            $html
+        );
+    }
+
+    public function test_spa_foto_store_redirects_to_filter_panel(): void
+    {
+        $this->post('/mulai');
+        $this->post('/frame', ['cart' => ['kpop' => 1]]);
+
+        $photos = array_map(fn () => $this->photo(), range(1, 3));
+        $this->post('/foto', ['photos' => $photos, 'from_spa' => 1])
+            ->assertJsonPath('redirect', 'http://localhost/spa?step=filter');
+
+        $this->assertSame('filter', session('spa_step'));
+    }
+
     public function test_empty_cart_is_rejected(): void
     {
         $this->post('/mulai');

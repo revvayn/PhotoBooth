@@ -61,7 +61,7 @@ function initPhotoSession() {
     const loading = document.querySelector('[data-camera-loading]');
     const errorBox = document.querySelector('[data-camera-error]');
     const shootBtn = document.querySelector('[data-shoot-btn]');
-    const countdown = document.querySelector('[data-countdown]');
+    const countdown = document.querySelector('[data-countdown-overlay]');
     const countdownNum = document.querySelector('[data-countdown-num]');
     const flashOverlay = document.querySelector('[data-flash-overlay]');
     const nextBtn = document.querySelector('[data-next-btn]');
@@ -134,7 +134,7 @@ function initPhotoSession() {
     const spaFoto = document.querySelector('[data-spa-panel="foto"]');
     const camW = parseInt(spaFoto?.dataset.camWidth || '1024', 10) || 1024;
     const camH = parseInt(spaFoto?.dataset.camHeight || '768', 10) || 768;
-    const countFrom = Math.min(10, Math.max(1, parseInt(spaFoto?.dataset.countdown || '3', 10) || 3));
+    const countFrom = Math.min(10, Math.max(1, parseInt(spaFoto?.dataset.camCountdown || '3', 10) || 3));
 
     const camSwitch = document.querySelector('[data-camera-switch]');
     let currentDeviceId = null;
@@ -295,22 +295,22 @@ function initPhotoSession() {
         nextBtn.classList.toggle('hidden', !done);
     };
 
+    const setCountdownVisible = (visible) => {
+        if (!countdown) return;
+        countdown.classList.toggle('hidden', !visible);
+        countdown.classList.toggle('flex', visible);
+    };
+
     const takePhoto = async (i) => {
-        if (countdownNum) countdownNum.textContent = countFrom;
-        if (countdown) {
-            countdown.classList.remove('hidden');
-            countdown.classList.add('flex');
-        }
+        if (countdownNum) countdownNum.textContent = String(countFrom);
+        setCountdownVisible(true);
 
         for (let n = countFrom; n >= 1; n--) {
-            if (countdownNum) countdownNum.textContent = n;
-            await wait(700);
+            if (countdownNum) countdownNum.textContent = String(n);
+            await wait(1000);
         }
 
-        if (countdown) {
-            countdown.classList.add('hidden');
-            countdown.classList.remove('flex');
-        }
+        setCountdownVisible(false);
 
         await showFlash();
 
@@ -372,18 +372,16 @@ function initPhotoSession() {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
                 },
-                body: JSON.stringify({ photos: valid }),
+                body: JSON.stringify({
+                    photos: valid,
+                    from_spa: !!document.querySelector('[data-spa-main]'),
+                }),
             });
 
             if (res.ok) {
                 stopStream();
                 const data = await res.json();
-                // Di dalam kanvas SPA (/spa): tetap di satu halaman, pindah ke panel filter.
-                if (document.querySelector('[data-spa-main]')) {
-                    window.location.href = '/spa?step=filter';
-                    return;
-                }
-                window.location.href = data.redirect;
+                window.location.href = data.redirect || '/spa?step=filter';
                 return;
             }
         } catch (err) {

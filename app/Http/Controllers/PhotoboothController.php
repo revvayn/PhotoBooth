@@ -253,10 +253,15 @@ class PhotoboothController extends Controller
         }
 
         $request->session()->put('photos', $saved);
+        $request->session()->put('spa_step', 'filter');
 
         $this->log('foto.taken', ['count' => $photoCount]);
 
-        return response()->json(['redirect' => route('filter')]);
+        $redirect = $request->boolean('from_spa')
+            ? route('spa', ['step' => 'filter'])
+            : route('filter');
+
+        return response()->json(['redirect' => $redirect]);
     }
 
     public function filter(Request $request)
