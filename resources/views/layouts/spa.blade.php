@@ -94,51 +94,8 @@
             const key = (active && active.dataset.spaStepDot) || 'frame';
             const target = panels.find((p) => p.dataset.spaPanel === key) || panels[0];
             target.classList.remove('hidden');
-        });
-    </script>
-    <div id="build-tag" style="position:fixed;right:8px;bottom:8px;z-index:9999;background:#111;color:#ff0;font:10px monospace;padding:4px 6px;border-radius:6px;">build: memuat…</div>
-    <script>
-        // Sementara: tampilkan aset build yang benar-benar dimuat tab ini.
-        (function () {
-            const el = document.getElementById('build-tag');
-            if (!el) return;
-            let js = '-', css = '-';
-            document.querySelectorAll('script[src*="/build/assets/"]').forEach((s) => { js = s.src.split('/').pop(); });
-            document.querySelectorAll('link[rel="stylesheet"][href*="/build/assets/"]').forEach((l) => { css = l.href.split('/').pop(); });
-            const vis = [...document.querySelectorAll('[data-spa-panel]')].filter((p) => !p.classList.contains('hidden')).map((p) => p.dataset.spaPanel).join(',');
-            el.textContent = 'js:' + js + ' css:' + css + ' vis:' + (vis || 'KOSONG');
-            const target = [...document.querySelectorAll('[data-spa-panel]')].find((p) => !p.classList.contains('hidden'));
-            if (target) {
-                const kids = [...target.querySelectorAll('h2, a, button, video, img, canvas, input, p')];
-                const painted = kids.filter((e) => e.offsetHeight > 0 && e.offsetWidth > 0).length;
-                el.textContent += ' show:' + target.dataset.spaPanel + '=' + painted + '/' + kids.length + 'h=' + target.offsetHeight;
-                const q = (s) => { const n = target.querySelector(s); return n ? (n.offsetWidth + 'x' + n.offsetHeight) : '-'; };
-                el.textContent += ' els:back=' + q('a[href*="step=frame"],a[href*="tutorial"]') + ',h2=' + q('h2') + ',thumbs=' + q('[data-shot-thumbs]') + ',cam=' + q('#camera') + ',shoot=' + q('[data-shoot-btn]');
-                el.textContent += ' t=' + Date.now().toString(36);
-                const vv = target.querySelector('#camera');
-                const tr = vv && vv.srcObject ? vv.srcObject.getVideoTracks() : [];
-                el.textContent += ' vid=' + (vv ? (vv.readyState + '/' + vv.videoWidth + 'x' + vv.videoHeight) : 'NOVIDEO') + ' trk=' + tr.map((x) => x.readyState + (x.muted ? 'M' : '') + (x.enabled ? '' : 'D')).join(',');
-                const hid = (s) => { const n = target.querySelector(s) || document.querySelector(s); return n ? (n.classList.contains('hidden') ? 1 : 0) : '-'; };
-                el.textContent += ' ov=load' + hid('[data-camera-loading]') + '/err' + hid('[data-camera-error]') + '/cd' + hid('[data-countdown-overlay]');
-                const h2 = target.querySelector('h2');
-                if (h2) { const c = getComputedStyle(h2); el.textContent += ' h2css=' + c.display + '/' + c.visibility + '/' + c.opacity + '/' + c.fontSize; }
-            }
-            try { localStorage.setItem('__t', '1'); el.textContent += ' ls=' + (localStorage.getItem('__t') === '1' ? 'ok' : 'FAIL'); localStorage.removeItem('__t'); }
-            catch (e) { el.textContent += ' ls=FAIL'; }
-            window.addEventListener('error', (e) => { el.textContent += ' JSErr=' + String(e.message || e).slice(0, 60); });
-            window.addEventListener('unhandledrejection', (e) => { el.textContent += ' REJ=' + String((e.reason && e.reason.message) || e.reason || e).slice(0, 60); });
-            fetch('/spa-version', { cache: 'no-store' }).then((r) => r.json()).then((v) => {
-                let cur_js = '-', cur_css = '-';
-                document.querySelectorAll('script[src*="/build/assets/"]').forEach((s) => { cur_js = s.src.split('/').pop(); });
-                document.querySelectorAll('link[rel="stylesheet"][href*="/build/assets/"]').forEach((l) => { cur_css = l.href.split('/').pop(); });
-                if ((v.js && cur_js !== v.js) || (v.css && cur_css !== v.css)) {
-                    el.style.background = '#b91c1c';
-                    el.textContent += ' TAB-BASI-TUTUP-TAB-INI';
-                } else {
-                    el.textContent += ' TAB-SEGAR';
-                }
-            }).catch(() => {});
-        })();
+                });
     </script>
 </body>
 </html>
+

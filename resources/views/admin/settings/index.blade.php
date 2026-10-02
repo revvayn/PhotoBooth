@@ -90,6 +90,66 @@
             </div>
         </div>
 
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="font-heading text-lg font-bold text-slate-800">Pengaturan Email (SMTP)</h2>
+                <p class="text-xs text-slate-400 mt-0.5">Digunakan untuk mengirimkan hasil foto ke email pengguna.</p>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                    <label for="mail_host" class="block text-sm font-medium text-slate-700 mb-1.5">SMTP Host</label>
+                    <input type="text" id="mail_host" name="mail_host" value="{{ old('mail_host', $settings['mail_host']) }}"
+                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                           placeholder="Contoh: smtp.gmail.com">
+                </div>
+
+                <div>
+                    <label for="mail_port" class="block text-sm font-medium text-slate-700 mb-1.5">SMTP Port</label>
+                    <input type="text" id="mail_port" name="mail_port" value="{{ old('mail_port', $settings['mail_port']) }}"
+                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                           placeholder="587 atau 465">
+                </div>
+
+                <div>
+                    <label for="mail_username" class="block text-sm font-medium text-slate-700 mb-1.5">SMTP Username / Email</label>
+                    <input type="text" id="mail_username" name="mail_username" value="{{ old('mail_username', $settings['mail_username']) }}"
+                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                           placeholder="emailanda@gmail.com">
+                </div>
+
+                <div>
+                    <label for="mail_password" class="block text-sm font-medium text-slate-700 mb-1.5">SMTP Password / App Password</label>
+                    <input type="password" id="mail_password" name="mail_password" value="{{ old('mail_password', $settings['mail_password']) }}"
+                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                           placeholder="App Password 16 karakter">
+                </div>
+
+                <div>
+                    <label for="mail_encryption" class="block text-sm font-medium text-slate-700 mb-1.5">Enkripsi</label>
+                    <select id="mail_encryption" name="mail_encryption"
+                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400">
+                        <option value="tls" {{ old('mail_encryption', $settings['mail_encryption']) === 'tls' ? 'selected' : '' }}>TLS (Port 587)</option>
+                        <option value="ssl" {{ old('mail_encryption', $settings['mail_encryption']) === 'ssl' ? 'selected' : '' }}>SSL (Port 465)</option>
+                        <option value="null" {{ old('mail_encryption', $settings['mail_encryption']) === 'null' ? 'selected' : '' }}>Tanpa Enkripsi</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="mail_from_address" class="block text-sm font-medium text-slate-700 mb-1.5">Pengirim (From Email)</label>
+                    <input type="email" id="mail_from_address" name="mail_from_address" value="{{ old('mail_from_address', $settings['mail_from_address']) }}"
+                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                           placeholder="no-reply@domain.com">
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="mail_from_name" class="block text-sm font-medium text-slate-700 mb-1.5">Nama Pengirim (From Name)</label>
+                    <input type="text" id="mail_from_name" name="mail_from_name" value="{{ old('mail_from_name', $settings['mail_from_name']) }}"
+                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                           placeholder="Photobooth Studio">
+                </div>
+            </div>
+        </div>
+
         <div class="flex justify-end">
             <button type="submit" class="px-8 py-3 rounded-xl bg-rose-500 text-white font-semibold shadow-md shadow-rose-200 hover:bg-rose-600 transition">
                 Simpan Pengaturan

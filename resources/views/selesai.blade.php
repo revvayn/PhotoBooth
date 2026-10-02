@@ -32,12 +32,13 @@
         <p class="text-sm text-slate-500 mt-4"><x-icon name="envelope" class="w-4 h-4 inline-block align-middle" /> Softfile telah dikirim ke <span class="font-semibold text-slate-700">{{ $email }}</span></p>
     @endif
 
-    <div class="mt-8 flex flex-col sm:flex-row gap-3 w-full max-w-sm">
-        <a href="{{ route('softfile.download') }}" data-strip-download class="flex-1 text-center rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold px-8 py-4 shadow-lg shadow-rose-200 hover:scale-105 transition-transform">
+        <div class="mt-8 flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+        <button type="button" data-strip-download class="flex-1 text-center rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold px-8 py-4 shadow-lg shadow-rose-200 hover:scale-105 transition-transform">
             ⬇️ Download Softfile
-        </a>
+        </button>
 
         <form method="POST" action="{{ route('selesai.store') }}" class="flex-1">
+
             @csrf
             <button type="submit" class="w-full rounded-full bg-slate-800 text-white font-display font-bold px-8 py-4 shadow-md hover:scale-105 transition-transform">
                 Selesai

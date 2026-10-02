@@ -18,6 +18,13 @@ class SettingController extends Controller
             'cam_width' => Setting::get('cam_width', '1024'),
             'cam_height' => Setting::get('cam_height', '768'),
             'countdown' => Setting::get('countdown', '3'),
+            'mail_host' => Setting::get('mail_host', ''),
+            'mail_port' => Setting::get('mail_port', '587'),
+            'mail_username' => Setting::get('mail_username', ''),
+            'mail_password' => Setting::get('mail_password', ''),
+            'mail_encryption' => Setting::get('mail_encryption', 'tls'),
+            'mail_from_address' => Setting::get('mail_from_address', ''),
+            'mail_from_name' => Setting::get('mail_from_name', 'Photobooth Studio'),
         ];
 
         return view('admin.settings.index', compact('settings'));
@@ -31,10 +38,17 @@ class SettingController extends Controller
             'cam_width' => 'required|in:640,1024,1280,1920',
             'cam_height' => 'required|in:480,768,720,1080',
             'countdown' => 'required|integer|min:3|max:10',
+            'mail_host' => 'nullable|string|max:255',
+            'mail_port' => 'nullable|string|max:10',
+            'mail_username' => 'nullable|string|max:255',
+            'mail_password' => 'nullable|string|max:255',
+            'mail_encryption' => 'nullable|string|in:tls,ssl,null',
+            'mail_from_address' => 'nullable|email|max:255',
+            'mail_from_name' => 'nullable|string|max:255',
         ]);
 
         foreach ($data as $key => $value) {
-            Setting::set($key, (string) $value);
+            Setting::set($key, (string) ($value ?? ''));
         }
 
         ActivityLog::create([

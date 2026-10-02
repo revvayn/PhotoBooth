@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\PhotoboothMail;
 use App\Models\ActivityLog;
 use App\Models\Frame;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class PhotoboothController extends Controller
@@ -410,7 +412,27 @@ class PhotoboothController extends Controller
 
         $request->session()->put('email', $data['email']);
 
-        $this->log('email.sent', ['email' => $data['email']]);
+        // Konfigurasi dinamis SMTP dari database Settings (jika diatur oleh Admin)
+        $mailHost = Setting::get('mail_host');
+        if (! empty($mailHost)) {
+            config([
+                'mail.default' => 'smtp',
+                'mail.mailers.smtp.host' => $mailHost,
+                'mail.mailers.smtp.port' => (int) Setting::get('mail_port', '587'),
+                'mail.mailers.smtp.username' => Setting::get('mail_username'),
+                'mail.mailers.smtp.password' => Setting::get('mail_password'),
+                'mail.mailers.smtp.encryption' => Setting::get('mail_encryption') === 'null' ? null : Setting::get('mail_encryption', 'tls'),
+                'mail.from.address' => Setting::get('mail_from_address', Setting::get('mail_username')),
+                'mail.from.name' => Setting::get('mail_from_name', 'Photobooth Studio'),
+            ]);
+        }
+
+        try {
+            Mail::to($data['email'])->send(new PhotoboothMail(session('queue')));
+            $this->log('email.sent', ['email' => $data['email'], 'status' => 'success']);
+        } catch (\Throwable $e) {
+            $this->log('email.failed', ['email' => $data['email'], 'error' => $e->getMessage()]);
+        }
 
         return response()->json(['redirect' => route('selesai')]);
     }
