@@ -44,6 +44,14 @@
         @case('check')
             <path d="m5 13 4 4L19 7"/>
             @break
+        @case('bag')
+            <rect x="5" y="8" width="14" height="13" rx="2"/>
+            <path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+            @break
+        @case('arrow-right')
+            <path d="M5 12h14"/>
+            <path d="m13 6 6 6-6 6"/>
+            @break
         @default
             <circle cx="12" cy="12" r="9"/>
             @break

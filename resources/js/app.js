@@ -555,25 +555,36 @@ function initFrameCart() {
         const entries = Object.entries(cart).filter(([, q]) => q > 0);
 
         cartList.innerHTML = '';
-        if (cartEmpty) cartEmpty.classList.toggle('hidden', entries.length > 0);
+        if (entries.length === 0 && cartEmpty) {
+            // pesan kosong ikut terhapus innerHTML='' di atas — pasang ulang
+            cartEmpty.classList.remove('hidden');
+            cartList.appendChild(cartEmpty);
+        }
         if (cartCount) cartCount.textContent = entries.length + (entries.length === 1 ? ' item' : ' item');
 
         entries.forEach(([slug, qty]) => {
             const info = FRAME_INFO[slug] || { name: slug, price: 0, img: '' };
             const row = document.createElement('div');
-            row.className = 'flex items-center gap-2.5';
+            // Dua baris: info + tombol qty. Satu baris membuat nama jadi "K…"
+            // karena lebar aside hanya 230px.
+            row.className = 'rounded-xl bg-white/70 ring-1 ring-rose-100 p-2 flex flex-col gap-1.5';
             row.innerHTML = `
-                <img src="${info.img}" alt="" class="w-10 h-12 rounded-lg object-contain bg-slate-50 ring-1 ring-slate-100 shrink-0">
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold truncate">${info.name}</p>
-                    <p class="text-xs text-slate-400">@ ${fmt(info.price)}</p>
+                <div class="flex items-center gap-2">
+                    <img src="${info.img}" alt="" class="w-9 h-11 rounded-lg object-contain bg-slate-50 ring-1 ring-slate-100 shrink-0">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-semibold truncate leading-tight">${info.name}</p>
+                        <p class="text-[11px] text-slate-400 truncate">${fmt(info.price)}</p>
+                    </div>
+                    <button type="button" data-cart-remove="${slug}" class="text-slate-300 hover:text-rose-500 text-lg leading-none shrink-0" title="Hapus">×</button>
                 </div>
-                <div class="flex items-center gap-1.5">
-                    <button type="button" data-cart-dec="${slug}" class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold hover:bg-rose-50 hover:text-rose-600">−</button>
-                    <span class="text-sm font-bold w-4 text-center">${qty}</span>
-                    <button type="button" data-cart-inc="${slug}" class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold hover:bg-rose-50 hover:text-rose-600">+</button>
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-300">Jumlah</span>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" data-cart-dec="${slug}" class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-bold leading-none hover:bg-rose-50 hover:text-rose-600">−</button>
+                        <span class="text-xs font-bold w-4 text-center">${qty}</span>
+                        <button type="button" data-cart-inc="${slug}" class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-bold leading-none hover:bg-rose-50 hover:text-rose-600">+</button>
+                    </div>
                 </div>
-                <button type="button" data-cart-remove="${slug}" class="text-slate-300 hover:text-rose-500 text-xl leading-none shrink-0" title="Hapus">×</button>
             `;
             cartList.appendChild(row);
         });
