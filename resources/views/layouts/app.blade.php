@@ -36,28 +36,6 @@
                     </div>
                 </div>
             </header>
-
-            <nav class="grid grid-cols-3 gap-2 sm:gap-3 mb-4 shrink-0" aria-label="Langkah">
-                @foreach ([
-                    ['n' => 1, 'label' => 'Cek Pembayaran'],
-                    ['n' => 2, 'label' => 'Sesi Foto'],
-                    ['n' => 3, 'label' => 'Print & Download'],
-                ] as $s)
-                    @php($active = $step === $s['n'])
-                    @php($done = $step > $s['n'])
-                    <div class="flex items-center gap-2 sm:gap-3">
-                        @if (!$loop->first)
-                            <div class="h-0.5 flex-1 max-w-6 {{ $done ? 'bg-rose-400' : 'bg-slate-200' }} rounded-full"></div>
-                        @endif
-                        <div class="flex items-center gap-2 min-w-0">
-                            <span class="shrink-0 w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center {{ $done ? 'bg-emerald-400 text-white' : ($active ? 'bg-rose-500 text-white shadow-md shadow-rose-200' : 'bg-white text-slate-400 ring-1 ring-slate-200') }}">
-                                {{ $done ? '✓' : $s['n'] }}
-                            </span>
-                            <span class="hidden sm:block text-xs font-medium {{ $active ? 'text-rose-600' : 'text-slate-400' }}">{{ $s['label'] }}</span>
-                        </div>
-                    </div>
-                @endforeach
-            </nav>
         @endif
 
         <main class="flex-1 min-h-0 flex flex-col overflow-y-auto">
