@@ -7,7 +7,7 @@
         <p class="text-slate-500 text-sm mt-1">Berikut hasil frame yang sudah dibuat</p>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 w-full max-w-3xl items-start">
+    <div class="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-4 w-full max-w-3xl items-start">
         <div class="space-y-4 w-full">
             @forelse ($items as $item)
                 <div class="mx-auto max-w-[260px] overflow-hidden rounded-2xl shadow-xl shadow-rose-100 ring-1 ring-rose-100 bg-white" data-strip-container>
