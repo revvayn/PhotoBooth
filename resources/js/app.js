@@ -290,9 +290,13 @@ function initPhotoSession() {
     };
 
     const updateNext = () => {
-        if (!nextBtn) return;
         const done = photos.every(Boolean);
-        nextBtn.classList.toggle('hidden', !done);
+        if (nextBtn) {
+            nextBtn.classList.toggle('hidden', !done);
+        }
+        if (shootBtn) {
+            shootBtn.classList.toggle('hidden', done);
+        }
     };
 
     const setCountdownVisible = (visible) => {
@@ -302,6 +306,9 @@ function initPhotoSession() {
     };
 
     const takePhoto = async (i) => {
+        if (shootBtn) shootBtn.classList.add('hidden');
+        if (nextBtn) nextBtn.classList.add('hidden');
+
         if (countdownNum) countdownNum.textContent = String(countFrom);
         setCountdownVisible(true);
 
@@ -315,7 +322,10 @@ function initPhotoSession() {
         await showFlash();
 
         const dataUrl = snapshot();
-        if (!dataUrl) return;
+        if (!dataUrl) {
+            updateNext();
+            return;
+        }
         photos[i] = dataUrl;
         updateSlot(i, dataUrl);
         paintTabs();
