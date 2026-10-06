@@ -26,7 +26,7 @@
         </div>
 
         <div class="grid md:grid-cols-[1fr_230px] gap-3 items-start">
-            <div class="grid grid-cols-[repeat(auto-fit,minmax(64px,1fr))] gap-2" data-frame-grid>
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(64px,150px))] gap-2" data-frame-grid>
                 @foreach ($allFrames as $frame)
                     @php($slotLabel = $frame->photo_count ? $frame->photo_count.'x' : '')
                     @php($inCart = isset($cart[$frame->slug]) && $cart[$frame->slug] > 0)
