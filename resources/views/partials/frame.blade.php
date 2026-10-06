@@ -14,12 +14,12 @@
 
         <div class="flex flex-wrap gap-1.5 justify-center mb-2">
             <button type="button" data-category="semua" data-category-chip
-                    class="px-4 py-1.5 rounded-full text-xs font-semibold transition-all ring-1 ring-rose-200 text-rose-600 bg-white/80 bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200">
+                    class="px-4 py-1.5 rounded-full text-xs font-semibold transition-all ring-1 bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200">
                 Semua
             </button>
             @foreach ($categories as $cat)
                 <button type="button" data-category="{{ \Illuminate\Support\Str::slug($cat) }}" data-category-chip
-                        class="px-4 py-1.5 rounded-full text-xs font-semibold transition-all ring-1 ring-rose-200 text-rose-600 bg-white/80">
+                        class="px-4 py-1.5 rounded-full text-xs font-semibold transition-all ring-1 bg-white/80 text-rose-600 ring-rose-200 hover:bg-white">
                     {{ $cat }}
                 </button>
             @endforeach
@@ -35,9 +35,9 @@
                             data-price="{{ $frame->price }}"
                             data-name="{{ $frame->name }}"
                             data-qty="{{ $cart[$frame->slug] ?? 0 }}"
-                            class="group relative rounded-xl bg-white/90 backdrop-blur p-1.5 ring-1 ring-rose-100 transition-all hover:shadow-md {{ $inCart ? 'ring-2 ring-rose-500 shadow-lg shadow-rose-100' : '' }}">
+                            class="group relative rounded-2xl bg-white/90 backdrop-blur p-2 ring-1 ring-rose-100 transition-all duration-200 hover:ring-rose-300 hover:shadow-lg hover:-translate-y-0.5 {{ $inCart ? 'ring-2 ring-rose-500 shadow-lg shadow-rose-200' : '' }}">
                         <div class="relative">
-                            <div class="aspect-square rounded-lg overflow-hidden bg-white ring-1 ring-slate-100">
+                            <div class="aspect-square rounded-xl overflow-hidden bg-white ring-1 ring-slate-100">
                                 @if ($frame->image_url)
                                     <img src="{{ $frame->image_url }}" alt="{{ $frame->name }}" class="w-full h-full object-contain">
                                 @else
