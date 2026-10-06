@@ -11,7 +11,7 @@
         @csrf
         <input type="hidden" name="from_spa" value="1">
 
-        <div class="flex-1 min-h-0 overflow-y-auto space-y-2 pb-2 pr-0.5">
+        <div class="flex-1 min-h-0 overflow-y-auto grid gap-2 pb-2 pr-0.5 content-start {{ count($items) > 1 ? 'sm:grid-cols-2' : 'sm:grid-cols-1' }}">
             @forelse ($items as $item)
                 @php($slug = $item['slug'])
                 <div class="rounded-2xl bg-white/80 ring-1 ring-rose-100 p-2.5" data-filter-item="{{ $slug }}">
