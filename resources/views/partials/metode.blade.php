@@ -1,7 +1,4 @@
 ﻿<div class="flex-1 min-h-0 flex flex-col items-center justify-center py-2">
-    <div class="w-full max-w-lg mb-1">
-        <a href="{{ route('spa', ['step' => 'filter']) }}" class="text-xs font-semibold text-slate-400 hover:text-rose-500 transition">← Kembali</a>
-    </div>
     <div class="w-full max-w-lg text-center mb-3">
         <h2 class="font-display font-bold text-2xl mb-1">Metode Pembayaran</h2>
         <p class="text-slate-500 text-sm">Menerima pembayaran melalui</p>

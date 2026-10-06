@@ -1,7 +1,4 @@
 ﻿<div class="flex-1 min-h-0 flex flex-col">
-    <div class="mb-1">
-        <a href="{{ route('spa', ['step' => 'frame']) }}" class="text-xs font-semibold text-slate-400 hover:text-rose-500 transition">← Kembali</a>
-    </div>
     <div class="pb-2 flex items-center justify-between">
         <h2 class="font-display font-bold text-xl">Sesi Foto</h2>
         <span class="text-xs text-slate-500">Ambil <strong>{{ $photoCount }} foto</strong> untuk {{ count($items) }} frame</span>

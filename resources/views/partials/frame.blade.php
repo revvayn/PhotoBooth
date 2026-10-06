@@ -1,7 +1,4 @@
 ﻿<div class="flex-1 min-h-0 flex flex-col">
-    <div class="mb-1">
-        <a href="{{ route('tutorial') }}" class="text-xs font-semibold text-slate-400 hover:text-rose-500 transition">← Kembali</a>
-    </div>
     <div class="text-center mb-2">
         <h2 class="font-display font-bold text-xl">Pilih Frame</h2>
         <p class="text-slate-500 text-xs mt-0.5">Klik frame untuk menambah ke keranjang, lalu lanjut</p>
