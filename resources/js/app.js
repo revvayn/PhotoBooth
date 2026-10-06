@@ -676,7 +676,7 @@ function initQr() {
     const merchant = box.dataset.merchant || 'PERKAKASKU';
     const payload = `QRIS|${merchant}|${nmid}|${price}|ANTRIAN${queue.replace('#', '')}`;
 
-    QRCode.toCanvas(box, payload, { width: 208, margin: 2, color: { dark: '#18181b', light: '#fafafa' } })
+    QRCode.toCanvas(box, payload, { width: 160, margin: 2, color: { dark: '#18181b', light: '#fafafa' } })
         .catch((err) => {
             box.textContent = 'QR Invoice';
         });

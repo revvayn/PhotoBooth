@@ -19,14 +19,14 @@
         </div>
     @endif
 
-    <div class="flex-1 min-h-0 flex flex-col sm:flex-row gap-2 items-center sm:items-start sm:justify-center">
-    <div class="order-2 sm:order-1 flex sm:flex-col gap-2 overflow-x-auto sm:overflow-hidden shrink-0 w-full sm:w-24 min-h-0 sm:max-h-[calc(100dvh_-_240px)] pb-1 sm:pb-0" data-shot-thumbs data-photo-count="{{ $photoCount }}">
+    <div class="flex-1 min-h-0 flex flex-col sm:flex-row gap-2 items-center sm:items-stretch sm:justify-center">
+    <div class="order-2 sm:order-1 flex sm:flex-col gap-2 overflow-x-auto sm:overflow-hidden shrink-0 w-full sm:w-24 min-h-0 pb-1 sm:pb-0" data-shot-thumbs data-photo-count="{{ $photoCount }}">
         @php($gi = 0)
         @foreach ($items as $index => $item)
-            <div class="flex gap-2 sm:flex-col sm:w-full shrink-0 {{ count($items) > 1 && $index !== 0 ? 'hidden' : '' }}" data-frame-slots="{{ $index }}">
+            <div class="flex gap-2 flex-1 min-w-0 sm:flex-col sm:w-full sm:flex-1 sm:min-h-0 shrink-0 {{ count($items) > 1 && $index !== 0 ? 'hidden' : '' }}" data-frame-slots="{{ $index }}">
                 @foreach (range(1, $item['photo_count']) as $local)
                     @php($gidx = $gi++)
-                    <div class="relative rounded-xl overflow-hidden border border-rose-200 h-16 w-16 sm:h-auto sm:w-full sm:aspect-square bg-white shadow-sm shrink-0" data-shot-item="{{ $gidx }}">
+                    <div class="relative rounded-xl overflow-hidden border border-rose-200 h-16 flex-1 min-w-0 sm:h-auto sm:w-full sm:flex-1 sm:min-h-0 bg-white shadow-sm" data-shot-item="{{ $gidx }}">
                         <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
                             <span class="text-xl leading-none text-rose-300" data-shot-icon><x-icon name="film" class="w-6 h-6" /></span>
                             <span class="text-[10px] font-semibold text-slate-500 leading-tight">{{ $item['name'] }} {{ $local }}</span>
@@ -42,7 +42,7 @@
         @endforeach
     </div>
 
-    <div class="order-1 sm:order-2 relative isolate rounded-[2rem] overflow-hidden bg-slate-900 shadow-2xl shrink-0 max-w-full w-[min(100%,calc(100dvh_-_240px),720px)] aspect-square min-h-0 max-h-full">
+    <div class="order-1 sm:order-2 relative isolate rounded-[2rem] overflow-hidden bg-slate-900 shadow-2xl shrink-0 w-full aspect-square sm:w-auto sm:h-full sm:aspect-square sm:max-w-[720px] min-h-0">
         <video id="camera" class="w-full h-full object-cover hidden" autoplay playsinline muted></video>
 
         <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/70 text-white hidden" data-camera-loading>

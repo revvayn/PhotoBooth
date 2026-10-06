@@ -2,9 +2,8 @@
     <div class="mb-1">
         <a href="{{ route('spa', ['step' => 'metode']) }}" class="text-xs font-semibold text-slate-400 hover:text-rose-500 transition">← Kembali</a>
     </div>
-    <div class="text-center mb-3">
-        <h2 class="font-display font-bold text-2xl">Pembayaran</h2>
-        <p class="text-slate-500 text-sm mt-1">Menerima pembayaran melalui</p>
+    <div class="text-center mb-2">
+        <h2 class="font-display font-bold text-xl">Pembayaran</h2>
     </div>
 
     <div class="flex flex-col items-center justify-center flex-1">
@@ -12,24 +11,23 @@
             <div class="w-full max-w-sm bg-white/95 backdrop-blur rounded-[2rem] shadow-xl shadow-rose-100 ring-1 ring-rose-100 p-4 sm:p-6 text-center">
                 <div class="w-9 h-9 mx-auto rounded-2xl bg-rose-500 text-white flex items-center justify-center mb-2"><x-icon name="card" class="w-5 h-5 text-white" /></div>
                 @if (!empty($qris_image))
-                    <div class="w-40 h-40 sm:w-52 sm:h-52 mx-auto flex items-center justify-center mb-2">
+                    <div class="w-36 h-36 sm:w-40 sm:h-40 mx-auto flex items-center justify-center mb-2">
                         <img src="{{ asset('storage/' . $qris_image) }}" alt="QRIS" class="w-full h-full object-contain">
                     </div>
                 @else
-                    <div class="w-40 h-40 sm:w-52 sm:h-52 mx-auto bg-slate-50 rounded-2xl ring-1 ring-slate-200 flex items-center justify-center mb-2" id="qrcode" data-nmid="{{ $nmid }}" data-merchant="{{ $merchant }}"></div>
+                    <div class="w-36 h-36 sm:w-40 sm:h-40 mx-auto bg-slate-50 rounded-2xl ring-1 ring-slate-200 flex items-center justify-center mb-2" id="qrcode" data-nmid="{{ $nmid }}" data-merchant="{{ $merchant }}"></div>
                 @endif
-                <p class="text-2xl font-display font-bold text-slate-800 mb-1" data-qris-price>Rp. {{ number_format($total, 0, ',', '.') }}</p>
+                <p class="text-xl font-display font-bold text-slate-800 mb-1" data-qris-price>Rp. {{ number_format($total, 0, ',', '.') }}</p>
                 <p class="text-xs text-slate-500 leading-relaxed">QR code bisa di foto sebagai invoice pembayaran.</p>
                 <p class="text-xs text-slate-400 mt-1.5">Antrian <span class="font-bold text-rose-500">{{ $queue }}</span></p>
             </div>
         @else
-            <div class="w-full max-w-sm bg-white/95 backdrop-blur rounded-[2rem] shadow-xl shadow-rose-100 ring-1 ring-rose-100 p-5 sm:p-6 text-center">
-                <div class="w-9 h-9 mx-auto rounded-2xl from-amber-400 to-emerald-500 bg-gradient-to-br text-white flex items-center justify-center mb-3"><x-icon name="cash" class="w-5 h-5 text-white" /></div>
-                <p class="text-lg font-semibold text-slate-800 mb-1">{{ $merchant }}</p>
-                <p class="text-xs text-slate-500 mb-4">NMID : {{ $nmid }}</p>
-                <div class="rounded-2xl bg-rose-50 ring-1 ring-rose-100 py-3 px-6 mb-4">
-                    <p class="text-xs text-slate-400 mb-1">Total Pembayaran</p>
-                    <p class="text-3xl font-display font-bold text-slate-800">Rp. {{ number_format($total, 0, ',', '.') }}</p>
+            <div class="w-full max-w-sm bg-white/95 backdrop-blur rounded-[2rem] shadow-xl shadow-rose-100 ring-1 ring-rose-100 p-4 sm:p-5 text-center">
+                <div class="w-9 h-9 mx-auto rounded-2xl from-amber-400 to-emerald-500 bg-gradient-to-br text-white flex items-center justify-center mb-2"><x-icon name="cash" class="w-5 h-5 text-white" /></div>
+                <p class="text-base font-semibold text-slate-800 mb-3">{{ $merchant }} <span class="text-slate-400 font-normal">· NMID {{ $nmid }}</span></p>
+                <div class="rounded-2xl bg-rose-50 ring-1 ring-rose-100 py-2.5 px-6 mb-3">
+                    <p class="text-xs text-slate-400 mb-0.5">Total Pembayaran</p>
+                    <p class="text-2xl font-display font-bold text-slate-800">Rp. {{ number_format($total, 0, ',', '.') }}</p>
                 </div>
                 <p class="text-xs text-slate-500 leading-relaxed">Silakan bayar tunai di kasir menggunakan nomor antrian <span class="font-bold text-rose-500">{{ $queue }}</span>.</p>
             </div>

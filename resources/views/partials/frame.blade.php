@@ -25,8 +25,8 @@
             @endforeach
         </div>
 
-        <div class="grid lg:grid-cols-[1fr_300px] gap-4 items-start">
-            <div class="grid grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2.5" data-frame-grid>
+        <div class="grid md:grid-cols-[1fr_230px] gap-3 items-start">
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(64px,1fr))] gap-2" data-frame-grid>
                 @foreach ($allFrames as $frame)
                     @php($slotLabel = $frame->photo_count ? $frame->photo_count.'x' : '')
                     @php($inCart = isset($cart[$frame->slug]) && $cart[$frame->slug] > 0)
@@ -37,7 +37,7 @@
                             data-qty="{{ $cart[$frame->slug] ?? 0 }}"
                             class="group relative rounded-xl bg-white/90 backdrop-blur p-1.5 ring-1 ring-rose-100 transition-all hover:shadow-md {{ $inCart ? 'ring-2 ring-rose-500 shadow-lg shadow-rose-100' : '' }}">
                         <div class="relative">
-                            <div class="aspect-[3/4] rounded-lg overflow-hidden bg-white ring-1 ring-slate-100">
+                            <div class="aspect-square rounded-lg overflow-hidden bg-white ring-1 ring-slate-100">
                                 @if ($frame->image_url)
                                     <img src="{{ $frame->image_url }}" alt="{{ $frame->name }}" class="w-full h-full object-contain">
                                 @else
@@ -49,8 +49,8 @@
                             @endif
                             <span data-add-badge class="absolute -top-1 -left-1 w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center shadow {{ $inCart ? '' : 'hidden' }}"><x-icon name="check" class="w-4 h-4 text-white" /></span>
                         </div>
-                        <div class="py-1.5 text-center space-y-0.5">
-                            <span class="block text-xs font-semibold leading-tight">{{ $frame->name }}</span>
+                        <div class="py-1 text-center space-y-0.5">
+                            <span class="block text-xs font-semibold leading-tight truncate">{{ $frame->name }}</span>
                             <span class="block text-[11px] text-slate-400">Rp. {{ number_format($frame->price, 0, ',', '.') }}</span>
                         </div>
                     </button>

@@ -2,15 +2,14 @@
     <div class="w-full mb-1">
         <a href="{{ route('spa', ['step' => 'pembayaran']) }}" class="text-xs font-semibold text-slate-400 hover:text-rose-500 transition">← Kembali</a>
     </div>
-    <div class="text-center mb-3">
-        <h2 class="font-display font-bold text-2xl">Review Foto</h2>
-        <p class="text-slate-500 text-sm mt-1">Berikut hasil frame yang sudah dibuat</p>
+    <div class="text-center mb-2">
+        <h2 class="font-display font-bold text-xl">Review Foto</h2>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-4 w-full max-w-3xl items-start">
         <div class="space-y-4 w-full">
             @forelse ($items as $item)
-                <div class="mx-auto max-w-[260px] overflow-hidden rounded-2xl shadow-xl shadow-rose-100 ring-1 ring-rose-100 bg-white" data-strip-container>
+                <div class="mx-auto max-w-[210px] overflow-hidden rounded-2xl shadow-xl shadow-rose-100 ring-1 ring-rose-100 bg-white" data-strip-container>
                     <canvas class="w-full h-auto block" data-strip-canvas
                             data-photos='@json($item['photos'] ?? [])'
                             data-filters='@json($item['filter_map'] ?? [])'
@@ -28,8 +27,8 @@
             @endforelse
         </div>
 
-        <div class="flex flex-col justify-center gap-3 lg:sticky lg:top-4">
-            <div class="rounded-3xl bg-white/90 backdrop-blur ring-1 ring-rose-100 p-4">
+        <div class="flex flex-col justify-center gap-2.5 lg:sticky lg:top-4">
+            <div class="rounded-2xl bg-white/90 backdrop-blur ring-1 ring-rose-100 p-3.5">
                 <p class="text-xs text-slate-400 mb-1">Ringkasan Pesanan</p>
                 <div class="text-sm text-slate-600 space-y-1">
                     <p>Antrian: <span class="font-bold text-rose-500">{{ $queue }}</span></p>
@@ -46,7 +45,7 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('email.send') }}" data-email-form class="rounded-3xl bg-white/90 backdrop-blur ring-1 ring-rose-100 p-4 space-y-2.5">
+            <form method="POST" action="{{ route('email.send') }}" data-email-form class="rounded-2xl bg-white/90 backdrop-blur ring-1 ring-rose-100 p-3.5 space-y-2">
                 @csrf
                 <label class="block text-sm font-semibold text-slate-700">Masukkan Email</label>
                 <input type="email" name="email" id="email-input" placeholder="email@contoh.com" required
@@ -56,7 +55,7 @@
                 </button>
             </form>
 
-            <a href="{{ route('selesai') }}" class="rounded-full bg-white ring-1 ring-rose-200 text-rose-600 font-semibold py-3.5 text-center hover:bg-rose-50 transition">
+            <a href="{{ route('selesai') }}" class="rounded-full bg-white ring-1 ring-rose-200 text-rose-600 font-semibold py-2.5 text-center hover:bg-rose-50 transition">
                 Lewati, langsung selesai
             </a>
         </div>
