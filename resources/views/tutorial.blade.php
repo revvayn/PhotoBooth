@@ -3,14 +3,14 @@
 @section('title', 'Tutorial — Photobooth')
 
 @section('content')
-<div class="flex-1 flex flex-col items-center justify-center py-4">
-    <div class="w-full max-w-lg bg-white/90 backdrop-blur rounded-[2rem] shadow-xl shadow-rose-100 ring-1 ring-rose-100 p-5 sm:p-8">
-        <div class="text-center mb-5">
-            <h2 class="font-display font-bold text-2xl text-slate-800 mb-1">Cara Pakai Photobooth</h2>
+<div class="flex-1 min-h-0 flex flex-col items-center justify-center py-2">
+    <div class="w-full max-w-2xl bg-white/90 backdrop-blur rounded-[2rem] shadow-xl shadow-rose-100 ring-1 ring-rose-100 p-4 sm:p-5">
+        <div class="text-center mb-3">
+            <h2 class="font-display font-bold text-xl text-slate-800 mb-1">Cara Pakai Photobooth</h2>
             <p class="text-sm text-slate-500">Ikuti 6 langkah mudah di bawah ini</p>
         </div>
 
-        <div class="space-y-4">
+        <div class="grid sm:grid-cols-2 gap-x-4 gap-y-2.5">
             <div class="flex items-start gap-3">
                 <span class="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-rose-400 to-fuchsia-500 text-white text-sm font-bold flex items-center justify-center shadow-md">1</span>
                 <div class="pt-0.5">
@@ -60,15 +60,11 @@
             </div>
         </div>
 
-        <div class="mt-5">
-            <p class="text-center text-sm text-slate-500 mb-4">Siap? Langsung mulai sesi fotomu!</p>
+        <div class="mt-3 text-center">
+            <a href="{{ route('spa') }}" class="inline-block px-10 py-3 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-lg shadow-lg shadow-rose-200 hover:shadow-xl hover:scale-105 transition-all">
+                Lanjut →
+            </a>
         </div>
-    </div>
-
-    <div class="mt-6 flex justify-end w-full max-w-lg">
-                <a href="{{ route('spa') }}" class="px-10 py-4 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-lg shadow-lg shadow-rose-200 hover:shadow-xl hover:scale-105 transition-all">
-            Lanjut →
-        </a>
     </div>
 </div>
 @endsection
