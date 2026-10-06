@@ -11,7 +11,7 @@
         </div>
     @endif
 
-    <form action="{{ route('admin.settings.update') }}" method="POST" class="space-y-6">
+    <form action="{{ route('admin.settings.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
         @csrf
         @method('PUT')
 
@@ -39,6 +39,33 @@
                     @error('qris_nmid')
                         <p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>
                     @enderror
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Gambar QRIS (opsional)</label>
+                    <p class="text-xs text-slate-400 mb-2">Unggah gambar QRIS resmi. Bila diisi, kiosk menampilkan gambar ini; bila kosong, QR dibuat otomatis dari NMID.</p>
+                    <div class="flex items-start gap-4">
+                        <div class="w-24 h-24 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
+                            @if (!empty($settings['qris_image']))
+                                <img src="{{ asset('storage/' . $settings['qris_image']) }}" alt="QRIS" class="w-full h-full object-contain">
+                            @else
+                                <span class="text-slate-300 text-xs text-center px-2">Belum ada gambar</span>
+                            @endif
+                        </div>
+                        <div class="flex-1">
+                            <input type="file" id="qris_image" name="qris_image" accept="image/png,image/jpeg"
+                                   class="w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-rose-50 file:text-rose-600 hover:file:bg-rose-100 transition">
+                            @error('qris_image')
+                                <p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>
+                            @enderror
+                            @if (!empty($settings['qris_image']))
+                                <label class="mt-2 flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer">
+                                    <input type="checkbox" name="remove_qris_image" value="1" class="rounded border-gray-300 text-rose-500 focus:ring-rose-400">
+                                    Hapus gambar QRIS yang ada
+                                </label>
+                            @endif
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

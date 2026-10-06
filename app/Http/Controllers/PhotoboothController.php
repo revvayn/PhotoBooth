@@ -122,6 +122,7 @@ class PhotoboothController extends Controller
             'metode' => session('metode'),
             'nmid' => Setting::get('qris_nmid', '102020034073193'),
             'merchant' => Setting::get('qris_merchant', 'PERKAKASKU'),
+            'qris_image' => Setting::get('qris_image'),
             'cam_width' => (int) Setting::get('cam_width', '1024'),
             'cam_height' => (int) Setting::get('cam_height', '768'),
             'countdown' => (int) Setting::get('countdown', '3'),
@@ -358,6 +359,7 @@ class PhotoboothController extends Controller
             'total' => $this->total(),
             'nmid' => Setting::get('qris_nmid', '102020034073193'),
             'merchant' => Setting::get('qris_merchant', 'PERKAKASKU'),
+            'qris_image' => Setting::get('qris_image'),
             'queue' => session('queue'),
             'step' => 3,
         ]);

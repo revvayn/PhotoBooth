@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
 {
@@ -15,6 +16,7 @@ class SettingController extends Controller
         $settings = [
             'qris_merchant' => Setting::get('qris_merchant', 'PERKAKASKU'),
             'qris_nmid' => Setting::get('qris_nmid', '102020034073193'),
+            'qris_image' => Setting::get('qris_image'),
             'cam_width' => Setting::get('cam_width', '1024'),
             'cam_height' => Setting::get('cam_height', '768'),
             'countdown' => Setting::get('countdown', '3'),
@@ -35,6 +37,8 @@ class SettingController extends Controller
         $data = $request->validate([
             'qris_merchant' => 'required|string|max:100',
             'qris_nmid' => 'required|string|max:30',
+            'qris_image' => 'nullable|image|mimes:png,jpg,jpeg|max:4096',
+            'remove_qris_image' => 'nullable|boolean',
             'cam_width' => 'required|in:640,1024,1280,1920',
             'cam_height' => 'required|in:480,768,720,1080',
             'countdown' => 'required|integer|min:3|max:10',
@@ -49,6 +53,20 @@ class SettingController extends Controller
 
         foreach ($data as $key => $value) {
             Setting::set($key, (string) ($value ?? ''));
+        }
+
+        // Upload / hapus gambar QRIS (opsional; bila ada, dipakai kiosk
+        // menggantikan QR code yang di-generate otomatis).
+        if ($request->hasFile('qris_image')) {
+            $ext = strtolower($request->file('qris_image')->getClientOriginalExtension()) ?: 'png';
+            $path = $request->file('qris_image')->storeAs('qris', 'qris-image.'.$ext, 'public');
+            Setting::set('qris_image', $path);
+        } elseif ($request->boolean('remove_qris_image')) {
+            $old = Setting::get('qris_image');
+            if ($old) {
+                Storage::disk('public')->delete($old);
+            }
+            Setting::set('qris_image', '');
         }
 
         ActivityLog::create([
