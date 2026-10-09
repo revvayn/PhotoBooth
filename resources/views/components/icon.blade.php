@@ -52,6 +52,11 @@
             <path d="M5 12h14"/>
             <path d="m13 6 6 6-6 6"/>
             @break
+        @case('sliders')
+            <path d="M4 8h10M18 8h2M4 16h4M12 16h8"/>
+            <circle cx="16" cy="8" r="2"/>
+            <circle cx="10" cy="16" r="2"/>
+            @break
         @default
             <circle cx="12" cy="12" r="9"/>
             @break
