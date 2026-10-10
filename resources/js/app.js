@@ -550,6 +550,8 @@ function initFrameCart() {
             opt.classList.toggle('shadow-lg', inCart);
             opt.classList.toggle('shadow-rose-100', inCart);
             if (badge) badge.classList.toggle('hidden', !inCart);
+            const qtyEl = opt.querySelector('[data-add-qty]');
+            if (qtyEl) qtyEl.textContent = cart[slug] || 0;
         });
 
         const entries = Object.entries(cart).filter(([, q]) => q > 0);
