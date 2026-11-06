@@ -14,7 +14,7 @@
 </head>
 <body class="h-dvh overflow-hidden bg-gradient-to-br from-rose-100 via-fuchsia-50 to-violet-100 text-slate-800 font-sans antialiased">
 
-    <div class="h-dvh overflow-hidden flex flex-col px-4 sm:px-6 py-2 max-w-5xl mx-auto w-full min-h-0">
+    <div class="h-dvh overflow-hidden flex flex-col px-4 sm:px-8 py-3 max-w-6xl mx-auto w-full min-h-0">
 
         @if (isset($step))
             <header class="flex items-center justify-between gap-3 mb-3 shrink-0">
@@ -29,9 +29,11 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <div class="rounded-full bg-white/80 backdrop-blur px-4 py-2 shadow-sm ring-1 ring-rose-100">
-                        <span class="text-sm font-semibold tabular-nums" data-session-timer data-total="{{ session('total_seconds', 300) }}">
-                            <span class="text-rose-500 font-bold" data-session-timer-min>00</span>:<span data-session-timer-sec>00</span>
+                    @php($remaining = max(0, (int) session('total_seconds', 600) - (now()->timestamp - (int) session('started_at', now()->timestamp))))
+                    <div data-timer-pill class="flex items-center gap-2 rounded-full bg-white/80 backdrop-blur px-4 py-2 shadow-sm ring-1 ring-rose-100 transition-colors">
+                        <x-icon name="clock" class="w-4 h-4 text-rose-500" />
+                        <span class="text-sm font-bold tabular-nums text-slate-700" data-session-timer data-total="{{ $remaining }}">
+                            <span data-session-timer-min>00</span>:<span data-session-timer-sec>00</span>
                         </span>
                     </div>
                 </div>

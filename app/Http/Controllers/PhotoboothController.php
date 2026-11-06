@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Frame;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
@@ -23,10 +24,19 @@ class PhotoboothController extends Controller
         'neon' => 'Neon',
     ];
 
-    private const SESSION_SECONDS = 300;
+    /** Durasi sesi sebelum bayar (detik); bisa diubah admin di Pengaturan. */
+    private const DEFAULT_SESSION_SECONDS = 600;
 
-    public function welcome()
+    /** Waktu baru setelah pembayaran: review, kirim email, cetak. */
+    private const AFTER_PAYMENT_SECONDS = 300;
+
+    public function welcome(Request $request)
     {
+        // Sesi lama yang waktunya habis dibersihkan saat kembali ke layar awal.
+        if ($request->session()->has('queue') && $this->remainingSeconds() <= 0) {
+            $this->cleanupSession($request);
+        }
+
         return view('welcome');
     }
 
@@ -57,7 +67,7 @@ class PhotoboothController extends Controller
             $queue = '#'.rand(1000, 9999 );
             $request->session()->put('queue', $queue);
             $request->session()->put('started_at', now()->timestamp);
-            $request->session()->put('total_seconds', self::SESSION_SECONDS);
+            $request->session()->put('total_seconds', $this->sessionSeconds());
             $this->resetCartSession($request);
         }
 
@@ -86,6 +96,11 @@ class PhotoboothController extends Controller
                 }
             }
             $max = $i;
+        }
+        // Setelah bayar, satu-satunya tahap yang valid adalah review
+        // (tidak boleh kembali mengubah frame/foto lalu membayar ulang).
+        if ($request->session()->has('paid')) {
+            $step = 'review';
         }
         $idx = array_search($step, $validSteps, true);
         if ($idx === false || $idx > $max) {
@@ -123,6 +138,7 @@ class PhotoboothController extends Controller
             'nmid' => Setting::get('qris_nmid', '102020034073193'),
             'merchant' => Setting::get('qris_merchant', 'PERKAKASKU'),
             'qris_image' => Setting::get('qris_image'),
+            'needs_pin' => ! empty(Setting::get('cashier_pin_hash')),
             'cam_width' => (int) Setting::get('cam_width', '1024'),
             'cam_height' => (int) Setting::get('cam_height', '768'),
             'countdown' => (int) Setting::get('countdown', '3'),
@@ -131,16 +147,15 @@ class PhotoboothController extends Controller
 
     public function mulai(Request $request)
     {
+        $this->deletePhotos($request->session()->getId());
         $request->session()->regenerate();
         $queue = '#'.rand(1000, 9999);
 
         $request->session()->put('queue', $queue);
         $request->session()->put('started_at', now()->timestamp);
-        $request->session()->put('total_seconds', self::SESSION_SECONDS);
+        $request->session()->put('total_seconds', $this->sessionSeconds());
 
         $this->resetCartSession($request);
-
-        $this->log('session.started', ['queue' => $queue]);
 
         return redirect()->route('tutorial');
     }
@@ -196,12 +211,6 @@ class PhotoboothController extends Controller
         // Frame/key foto berubah => hasil foto lama tidak berlaku lagi.
         $this->resetCartSession($request, ['cart']);
 
-        $frames = Frame::whereIn('slug', array_keys($cart))->get();
-        $this->log('frame.selected', [
-            'frames' => $frames->map(fn ($f) => $f->name.' x'.$cart[$f->slug])->implode(' + '),
-            'total' => $this->total(),
-        ]);
-
         if ($request->boolean('from_spa')) {
             $request->session()->put('spa_step', 'foto');
 
@@ -256,9 +265,9 @@ class PhotoboothController extends Controller
         }
 
         $request->session()->put('photos', $saved);
+        // Foto baru (mis. foto ulang): pilihan filter lama tidak berlaku lagi.
+        $request->session()->forget(['filter', 'filters']);
         $request->session()->put('spa_step', 'filter');
-
-        $this->log('foto.taken', ['count' => $photoCount]);
 
         $redirect = $request->boolean('from_spa')
             ? route('spa', ['step' => 'filter'])
@@ -297,8 +306,6 @@ class PhotoboothController extends Controller
             // pertama) karena prereq tahap metode + clamp SPA mengeceknya.
             $first = reset($data['filters']);
             $request->session()->put('filter', $first ?: 'asli');
-
-            $this->log('filter.selected', ['mode' => 'per-photo', 'count' => count($data['filters'])]);
         } else {
             // Jalur lama: satu filter global untuk semua foto.
             $data = $request->validate([
@@ -306,8 +313,6 @@ class PhotoboothController extends Controller
             ]);
 
             $request->session()->put('filter', $data['filter']);
-
-            $this->log('filter.selected', ['filter' => $data['filter']]);
         }
 
         if ($request->boolean('from_spa')) {
@@ -339,8 +344,6 @@ class PhotoboothController extends Controller
 
         $request->session()->put('metode', $data['metode']);
 
-        $this->log('metode.selected', ['metode' => $data['metode']]);
-
         if ($request->boolean('from_spa')) {
             $request->session()->put('spa_step', 'pembayaran');
 
@@ -369,9 +372,25 @@ class PhotoboothController extends Controller
     {
         $this->requirePrereq($request, ['metode']);
 
-        $request->session()->put('paid', true);
+        // Idempoten: klik ganda / refresh tidak boleh mencatat pembayaran dua kali.
+        if (! $request->session()->has('paid')) {
+            // PIN kasir (opsional, diatur admin): kasir memverifikasi uang/QRIS
+            // sudah masuk, lalu memasukkan PIN. Kosong = konfirmasi bebas.
+            $pinHash = Setting::get('cashier_pin_hash');
+            if (! empty($pinHash)) {
+                $pin = (string) $request->input('pin', '');
+                if ($pin === '' || ! Hash::check($pin, $pinHash)) {
+                    return back()->withErrors(['pin' => 'PIN kasir salah. Minta kasir memverifikasi pembayaranmu.']);
+                }
+            }
 
-        $this->log('pembayaran.confirmed', ['total' => $this->total(), 'metode' => session('metode')]);
+            $request->session()->put('paid', true);
+            // Waktu baru untuk tahap review, kirim email, dan cetak.
+            $request->session()->put('started_at', now()->timestamp);
+            $request->session()->put('total_seconds', self::AFTER_PAYMENT_SECONDS);
+
+            $this->logPayment();
+        }
 
         if ($request->boolean('from_spa')) {
             $request->session()->put('spa_step', 'review');
@@ -410,9 +429,10 @@ class PhotoboothController extends Controller
 
         $data = $request->validate([
             'email' => ['required', 'email:rfc'],
+            // Strip hasil komposisi (JPEG data URL) dari kanvas klien, dilampirkan ke email.
+            'strips' => ['nullable', 'array', 'max:20'],
+            'strips.*' => ['string'],
         ]);
-
-        $request->session()->put('email', $data['email']);
 
         // Konfigurasi dinamis SMTP dari database Settings (jika diatur oleh Admin)
         $mailHost = Setting::get('mail_host');
@@ -429,12 +449,26 @@ class PhotoboothController extends Controller
             ]);
         }
 
-        try {
-            Mail::to($data['email'])->send(new PhotoboothMail(session('queue')));
-            $this->log('email.sent', ['email' => $data['email'], 'status' => 'success']);
-        } catch (\Throwable $e) {
-            $this->log('email.failed', ['email' => $data['email'], 'error' => $e->getMessage()]);
+        $attachments = [];
+        foreach ($data['strips'] ?? [] as $strip) {
+            $raw = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $strip), true);
+            if ($raw !== false && $raw !== '') {
+                $attachments[] = $raw;
+            }
         }
+
+        try {
+            Mail::to($data['email'])->send(new PhotoboothMail(session('queue'), $attachments));
+        } catch (\Throwable $e) {
+            report($e);
+
+            // Jangan pura-pura berhasil: kembalikan error agar kiosk bisa menampilkannya.
+            return response()->json([
+                'message' => 'Email gagal dikirim. Periksa alamat email lalu coba lagi, atau unduh softfile langsung.',
+            ], 422);
+        }
+
+        $request->session()->put('email', $data['email']);
 
         return response()->json(['redirect' => route('selesai')]);
     }
@@ -442,8 +476,6 @@ class PhotoboothController extends Controller
     public function selesai(Request $request)
     {
         $this->requirePrereq($request, ['paid']);
-
-        $this->log('session.completed');
 
         $photos = session('photos', []);
 
@@ -465,6 +497,8 @@ class PhotoboothController extends Controller
 
     public function selesaiStore(Request $request)
     {
+        // Foto pelanggan tidak boleh tertinggal di server setelah sesi selesai.
+        $this->deletePhotos($request->session()->getId());
         $request->session()->flush();
         $request->session()->regenerate();
 
@@ -565,7 +599,7 @@ class PhotoboothController extends Controller
      */
     private function resetCartSession(Request $request, array $keep = []): void
     {
-        $forget = ['cart', 'photos', 'filter', 'metode', 'paid', 'email'];
+        $forget = ['cart', 'photos', 'filter', 'filters', 'metode', 'paid', 'email'];
         $request->session()->forget(array_diff($forget, $keep));
     }
 
@@ -586,13 +620,59 @@ class PhotoboothController extends Controller
         }
     }
 
-    private function log(string $action, array $metadata = []): void
+    /**
+     * Satu-satunya yang dicatat ke log: pembayaran yang dikonfirmasi.
+     */
+    private function logPayment(): void
     {
+        $items = array_map(fn (array $item) => [
+            'name' => $item['name'],
+            'qty' => $item['qty'],
+            'price' => $item['price'],
+        ], $this->cartItems());
+
         ActivityLog::create([
             'session_id' => session()->getId(),
             'queue_number' => session('queue'),
-            'action' => $action,
-            'metadata' => ['ip' => request()->ip()] + $metadata,
+            'action' => ActivityLog::PAYMENT,
+            'metadata' => [
+                'metode' => session('metode'),
+                'total' => $this->total(),
+                'photo_count' => $this->maxPhotoCount(),
+                'items' => $items,
+                'ip' => request()->ip(),
+            ],
         ]);
+    }
+
+    private function sessionSeconds(): int
+    {
+        $seconds = (int) Setting::get('session_seconds', (string) self::DEFAULT_SESSION_SECONDS);
+
+        return max(120, min(3600, $seconds ?: self::DEFAULT_SESSION_SECONDS));
+    }
+
+    /**
+     * Sisa waktu sesi (detik) dihitung dari server, sehingga tidak
+     * ter-reset tiap kali panel dimuat ulang.
+     */
+    private function remainingSeconds(): int
+    {
+        $total = (int) session('total_seconds', self::DEFAULT_SESSION_SECONDS);
+        $elapsed = now()->timestamp - (int) session('started_at', now()->timestamp);
+
+        return max(0, $total - $elapsed);
+    }
+
+    private function deletePhotos(string $sessionId): void
+    {
+        Storage::disk('public')->deleteDirectory('photos/'.$sessionId);
+    }
+
+    private function cleanupSession(Request $request): void
+    {
+        $this->deletePhotos($request->session()->getId());
+        $request->session()->flush();
+        $request->session()->regenerate();
     }
 }

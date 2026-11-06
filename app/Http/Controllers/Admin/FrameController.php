@@ -3,11 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ActivityLog;
 use App\Models\Frame;
 use App\Services\FrameAnalyzer;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -50,6 +48,7 @@ class FrameController extends Controller
         $validated['is_active'] = $request->boolean('is_active', false);
         $validated['sort_order'] = $request->integer('sort_order', 0);
         $validated['price'] = $validated['price'] ?? 30000;
+        unset($validated['frame_image']);
 
         $frame = Frame::create($validated);
 
@@ -60,13 +59,6 @@ class FrameController extends Controller
 
             return back()->withErrors(['frame_image' => $e->getMessage()])->withInput();
         }
-
-        ActivityLog::create([
-            'session_id' => session()->getId(),
-            'queue_number' => 'admin',
-            'action' => 'frame.created',
-            'metadata' => ['frame_name' => $frame->name, 'admin' => Auth::guard('auth')->user()?->email ?? 'admin'],
-        ]);
 
         return redirect()->route('admin.frames.index')->with('success', 'Frame berhasil ditambahkan.');
     }
@@ -96,6 +88,7 @@ class FrameController extends Controller
         $validated['is_active'] = $request->boolean('is_active', false);
         $validated['sort_order'] = $request->integer('sort_order', 0);
         $validated['price'] = $validated['price'] ?? 30000;
+        unset($validated['frame_image']);
 
         $frame->update($validated);
 
@@ -107,29 +100,13 @@ class FrameController extends Controller
             }
         }
 
-        ActivityLog::create([
-            'session_id' => session()->getId(),
-            'queue_number' => 'admin',
-            'action' => 'frame.updated',
-            'metadata' => ['frame_name' => $frame->name, 'admin' => Auth::guard('auth')->user()?->email ?? 'admin'],
-        ]);
-
         return redirect()->route('admin.frames.index')->with('success', 'Frame berhasil diperbarui.');
     }
 
     public function destroy(Frame $frame)
     {
-        $frameName = $frame->name;
-
         $this->deleteFrameImage($frame);
         $frame->delete();
-
-        ActivityLog::create([
-            'session_id' => session()->getId(),
-            'queue_number' => 'admin',
-            'action' => 'frame.deleted',
-            'metadata' => ['frame_name' => $frameName, 'admin' => Auth::guard('auth')->user()?->email ?? 'admin'],
-        ]);
 
         return redirect()->route('admin.frames.index')->with('success', 'Frame berhasil dihapus.');
     }

@@ -23,11 +23,23 @@ function initTimer() {
     const secEl = el.querySelector('[data-session-timer-sec]');
     const overlay = document.querySelector('[data-timeout-overlay]');
 
+    const pill = el.closest('[data-timer-pill]');
+
     const paint = (s) => {
         const m = Math.floor(s / 60).toString().padStart(2, '0');
         const r = (s % 60).toString().padStart(2, '0');
         if (minEl) minEl.textContent = m;
         if (secEl) secEl.textContent = r;
+
+        // Peringatan visual saat sisa waktu <= 1 menit.
+        if (pill) {
+            const warn = s <= 60;
+            pill.classList.toggle('bg-red-50', warn);
+            pill.classList.toggle('ring-red-300', warn);
+            pill.classList.toggle('animate-pulse', warn && s > 0);
+            el.classList.toggle('text-red-600', warn);
+            el.classList.toggle('text-slate-700', !warn);
+        }
     };
 
     paint(remaining);
@@ -53,6 +65,11 @@ function initTimer() {
 function initPhotoSession() {
     const video = document.querySelector('[data-camera]') ?? document.getElementById('camera');
     if (!video) return;
+
+    // Dokumen SPA memuat semua panel sekaligus; kamera hanya boleh menyala
+    // saat panel foto yang sedang tampil (bukan di tahap frame/bayar/dst).
+    const fotoPanel = document.querySelector('[data-spa-panel="foto"]');
+    if (fotoPanel && fotoPanel.classList.contains('hidden')) return;
 
     // Video display:none sampai benar-benar mengalir (event playing):
     // elemen video mati tidak boleh punya layer komposit sama sekali.
@@ -682,7 +699,7 @@ function initQr() {
     const box = document.getElementById('qrcode');
     if (!box) return;
 
-    const queue = document.querySelector('.text-rose-500')?.textContent ?? '';
+    const queue = box.dataset.queue ?? '';
     const priceEl = document.querySelector('[data-qris-price]');
     const price = (priceEl?.textContent ?? 'Rp. 30.000').replace(/\D/g, '') || '30000';
     const nmid = box.dataset.nmid || '102020034073193';
@@ -817,7 +834,12 @@ async function buildStripFrame(canvas, photoUrls, filterKey, frameImageUrl, fram
 function initStrip() {
     const downloadLink = document.querySelector('[data-strip-download]');
 
-    const canvases = [...document.querySelectorAll('[data-strip-canvas]')];
+    // Dokumen SPA memuat semua panel; hanya kanvas di panel yang tampil yang dipakai
+    // (agar cetak/unduh/email tidak ikut menyertakan kanvas panel filter yang tersembunyi).
+    const canvases = [...document.querySelectorAll('[data-strip-canvas]')].filter((c) => {
+        const panel = c.closest('[data-spa-panel]');
+        return !panel || !panel.classList.contains('hidden');
+    });
     const ready = canvases.map((canvas) => {
         let photos = [];
         let slots = [];
@@ -859,6 +881,8 @@ function initStrip() {
         ).then(() => canvas);
     });
 
+    window.__stripsReady = Promise.all(ready);
+
     if (downloadLink) {
         downloadLink.addEventListener('click', (e) => {
             e.preventDefault();
@@ -877,27 +901,57 @@ function initStrip() {
     }
 }
 
-/* ---------------- Email form + printing modal ---------------- */
+/* ---------------- Modal (cetak / kirim email) ---------------- */
+
+function showModal(title, text) {
+    const modal = document.querySelector('[data-printing-modal]');
+    if (!modal) return;
+    const t = modal.querySelector('[data-modal-title]');
+    const p = modal.querySelector('[data-modal-text]');
+    if (t) t.textContent = title;
+    if (p) p.textContent = text;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function hideModal() {
+    const modal = document.querySelector('[data-printing-modal]');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+/* ---------------- Email form ---------------- */
 
 function initEmailForm() {
     const form = document.querySelector('[data-email-form]');
     if (!form) return;
 
+    const errorBox = form.querySelector('[data-email-error]');
+    const setError = (msg) => {
+        if (!errorBox) return;
+        errorBox.textContent = msg || '';
+        errorBox.classList.toggle('hidden', !msg);
+    };
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        setError('');
         const email = document.getElementById('email-input');
         if (!email.value || !email.checkValidity()) {
             email.focus();
             return;
         }
 
-        const modal = document.querySelector('[data-printing-modal]');
-        if (modal) {
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
+        showModal('Mengirim softfile...', 'Mohon tunggu sebentar');
 
         try {
+            // Lampirkan strip yang sudah jadi (frame + filter), bukan foto mentah.
+            const built = await (window.__stripsReady || Promise.resolve([]));
+            const strips = built
+                .filter((c) => c && c.width)
+                .map((c) => c.toDataURL('image/jpeg', 0.9));
+
             const res = await fetch(form.action, {
                 method: 'POST',
                 headers: {
@@ -905,15 +959,72 @@ function initEmailForm() {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
                 },
-                body: JSON.stringify({ email: email.value }),
+                body: JSON.stringify({ email: email.value, strips }),
             });
-            const data = await res.json();
-            window.location.href = data.redirect;
-        } catch (err) {
-            if (modal) {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok && data.redirect) {
+                window.location.href = data.redirect;
+                return;
             }
+
+            hideModal();
+            setError(data.message || data.errors?.email?.[0] || 'Gagal mengirim email. Coba lagi.');
+        } catch (err) {
+            hideModal();
+            setError('Koneksi bermasalah. Coba lagi.');
+        }
+    });
+}
+
+/* ---------------- Cetak ---------------- */
+
+function initPrint() {
+    const btn = document.querySelector('[data-print-btn]');
+    const sheet = document.getElementById('print-sheet');
+    if (!btn || !sheet) return;
+
+    btn.addEventListener('click', async () => {
+        showModal('Menyiapkan cetakan...', 'Dialog cetak akan terbuka');
+        try {
+            await (window.__stripsReady || Promise.resolve());
+            sheet.innerHTML = '';
+
+            // Setiap frame dicetak sebanyak jumlah (qty) yang dibayar.
+            document.querySelectorAll('[data-strip-container]').forEach((box) => {
+                const canvas = box.querySelector('[data-strip-canvas]');
+                if (!canvas || !canvas.width || box.classList.contains('hidden')) return;
+                const qty = Math.max(1, parseInt(box.dataset.qty || '1', 10) || 1);
+                const src = canvas.toDataURL('image/png');
+                for (let i = 0; i < qty; i++) {
+                    const page = document.createElement('div');
+                    page.className = 'print-page';
+                    const img = new Image();
+                    img.src = src;
+                    page.appendChild(img);
+                    sheet.appendChild(page);
+                }
+            });
+
+            await Promise.all([...sheet.querySelectorAll('img')].map((img) => (img.decode ? img.decode().catch(() => {}) : Promise.resolve())));
+            hideModal();
+            window.print();
+        } catch (err) {
+            hideModal();
+        }
+    });
+}
+
+/* ---------------- Konfirmasi bayar: cegah klik ganda ---------------- */
+
+function initPayForm() {
+    const form = document.querySelector('[data-pay-form]');
+    if (!form) return;
+    form.addEventListener('submit', () => {
+        const btn = form.querySelector('[data-pay-submit]');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Memproses...';
         }
     });
 }
@@ -930,4 +1041,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initQr();
     initStrip();
     initEmailForm();
+    initPrint();
+    initPayForm();
 });

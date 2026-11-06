@@ -9,8 +9,8 @@
         ['Sesi Foto', 'Ambil foto bergaya photobooth di depan kamera.'],
         ['Pilih Filter', 'Sesuaikan warna fotomu dengan seleramu.'],
         ['Metode Pembayaran', 'Pilih bayar via QRIS atau tunai di kasir.'],
-        ['Pembayaran', 'Scan QR atau gunakan nomor antrian '.$queue.'.'],
-        ['Review & Cetak', 'Periksa hasilnya, cetak, dan kirim softfile ke email.'],
+        ['Pembayaran', 'Scan QRIS, atau bayar tunai di kasir dengan nomor antrian '.$queue.'.'],
+        ['Cetak & Kirim', 'Cetak hasilnya, unduh, atau kirim softfile ke email.'],
     ];
 @endphp
 <div class="flex-1 min-h-0 flex flex-col items-center justify-center py-2">
@@ -25,8 +25,8 @@
                 <div class="flex items-start gap-3 rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 h-full">
                     <span class="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-rose-500 to-violet-600 text-white text-sm font-bold flex items-center justify-center shadow-md">{{ $i + 1 }}</span>
                     <div class="pt-0.5">
-                        <h3 class="font-semibold text-slate-800 text-sm">{{ $step[0] }}</h3>
-                        <p class="text-xs text-slate-500 leading-snug">{{ $step[1] }}</p>
+                        <h3 class="font-semibold text-slate-800">{{ $step[0] }}</h3>
+                        <p class="text-sm text-slate-500 leading-snug">{{ $step[1] }}</p>
                     </div>
                 </div>
             @endforeach

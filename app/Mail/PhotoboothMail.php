@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
@@ -16,27 +15,22 @@ class PhotoboothMail extends Mailable
 
     public $queueNumber;
 
-    /**
-     * Create a new message instance.
-     */
-    public function __construct($queueNumber)
+    /** @var array<int, string> biner JPEG hasil komposisi frame */
+    public array $strips;
+
+    public function __construct($queueNumber, array $strips = [])
     {
         $this->queueNumber = $queueNumber;
+        $this->strips = $strips;
     }
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Hasil Foto Photobooth ' . $this->queueNumber,
+            subject: 'Hasil Foto Photobooth '.$this->queueNumber,
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
         return new Content(
@@ -45,10 +39,17 @@ class PhotoboothMail extends Mailable
     }
 
     /**
-     * Get the attachments for the message.
+     * Lampirkan setiap strip foto yang sudah jadi (sudah berframe + filter).
      */
     public function attachments(): array
     {
-        return [];
+        $files = [];
+
+        foreach (array_values($this->strips) as $i => $raw) {
+            $files[] = Attachment::fromData(fn () => $raw, 'photobooth-'.($i + 1).'.jpg')
+                ->withMime('image/jpeg');
+        }
+
+        return $files;
     }
 }

@@ -41,13 +41,14 @@ Route::get('/softfile', [PhotoboothController::class, 'download'])->name('softfi
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1')->name('login.post');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::middleware(AdminAuth::class)->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::resource('frames', FrameController::class)->except(['show']);
         Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
+        Route::get('/logs/export', [LogController::class, 'export'])->name('logs.export');
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
     });

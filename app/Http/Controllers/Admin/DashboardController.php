@@ -9,26 +9,52 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    private const DAYS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+
     public function index()
     {
-        $totalSessionsToday = ActivityLog::where('created_at', '>=', Carbon::today())
-            ->distinct('session_id')
-            ->count('session_id');
+        // Log hanya berisi pembayaran, jadi seluruh statistik dihitung dari sini.
+        $payments = ActivityLog::payments()->orderBy('created_at', 'desc')->get();
 
-        $totalPhotos = ActivityLog::where('action', 'foto.taken')
-            ->count();
+        $today = Carbon::today();
+        $todayPayments = $payments->filter(fn ($p) => $p->created_at->gte($today));
 
-        $totalFrames = Frame::count();
-        $totalLogs = ActivityLog::count();
+        $sum = fn ($rows) => (int) $rows->sum(fn ($p) => $p->payment_total);
+        $byMethod = fn ($rows, string $m) => $rows->filter(fn ($p) => $p->payment_method === $m);
 
-        $recentLogs = ActivityLog::orderBy('created_at', 'desc')->limit(10)->get();
+        $stats = [
+            'revenue_today' => $sum($todayPayments),
+            'count_today' => $todayPayments->count(),
+            'revenue_total' => $sum($payments),
+            'count_total' => $payments->count(),
+            'qris_total' => $sum($byMethod($payments, 'qris')),
+            'qris_count' => $byMethod($payments, 'qris')->count(),
+            'cash_total' => $sum($byMethod($payments, 'cash')),
+            'cash_count' => $byMethod($payments, 'cash')->count(),
+            'photos_total' => (int) $payments->sum(fn ($p) => $p->payment_photo_count),
+        ];
 
-        return view('admin.dashboard', compact(
-            'totalSessionsToday',
-            'totalPhotos',
-            'totalFrames',
-            'totalLogs',
-            'recentLogs'
-        ));
+        // Pendapatan 7 hari terakhir (termasuk hari ini).
+        $week = collect(range(6, 0))->map(function (int $ago) use ($payments, $sum) {
+            $day = Carbon::today()->subDays($ago);
+            $rows = $payments->filter(fn ($p) => $p->created_at->isSameDay($day));
+
+            return [
+                'label' => self::DAYS[$day->dayOfWeek],
+                'date' => $day->format('d/m'),
+                'revenue' => $sum($rows),
+                'count' => $rows->count(),
+                'is_today' => $ago === 0,
+            ];
+        });
+
+        return view('admin.dashboard', [
+            'stats' => $stats,
+            'week' => $week,
+            'weekMax' => max(1, (int) $week->max('revenue')),
+            'framesActive' => Frame::active()->count(),
+            'framesTotal' => Frame::count(),
+            'recent' => $payments->take(8),
+        ]);
     }
 }

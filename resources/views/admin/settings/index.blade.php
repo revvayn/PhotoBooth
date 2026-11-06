@@ -119,6 +119,42 @@
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="font-heading text-lg font-bold text-slate-800">Sesi & Kasir</h2>
+                <p class="text-xs text-slate-400 mt-0.5">Batas waktu pelanggan dan verifikasi pembayaran oleh kasir.</p>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                    <label for="session_minutes" class="block text-sm font-medium text-slate-700 mb-1.5">Durasi sesi (menit) <span class="text-red-500">*</span></label>
+                    <input type="number" id="session_minutes" name="session_minutes" min="2" max="60" required
+                           value="{{ old('session_minutes', $settings['session_seconds']) }}"
+                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 @error('session_minutes') border-red-300 @enderror">
+                    <p class="mt-1.5 text-xs text-slate-400">Dari frame sampai pembayaran. Setelah bayar, pelanggan dapat 5 menit lagi untuk cetak/kirim.</p>
+                    @error('session_minutes')
+                        <p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="cashier_pin" class="block text-sm font-medium text-slate-700 mb-1.5">PIN Kasir (opsional)</label>
+                    <input type="password" id="cashier_pin" name="cashier_pin" inputmode="numeric" maxlength="8" autocomplete="new-password"
+                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 @error('cashier_pin') border-red-300 @enderror"
+                           placeholder="{{ $settings['has_cashier_pin'] ? 'Tersimpan — isi untuk mengganti' : '4–8 angka' }}">
+                    <p class="mt-1.5 text-xs text-slate-400">Bila diisi, tombol "Sudah Bayar" di kiosk meminta PIN ini sehingga pelanggan tidak bisa lanjut tanpa bayar.</p>
+                    @error('cashier_pin')
+                        <p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>
+                    @enderror
+                    @if ($settings['has_cashier_pin'])
+                        <label class="mt-2 flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer">
+                            <input type="checkbox" name="remove_cashier_pin" value="1" class="rounded border-gray-300 text-rose-500 focus:ring-rose-400">
+                            Nonaktifkan PIN kasir
+                        </label>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
                 <h2 class="font-heading text-lg font-bold text-slate-800">Pengaturan Email (SMTP)</h2>
                 <p class="text-xs text-slate-400 mt-0.5">Digunakan untuk mengirimkan hasil foto ke email pengguna.</p>
             </div>
@@ -146,9 +182,9 @@
 
                 <div>
                     <label for="mail_password" class="block text-sm font-medium text-slate-700 mb-1.5">SMTP Password / App Password</label>
-                    <input type="password" id="mail_password" name="mail_password" value="{{ old('mail_password', $settings['mail_password']) }}"
+                    <input type="password" id="mail_password" name="mail_password" value="" autocomplete="new-password"
                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
-                           placeholder="App Password 16 karakter">
+                           placeholder="{{ $settings['has_mail_password'] ? 'Tersimpan — kosongkan jika tidak diubah' : 'App Password 16 karakter' }}">
                 </div>
 
                 <div>

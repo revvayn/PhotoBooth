@@ -4,9 +4,9 @@
             <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-400 to-violet-500 text-white flex items-center justify-center shadow-md shadow-rose-200">
                 <x-icon name="sliders" class="w-4 h-4 text-white" />
             </span>
-            <h2 class="font-display font-bold text-xl">Pilih Filter</h2>
+            <h2 class="font-display font-bold text-2xl">Pilih Filter</h2>
         </div>
-        <p class="text-slate-500 text-xs mt-1">Ketuk pilihan di tiap foto untuk mengganti tampilannya</p>
+        <p class="text-slate-500 text-sm mt-1">Ketuk pilihan di tiap foto untuk mengganti tampilannya</p>
     </div>
 
     <form method="POST" action="{{ route('filter') }}" data-filter-form class="flex flex-col flex-1 min-h-0">
@@ -54,7 +54,7 @@
                                     <div class="grid {{ $chipCols }} gap-1">
                                         @foreach ($filters as $key => $label)
                                             <button type="button" data-filter-chip="{{ $key }}"
-                                                    class="w-full justify-center px-2 py-1.5 rounded-full text-[11px] font-bold ring-1 transition-all hover:scale-[1.03] active:scale-95 {{ (($item['filter_map'] ?? [])[$local] ?? 'asli') === $key ? 'bg-rose-500 text-white ring-rose-500' : 'bg-white text-slate-500 ring-rose-100 hover:ring-rose-200' }}">{{ $label }}</button>
+                                                    class="w-full justify-center px-2 py-2 rounded-full text-xs font-bold ring-1 transition-all hover:scale-[1.03] active:scale-95 {{ (($item['filter_map'] ?? [])[$local] ?? 'asli') === $key ? 'bg-rose-500 text-white ring-rose-500' : 'bg-white text-slate-500 ring-rose-100 hover:ring-rose-200' }}">{{ $label }}</button>
                                         @endforeach
                                     </div>
                                 </div>
@@ -72,9 +72,13 @@
             @endforelse
         </div>
 
-        <div class="pt-2 flex justify-center shrink-0">
+        <div class="pt-2 flex justify-center items-center gap-3 shrink-0">
+            <a href="{{ route('spa', ['step' => 'foto']) }}" data-back-btn
+               class="inline-flex items-center gap-1.5 rounded-full bg-white/80 ring-1 ring-rose-100 px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-white transition">
+                <x-icon name="arrow-left" class="w-4 h-4" /> Foto Ulang
+            </a>
             <button type="submit"
-                    class="w-full max-w-xs inline-flex items-center justify-center gap-1.5 px-6 py-3 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-sm shadow-lg shadow-rose-200 hover:scale-[1.02] active:scale-95 transition-transform">
+                    class="w-full max-w-xs inline-flex items-center justify-center gap-1.5 px-6 py-3.5 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-base shadow-lg shadow-rose-200 hover:scale-[1.02] active:scale-95 transition-transform">
                 Lanjut ke Pembayaran
                 <x-icon name="arrow-right" class="w-4 h-4 text-white" />
             </button>

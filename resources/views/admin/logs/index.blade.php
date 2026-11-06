@@ -1,99 +1,118 @@
 @extends('layouts.admin')
 
-@section('title', 'Activity Log - Photobooth Admin')
-@section('page-title', 'Activity Log')
+@section('title', 'Log Pembayaran - Photobooth Admin')
+@section('page-title', 'Log Pembayaran')
+
+@php
+    $rp = fn ($n) => 'Rp. '.number_format($n, 0, ',', '.');
+    $qs = fn (array $extra = []) => array_filter(array_merge(request()->query(), $extra), fn ($v) => $v !== null && $v !== '');
+    // Header kolom yang bisa diurutkan; klik lagi untuk membalik arah.
+    $sortLink = function (string $col) use ($filters, $qs) {
+        $dir = ($filters['sort'] === $col && $filters['dir'] === 'asc') ? 'desc' : 'asc';
+        return route('admin.logs.index', $qs(['sort' => $col, 'dir' => $dir, 'page' => null]));
+    };
+    $arrow = fn (string $col) => $filters['sort'] === $col ? ($filters['dir'] === 'asc' ? '↑' : '↓') : '';
+@endphp
 
 @section('content')
 <div class="space-y-6">
-    {{-- Header --}}
-    <div class="flex items-center justify-between">
-        <p class="text-slate-500 text-sm">Riwayat aktivitas seluruh sesi photobooth</p>
-        <span class="text-xs text-slate-400">{{ $logs->total() }} total entri</span>
+    {{-- Ringkasan sesuai filter --}}
+    <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs font-medium text-slate-500">Transaksi</p>
+            <p class="text-2xl font-bold text-slate-800 mt-1">{{ $summary['count'] }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs font-medium text-slate-500">Total Pendapatan</p>
+            <p class="text-2xl font-bold text-rose-600 mt-1 tabular-nums">{{ $rp($summary['revenue']) }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs font-medium text-slate-500">QRIS</p>
+            <p class="text-2xl font-bold text-slate-800 mt-1 tabular-nums">{{ $rp($summary['qris']) }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs font-medium text-slate-500">Tunai</p>
+            <p class="text-2xl font-bold text-slate-800 mt-1 tabular-nums">{{ $rp($summary['cash']) }}</p>
+        </div>
     </div>
 
-    {{-- Logs Table --}}
+    {{-- Filter --}}
+    <form method="GET" action="{{ route('admin.logs.index') }}" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-wrap items-end gap-3">
+        <input type="hidden" name="sort" value="{{ $filters['sort'] }}">
+        <input type="hidden" name="dir" value="{{ $filters['dir'] }}">
+        <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Cari antrian</label>
+            <input type="text" name="q" value="{{ $filters['q'] }}" placeholder="#1234"
+                   class="w-32 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-400">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Metode</label>
+            <select name="metode" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-400">
+                <option value="">Semua</option>
+                <option value="qris" @selected($filters['metode'] === 'qris')>QRIS</option>
+                <option value="cash" @selected($filters['metode'] === 'cash')>Tunai</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Dari tanggal</label>
+            <input type="date" name="from" value="{{ $filters['from'] }}" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-400">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Sampai tanggal</label>
+            <input type="date" name="to" value="{{ $filters['to'] }}" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-400">
+        </div>
+        <div class="flex items-center gap-2">
+            <button type="submit" class="px-4 py-2 rounded-lg bg-rose-500 text-white text-sm font-semibold hover:bg-rose-600 transition">Terapkan</button>
+            <a href="{{ route('admin.logs.index') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-gray-100 transition">Reset</a>
+        </div>
+        <a href="{{ route('admin.logs.export', $qs(['page' => null])) }}"
+           class="ml-auto px-4 py-2 rounded-lg ring-1 ring-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-semibold hover:bg-emerald-100 transition">
+            Ekspor CSV
+        </a>
+    </form>
+
+    {{-- Tabel --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-gray-50">
-                        <th class="text-left px-6 py-3 font-semibold text-slate-600">Waktu</th>
-                        <th class="text-left px-6 py-3 font-semibold text-slate-600">Session ID</th>
-                        <th class="text-left px-6 py-3 font-semibold text-slate-600">Queue</th>
-                        <th class="text-left px-6 py-3 font-semibold text-slate-600">Aksi</th>
-                        <th class="text-left px-6 py-3 font-semibold text-slate-600 max-w-xs">Detail</th>
-                        <th class="text-left px-6 py-3 font-semibold text-slate-600">IP</th>
+                        <th class="text-left px-6 py-3 font-semibold text-slate-600"><a href="{{ $sortLink('created_at') }}" class="hover:text-rose-600">Waktu {{ $arrow('created_at') }}</a></th>
+                        <th class="text-left px-6 py-3 font-semibold text-slate-600"><a href="{{ $sortLink('queue_number') }}" class="hover:text-rose-600">Antrian {{ $arrow('queue_number') }}</a></th>
+                        <th class="text-left px-6 py-3 font-semibold text-slate-600"><a href="{{ $sortLink('metode') }}" class="hover:text-rose-600">Metode {{ $arrow('metode') }}</a></th>
+                        <th class="text-left px-6 py-3 font-semibold text-slate-600">Frame</th>
+                        <th class="text-right px-6 py-3 font-semibold text-slate-600"><a href="{{ $sortLink('total') }}" class="hover:text-rose-600">Total {{ $arrow('total') }}</a></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    @forelse($logs as $log)
+                    @forelse ($logs as $p)
                         <tr class="hover:bg-gray-50/50 transition-colors">
                             <td class="px-6 py-3 text-slate-600 whitespace-nowrap">
-                                <div class="text-sm">{{ $log->created_at->format('d M Y') }}</div>
-                                <div class="text-xs text-slate-400">{{ $log->created_at->format('H:i:s') }}</div>
+                                <div>{{ $p->created_at->format('d M Y') }}</div>
+                                <div class="text-xs text-slate-400">{{ $p->created_at->format('H:i:s') }}</div>
                             </td>
-                            <td class="px-6 py-3 font-mono text-xs text-slate-500">
-                                <span class="inline-flex items-center px-2 py-1 bg-gray-100 rounded-md" title="{{ $log->session_id }}">
-                                    {{ \Illuminate\Support\Str::limit($log->session_id, 16, '') }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-3 text-slate-600">{{ $log->queue_number ?? '-' }}</td>
+                            <td class="px-6 py-3 font-semibold text-slate-700">{{ $p->queue_number ?? '-' }}</td>
                             <td class="px-6 py-3">
-                                @php
-                                    $actionStyles = [
-                                        'session.started'      => 'bg-blue-100 text-blue-700 ring-blue-600/20',
-                                        'foto.taken'           => 'bg-rose-100 text-rose-700 ring-rose-600/20',
-                                        'filter.selected'      => 'bg-fuchsia-100 text-fuchsia-700 ring-fuchsia-600/20',
-                                        'frame.selected'       => 'bg-amber-100 text-amber-700 ring-amber-600/20',
-                                        'print.selected'       => 'bg-violet-100 text-violet-700 ring-violet-600/20',
-                                        'metode.selected'      => 'bg-cyan-100 text-cyan-700 ring-cyan-600/20',
-                                        'pembayaran.confirmed' => 'bg-emerald-100 text-emerald-700 ring-emerald-600/20',
-                                        'email.sent'           => 'bg-teal-100 text-teal-700 ring-teal-600/20',
-                                        'session.completed'    => 'bg-slate-100 text-slate-600 ring-slate-500/20',
-                                        'frame.created'        => 'bg-green-100 text-green-700 ring-green-600/20',
-                                        'frame.updated'        => 'bg-blue-100 text-blue-700 ring-blue-600/20',
-                                        'frame.deleted'        => 'bg-red-100 text-red-700 ring-red-600/20',
-                                    ];
-                                    $style = $actionStyles[$log->action] ?? 'bg-gray-100 text-gray-600 ring-gray-500/20';
-                                @endphp
-                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ring-1 ring-inset {{ $style }}">
-                                    {{ $log->action }}
-                                </span>
+                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $p->payment_method === 'qris' ? 'bg-violet-100 text-violet-700' : 'bg-amber-100 text-amber-700' }}">{{ strtoupper($p->payment_method) }}</span>
                             </td>
-                            <td class="px-6 py-3 max-w-xs">
-                                @if($log->metadata && (is_array($log->metadata) ? count($log->metadata) > 0 : true))
-                                    <div class="group relative">
-                                        <span class="text-xs text-slate-500 truncate block max-w-[200px] cursor-default">
-                                            {{ is_array($log->metadata) ? json_encode($log->metadata) : $log->metadata }}
-                                        </span>
-                                        @if(is_array($log->metadata) && count($log->metadata) > 0)
-                                            <div class="hidden group-hover:block absolute z-10 bottom-full left-0 mb-2 w-72 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-xl font-mono whitespace-pre-wrap break-all">
-                                                @json($log->metadata, JSON_PRETTY_PRINT)
-                                            </div>
-                                        @endif
-                                    </div>
-                                @else
-                                    <span class="text-slate-300">-</span>
+                            <td class="px-6 py-3 text-slate-500 text-xs">
+                                {{ $p->payment_items_label }}
+                                @if ($p->payment_photo_count)
+                                    <span class="text-slate-400">&middot; {{ $p->payment_photo_count }} foto</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-3 text-slate-500 font-mono text-xs">{{ is_array($log->metadata) ? ($log->metadata['ip'] ?? '-') : '-' }}</td>
+                            <td class="px-6 py-3 text-right font-semibold text-slate-800 tabular-nums whitespace-nowrap">{{ $rp($p->payment_total) }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-slate-400">
-                                <svg class="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
-                                </svg>
-                                Belum ada activity log
-                            </td>
+                            <td colspan="5" class="px-6 py-12 text-center text-slate-400">Tidak ada pembayaran yang cocok dengan filter</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        {{-- Pagination --}}
-        @if(method_exists($logs, 'links') && $logs->hasPages())
+        @if ($logs->hasPages())
             <div class="px-6 py-4 border-t border-gray-200">
                 {{ $logs->links() }}
             </div>

@@ -1,7 +1,11 @@
 ﻿<div class="flex-1 min-h-0 flex flex-col">
-    <div class="pb-2 flex items-center justify-between">
-        <h2 class="font-display font-bold text-xl">Sesi Foto</h2>
-        <span class="text-xs text-slate-500">Ambil <strong>{{ $photoCount }} foto</strong> untuk {{ count($items) }} frame</span>
+    <div class="pb-2 flex items-center justify-between gap-3">
+        <a href="{{ route('spa', ['step' => 'frame']) }}" data-back-btn
+           class="inline-flex items-center gap-1.5 rounded-full bg-white/80 ring-1 ring-rose-100 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-white transition shrink-0">
+            <x-icon name="arrow-left" class="w-4 h-4" /> Ganti Frame
+        </a>
+        <h2 class="font-display font-bold text-2xl">Sesi Foto</h2>
+        <span class="text-sm text-slate-500 text-right">Ambil <strong>{{ $photoCount }} foto</strong> untuk {{ count($items) }} frame</span>
     </div>
 
     @if (count($items) > 1)

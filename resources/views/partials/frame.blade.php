@@ -4,9 +4,9 @@
             <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-400 to-violet-500 text-white flex items-center justify-center shadow-md shadow-rose-200">
                 <x-icon name="photo" class="w-4 h-4 text-white" />
             </span>
-            <h2 class="font-display font-bold text-xl">Pilih Frame</h2>
+            <h2 class="font-display font-bold text-2xl">Pilih Frame</h2>
         </div>
-        <p class="text-slate-500 text-xs mt-1">Ketuk frame untuk menambah ke keranjang, lalu lanjut</p>
+        <p class="text-slate-500 text-sm mt-1">Ketuk frame untuk menambah ke keranjang, lalu lanjut</p>
     </div>
 
     <form method="POST" action="{{ route('frame') }}" data-frame-form class="flex flex-col flex-1 min-h-0">
@@ -17,12 +17,12 @@
         <div class="flex justify-center mb-2">
             <div class="inline-flex flex-wrap justify-center gap-1.5 rounded-full bg-white/70 backdrop-blur ring-1 ring-rose-100 px-2 py-1.5 shadow-sm">
                 <button type="button" data-category="semua" data-category-chip
-                        class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ring-1 bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200">
+                        class="px-4 py-2 rounded-full text-sm font-semibold transition-all ring-1 bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200">
                     Semua
                 </button>
                 @foreach ($categories as $cat)
                     <button type="button" data-category="{{ \Illuminate\Support\Str::slug($cat) }}" data-category-chip
-                            class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ring-1 bg-white/80 text-rose-600 ring-rose-200 hover:bg-white">
+                            class="px-4 py-2 rounded-full text-sm font-semibold transition-all ring-1 bg-white/80 text-rose-600 ring-rose-200 hover:bg-white">
                         {{ $cat }}
                     </button>
                 @endforeach
@@ -91,7 +91,7 @@
                         <span class="w-8 h-8 rounded-full bg-white ring-1 ring-rose-100 flex items-center justify-center text-rose-400 shrink-0">
                             <x-icon name="bag" class="w-4 h-4" />
                         </span>
-                        <p class="text-xs text-slate-400 leading-snug">Belum ada frame. Ketuk kartu di kiri untuk menambah.</p>
+                        <p class="text-sm text-slate-400 leading-snug">Belum ada frame. Ketuk kartu di kiri untuk menambah.</p>
                     </div>
                 </div>
 
@@ -101,7 +101,7 @@
                 </div>
 
                 <button type="submit" data-cart-submit disabled
-                        class="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-sm whitespace-nowrap shadow-lg shadow-rose-200 disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-95 transition-transform">
+                        class="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-4 py-3.5 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-base whitespace-nowrap shadow-lg shadow-rose-200 disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-95 transition-transform">
                     Lanjut ke Sesi Foto
                     <x-icon name="arrow-right" class="w-4 h-4 text-white" />
                 </button>
