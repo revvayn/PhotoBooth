@@ -12,6 +12,24 @@ const FILTERS = {
     neon: 'saturate(1.8) contrast(1.2) hue-rotate(-8deg)',
 };
 
+/* ---------------- Toast kecil untuk pesan error/info ---------------- */
+
+let toastTimer = null;
+
+function showToast(message, tone = 'error') {
+    const box = document.querySelector('[data-toast]');
+    if (!box) return;
+
+    box.textContent = message;
+    box.classList.toggle('bg-slate-900', tone !== 'success');
+    box.classList.toggle('bg-emerald-600', tone === 'success');
+    box.classList.remove('hidden');
+    box.classList.add('flex', 'items-center');
+
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => box.classList.add('hidden'), 4200);
+}
+
 /* ---------------- Session Timer ---------------- */
 
 function initTimer() {
@@ -22,8 +40,11 @@ function initTimer() {
     const minEl = el.querySelector('[data-session-timer-min]');
     const secEl = el.querySelector('[data-session-timer-sec]');
     const overlay = document.querySelector('[data-timeout-overlay]');
-
+    const note = overlay?.querySelector('[data-timeout-note]');
     const pill = el.closest('[data-timer-pill]');
+
+    let expired = false;
+    let interval = null;
 
     const paint = (s) => {
         const m = Math.floor(s / 60).toString().padStart(2, '0');
@@ -42,24 +63,48 @@ function initTimer() {
         }
     };
 
-    paint(remaining);
+    const expire = () => {
+        if (expired) return;
+        expired = true;
+        clearInterval(interval);
+        paint(0);
 
-    const tick = () => {
-        if (remaining <= 0) {
-            clearInterval(interval);
-            if (overlay) {
-                overlay.classList.remove('hidden');
-                overlay.classList.add('flex');
-            }
+        if (!overlay) {
+            window.location.href = document.body.dataset.homeUrl || '/';
             return;
         }
-        remaining -= 1;
-        paint(remaining);
+
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+
+        // Beri waktu singkat untuk membaca, lalu kembali ke layar awal supaya
+        // kiosk tidak tertinggal di sesi yang sudah mati.
+        let seconds = 10;
+        if (note) note.textContent = `Mengalihkan ke layar awal dalam ${seconds} detik…`;
+        const redirectTimer = setInterval(() => {
+            seconds -= 1;
+            if (note) note.textContent = seconds > 0
+                ? `Mengalihkan ke layar awal dalam ${seconds} detik…`
+                : 'Mengalihkan ke layar awal…';
+            if (seconds <= 0) {
+                clearInterval(redirectTimer);
+                window.location.href = document.body.dataset.homeUrl || '/';
+            }
+        }, 1000);
     };
 
-    const interval = setInterval(tick, 1000);
-}
+    paint(remaining);
+    if (remaining <= 0) {
+        expire();
+        return;
+    }
 
+    interval = setInterval(() => {
+        remaining -= 1;
+        paint(Math.max(0, remaining));
+        if (remaining <= 0) expire();
+    }, 1000);
+}
 /* ---------------- Camera / Photo Session ---------------- */
 
 function initPhotoSession() {
@@ -82,10 +127,16 @@ function initPhotoSession() {
     const countdownNum = document.querySelector('[data-countdown-num]');
     const flashOverlay = document.querySelector('[data-flash-overlay]');
     const nextBtn = document.querySelector('[data-next-btn]');
+    const progressEl = document.querySelector('[data-photo-progress]');
+    const photoError = document.querySelector('[data-photo-error]');
 
     // Global index foto tersusun berurutan sesuai urutan frame di cart.
-    const slotGroups = [...document.querySelectorAll('[data-frame-slots]')];
-    const tabs = [...document.querySelectorAll('[data-frame-tab]')];
+    // Batasi ke panel foto: kanvas di panel filter/review juga punya
+    // atribut data-frame-slots (berisi koordinat), jangan sampai terhitung.
+    const fotoRoot = document.querySelector('[data-spa-panel="foto"]') || document;
+    const slotGroups = [...fotoRoot.querySelectorAll('[data-frame-slots]')]
+        .filter((el) => el.querySelector('[data-shot-item]'));
+    const tabs = [...fotoRoot.querySelectorAll('[data-frame-tab]')];
 
     const frames = [];
     slotGroups.forEach((group, fIdx) => {
@@ -126,6 +177,16 @@ function initPhotoSession() {
         errorBox.classList.remove('flex');
     };
 
+    const showPhotoError = (msg) => {
+        if (!photoError) {
+            if (msg) showToast(msg);
+            return;
+        }
+        photoError.textContent = msg || '';
+        photoError.classList.toggle('hidden', !msg);
+        if (msg) showToast(msg);
+    };
+
     const activateTab = (fIdx) => {
         activeFrame = fIdx;
         slotGroups.forEach((g, i) => g.classList.toggle('hidden', i !== fIdx));
@@ -141,10 +202,16 @@ function initPhotoSession() {
                 : isActive
                     ? 'bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200'
                     : 'bg-white/80 text-rose-600 ring-rose-200';
-            t.className = 'px-4 py-2 rounded-full text-sm font-semibold ring-1 transition-all ' + clazz;
+            t.className = 'px-3 py-1.5 rounded-full text-xs font-semibold ring-1 transition-all ' + clazz;
+            t.setAttribute('aria-selected', isActive ? 'true' : 'false');
             const badge = t.querySelector('[data-tab-status]');
             if (badge) badge.textContent = done ? '✓ Selesai' : (frames[i].count + ' foto');
         });
+
+        if (progressEl) {
+            const doneCount = photos.filter(Boolean).length;
+            progressEl.textContent = doneCount + '/' + photoCount;
+        }
     };
 
     // Pengaturan kamera dari admin (via panel foto SPA); default aman bila absen.
@@ -195,6 +262,14 @@ function initPhotoSession() {
             return false;
         }
     };
+
+    // Tombol coba lagi di overlay error kamera — jangan biarkan pelanggan
+    // tertahan tanpa cara memulihkan kamera.
+    errorBox?.querySelector('[data-camera-retry]')?.addEventListener('click', async () => {
+        if (shootBtn) shootBtn.disabled = true;
+        const ok = await startStream(currentDeviceId);
+        if (ok) hideError();
+    });
 
     const CAM_SVG = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M9 7l1.5-2.5h5L17 7"/></svg>';
 
@@ -340,9 +415,11 @@ function initPhotoSession() {
 
         const dataUrl = snapshot();
         if (!dataUrl) {
+            showPhotoError('Kamera belum siap. Tunggu sebentar lalu coba lagi.');
             updateNext();
             return;
         }
+        showPhotoError('');
         photos[i] = dataUrl;
         updateSlot(i, dataUrl);
         paintTabs();
@@ -367,6 +444,7 @@ function initPhotoSession() {
             });
             if (!video.videoWidth) {
                 showError();
+                showPhotoError('Kamera belum siap. Tunggu hingga gambar muncul lalu coba lagi.');
                 return;
             }
             hideError();
@@ -379,6 +457,7 @@ function initPhotoSession() {
             }
         } catch (err) {
             showError('Gagal memotret, coba lagi.');
+            showPhotoError('Gagal memotret. Periksa kamera lalu coba lagi.');
         } finally {
             shooting = false;
             if (shootBtn) shootBtn.disabled = false;
@@ -386,10 +465,13 @@ function initPhotoSession() {
     };
 
     const submitPhotos = async () => {
-        const valid = photos.filter(Boolean);
-        if (!valid.length) return;
+        if (!photos.every(Boolean)) {
+            showPhotoError('Masih ada foto yang belum diambil. Selesaikan semua foto dulu ya.');
+            return;
+        }
         if (shootBtn) shootBtn.disabled = true;
         if (nextBtn) nextBtn.disabled = true;
+        showPhotoError('');
 
         try {
             const res = await fetch('/foto', {
@@ -400,7 +482,9 @@ function initPhotoSession() {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
                 },
                 body: JSON.stringify({
-                    photos: valid,
+                    // Kirim semua slot sesuai urutan; jangan difilter agar
+                    // indeks foto tetap cocok dengan frame di server.
+                    photos,
                     from_spa: !!document.querySelector('[data-spa-main]'),
                 }),
             });
@@ -408,11 +492,14 @@ function initPhotoSession() {
             if (res.ok) {
                 stopStream();
                 const data = await res.json();
-                window.location.href = data.redirect || '/spa?step=filter';
+                window.location.href = data.redirect || '/spa?step=review';
                 return;
             }
+
+            const data = await res.json().catch(() => ({}));
+            showPhotoError(data.message || 'Foto gagal disimpan. Coba ambil ulang.');
         } catch (err) {
-            // fall through
+            showPhotoError('Koneksi bermasalah. Periksa jaringan lalu coba lagi.');
         }
 
         if (shootBtn) shootBtn.disabled = false;
@@ -500,6 +587,7 @@ function initFilterEditor() {
                 if (!Number.isNaN(local)) map[local] = val;
                 row.querySelectorAll('[data-filter-chip]').forEach((chip) => {
                     const on = chip.dataset.filterChip === val;
+                    chip.setAttribute('aria-pressed', on ? 'true' : 'false');
                     chip.classList.toggle('bg-rose-500', on);
                     chip.classList.toggle('text-white', on);
                     chip.classList.toggle('ring-rose-500', on);
@@ -521,6 +609,22 @@ function initFilterEditor() {
             });
         });
 
+        // Terapkan filter Foto 1 ke seluruh foto dalam frame ini.
+        const sameBtn = block.querySelector('[data-filter-same]');
+        if (sameBtn) {
+            sameBtn.addEventListener('click', () => {
+                const rows = [...block.querySelectorAll('[data-filter-photo]')];
+                if (!rows.length) return;
+                const value = rows[0].querySelector('[data-filter-value]')?.value || 'asli';
+                rows.forEach((row) => {
+                    const input = row.querySelector('[data-filter-value]');
+                    if (input) input.value = value;
+                });
+                paint();
+                showToast('Filter Foto 1 diterapkan ke semua foto.', 'success');
+            });
+        }
+
         paint();
     });
 }
@@ -539,6 +643,7 @@ function initFrameCart() {
     const cartCount = form.querySelector('[data-cart-count]');
     const totalEl = form.querySelector('[data-cart-total]');
     const submitBtn = form.querySelector('[data-cart-submit]');
+    const clearBtn = form.querySelector('[data-cart-clear]');
 
     const fmt = (n) => 'Rp. ' + n.toLocaleString('id-ID');
 
@@ -566,12 +671,15 @@ function initFrameCart() {
             opt.classList.toggle('ring-rose-500', inCart);
             opt.classList.toggle('shadow-lg', inCart);
             opt.classList.toggle('shadow-rose-100', inCart);
+            opt.setAttribute('aria-pressed', inCart ? 'true' : 'false');
             if (badge) badge.classList.toggle('hidden', !inCart);
             const qtyEl = opt.querySelector('[data-add-qty]');
             if (qtyEl) qtyEl.textContent = cart[slug] || 0;
         });
 
         const entries = Object.entries(cart).filter(([, q]) => q > 0);
+
+        if (clearBtn) clearBtn.classList.toggle('hidden', entries.length === 0);
 
         cartList.innerHTML = '';
         if (entries.length === 0 && cartEmpty) {
@@ -640,6 +748,7 @@ function initFrameCart() {
     const applyFilter = (slug) => {
         cats.forEach((cat) => {
             const active = cat.dataset.category === slug;
+            cat.setAttribute('aria-pressed', active ? 'true' : 'false');
             cat.classList.toggle('bg-rose-500', active);
             cat.classList.toggle('text-white', active);
             cat.classList.toggle('ring-rose-500', active);
@@ -668,6 +777,20 @@ function initFrameCart() {
         else if (rm) remove(rm.dataset.cartRemove);
     });
 
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            Object.keys(cart).forEach((key) => delete cart[key]);
+            render();
+            showToast('Keranjang dikosongkan.', 'success');
+        });
+    }
+
+    form.addEventListener('submit', () => {
+        if (!submitBtn || submitBtn.disabled) return;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Menyiapkan kamera…';
+    });
+
     render();
 }
 
@@ -679,18 +802,53 @@ function initMetodeSelect() {
 
     const input = document.getElementById('metode-input');
     const options = form.querySelectorAll('[data-metode-option]');
+    const voucherBox = form.querySelector('[data-voucher-box]');
+    const voucherInput = document.getElementById('voucher-code');
+    const submitBtn = document.getElementById('metode-submit');
+    if (!input) return;
+
+    const paint = () => {
+        options.forEach((opt) => {
+            const active = opt.dataset.metodeOption === input.value;
+            opt.setAttribute('aria-pressed', active ? 'true' : 'false');
+            opt.classList.toggle('ring-2', active);
+            opt.classList.toggle('ring-rose-500', active);
+            opt.classList.toggle('shadow-lg', active);
+            opt.classList.toggle('shadow-rose-100', active);
+            opt.classList.toggle('ring-1', !active);
+            opt.classList.toggle('ring-rose-100', !active);
+
+            const check = opt.querySelector('[data-metode-check]');
+            if (check) {
+                check.classList.toggle('border-rose-500', active);
+                check.classList.toggle('bg-rose-500', active);
+                check.classList.toggle('border-slate-300', !active);
+                const dot = check.querySelector('span');
+                if (dot) dot.classList.toggle('hidden', !active);
+            }
+        });
+
+        const isVoucher = input.value === 'voucher';
+        voucherBox?.classList.toggle('hidden', !isVoucher);
+        if (submitBtn) {
+            submitBtn.textContent = isVoucher ? 'Gunakan Voucher & Mulai Foto' : 'Lanjut Pilih Frame';
+        }
+    };
 
     options.forEach((opt) => {
         opt.addEventListener('click', () => {
             input.value = opt.dataset.metodeOption;
-            options.forEach((o) => {
-                o.classList.remove('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100');
-                o.classList.add('ring-1', 'ring-rose-100');
-            });
-            opt.classList.remove('ring-1', 'ring-rose-100');
-            opt.classList.add('ring-2', 'ring-rose-500', 'shadow-lg', 'shadow-rose-100');
+            paint();
+            if (input.value === 'voucher') {
+                setTimeout(() => voucherInput?.focus(), 50);
+            } else {
+                voucherInput?.blur();
+            }
         });
     });
+
+    // Setelah error validasi, server mengembalikan pilihan terakhir.
+    paint();
 }
 
 /* ---------------- QRIS QR code ---------------- */
@@ -888,6 +1046,10 @@ function initStrip() {
             e.preventDefault();
             Promise.all(ready).then((built) => {
                 const strips = built.filter(Boolean);
+                if (!strips.length) {
+                    showToast('Belum ada foto untuk diunduh.');
+                    return;
+                }
                 strips.forEach((canvas, i) => {
                     setTimeout(() => {
                         const a = document.createElement('a');
@@ -896,6 +1058,7 @@ function initStrip() {
                         a.click();
                     }, i * 400);
                 });
+                showToast('Menyiapkan unduhan ' + strips.length + ' file…', 'success');
             });
         });
     }
@@ -928,21 +1091,37 @@ function initEmailForm() {
     if (!form) return;
 
     const errorBox = form.querySelector('[data-email-error]');
+    const successBox = form.querySelector('[data-email-success]');
+    const submitBtn = form.querySelector('[data-email-submit]');
+    const submitLabel = submitBtn ? submitBtn.innerHTML : '';
+
     const setError = (msg) => {
         if (!errorBox) return;
         errorBox.textContent = msg || '';
         errorBox.classList.toggle('hidden', !msg);
+        if (msg) showToast(msg);
+    };
+    const setSuccess = (msg) => {
+        if (!successBox) return;
+        successBox.textContent = msg || '';
+        successBox.classList.toggle('hidden', !msg);
     };
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         setError('');
+        setSuccess('');
         const email = document.getElementById('email-input');
         if (!email.value || !email.checkValidity()) {
             email.focus();
+            setError('Masukkan alamat email yang valid.');
             return;
         }
 
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Mengirim…';
+        }
         showModal('Mengirim softfile...', 'Mohon tunggu sebentar');
 
         try {
@@ -963,8 +1142,11 @@ function initEmailForm() {
             });
             const data = await res.json().catch(() => ({}));
 
-            if (res.ok && data.redirect) {
-                window.location.href = data.redirect;
+            if (res.ok && (data.ok || data.redirect)) {
+                hideModal();
+                setSuccess(data.message || `Softfile dikirim ke ${email.value}.`);
+                showToast(data.message || 'Email berhasil dikirim.', 'success');
+                // Tetap di halaman ini agar pelanggan masih bisa mencetak/mengunduh.
                 return;
             }
 
@@ -973,6 +1155,11 @@ function initEmailForm() {
         } catch (err) {
             hideModal();
             setError('Koneksi bermasalah. Coba lagi.');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = submitLabel;
+            }
         }
     });
 }
@@ -991,9 +1178,12 @@ function initPrint() {
             sheet.innerHTML = '';
 
             // Setiap frame dicetak sebanyak jumlah (qty) yang dibayar.
+            // Hanya ambil kartu di panel yang tampil; panel filter yang
+            // tersembunyi juga menyimpan kanvas pratinjau.
             document.querySelectorAll('[data-strip-container]').forEach((box) => {
                 const canvas = box.querySelector('[data-strip-canvas]');
                 if (!canvas || !canvas.width || box.classList.contains('hidden')) return;
+                if (box.closest('[data-spa-panel].hidden')) return;
                 const qty = Math.max(1, parseInt(box.dataset.qty || '1', 10) || 1);
                 const src = canvas.toDataURL('image/png');
                 for (let i = 0; i < qty; i++) {
@@ -1029,6 +1219,20 @@ function initPayForm() {
     });
 }
 
+/* ---------------- Selesai: cegah klik ganda ---------------- */
+
+function initFinishForm() {
+    const form = document.querySelector('[data-finish-form]');
+    if (!form) return;
+    form.addEventListener('submit', () => {
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Menyiapkan sesi baru…';
+        }
+    });
+}
+
 /* ---------------- Boot ---------------- */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1043,4 +1247,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initEmailForm();
     initPrint();
     initPayForm();
+    initFinishForm();
 });

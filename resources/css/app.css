@@ -23,6 +23,26 @@
     .tabular-nums {
         font-variant-numeric: tabular-nums;
     }
+
+    .scrollbar-none {
+        scrollbar-width: none;
+    }
+
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* Hormati preferensi pengguna yang tidak suka animasi berulang. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 /* ---------- Cetak: hanya lembar #print-sheet yang tampil ---------- */

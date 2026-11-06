@@ -22,7 +22,7 @@ class PaymentLogTest extends TestCase
     }
 
     /** Jalankan alur kiosk sampai tepat sebelum konfirmasi pembayaran. */
-    private function flowUntilPayment(string $metode = 'qris'): void
+    private function flowUntilPayment(): void
     {
         Frame::create([
             'name' => 'K-pop Frame', 'slug' => 'kpop', 'category' => 'K-pop', 'photo_count' => 3, 'price' => 30000,
@@ -34,24 +34,22 @@ class PaymentLogTest extends TestCase
         ]);
 
         $this->post('/mulai');
+        $this->post('/metode', ['metode' => 'qris']);
         $this->post('/frame', ['cart' => ['kpop' => 2]]);
-        $this->post('/foto', ['photos' => array_map(fn () => $this->photo(), range(1, 3))]);
-        $this->post('/filter', ['filter' => 'asli']);
-        $this->post('/metode', ['metode' => $metode]);
     }
 
     public function test_payment_is_logged_once_with_details(): void
     {
-        $this->flowUntilPayment('cash');
+        $this->flowUntilPayment();
 
-        $this->post('/pembayaran')->assertRedirect('/review');
-        $this->post('/pembayaran')->assertRedirect('/review'); // klik ganda
+        $this->post('/pembayaran')->assertRedirect('/foto');
+        $this->post('/pembayaran')->assertRedirect('/foto'); // klik ganda
 
         $this->assertSame(1, ActivityLog::count());
 
         $log = ActivityLog::first();
         $this->assertSame(ActivityLog::PAYMENT, $log->action);
-        $this->assertSame('cash', $log->payment_method);
+        $this->assertSame('qris', $log->payment_method);
         $this->assertSame(60000, $log->payment_total);
         $this->assertSame(3, $log->payment_photo_count);
         $this->assertStringContainsString('K-pop Frame x2', $log->payment_items_label);
@@ -80,19 +78,24 @@ class PaymentLogTest extends TestCase
         $this->assertFalse(session()->has('paid'));
         $this->assertSame(0, ActivityLog::count());
 
-        $this->post('/pembayaran', ['pin' => '1234'])->assertRedirect('/review');
+        $this->post('/pembayaran', ['pin' => '1234'])->assertRedirect('/foto');
         $this->assertTrue(session()->has('paid'));
         $this->assertSame(1, ActivityLog::count());
     }
 
-    public function test_spa_locks_to_review_after_payment(): void
+    public function test_spa_locks_to_photo_stage_after_payment_and_review_after_photos(): void
     {
         $this->flowUntilPayment();
         $this->post('/pembayaran', ['from_spa' => 1]);
 
+        // Pembayaran sudah masuk: frame tidak boleh diubah lagi.
         $html = $this->get('/spa?step=frame')->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/data-spa-step-dot="foto" data-state="active"/', $html);
 
-        // Panel yang tampil adalah review, bukan frame.
+        $photos = array_map(fn () => $this->photo(), range(1, 3));
+        $this->post('/foto', ['photos' => $photos, 'from_spa' => 1]);
+
+        $html = $this->get('/spa?step=frame')->assertOk()->getContent();
         $this->assertMatchesRegularExpression('/data-spa-step-dot="review" data-state="active"/', $html);
     }
 

@@ -25,7 +25,7 @@
             <p class="text-sm font-medium text-slate-500">Per Metode</p>
             <div class="mt-2 space-y-1.5 text-sm">
                 <p class="flex justify-between"><span class="text-slate-500">QRIS <span class="text-xs text-slate-400">({{ $stats['qris_count'] }})</span></span><span class="font-semibold text-slate-800 tabular-nums">{{ $rp($stats['qris_total']) }}</span></p>
-                <p class="flex justify-between"><span class="text-slate-500">Tunai <span class="text-xs text-slate-400">({{ $stats['cash_count'] }})</span></span><span class="font-semibold text-slate-800 tabular-nums">{{ $rp($stats['cash_total']) }}</span></p>
+                <p class="flex justify-between"><span class="text-slate-500">Voucher <span class="text-xs text-slate-400">({{ $stats['voucher_count'] }})</span></span><span class="font-semibold text-slate-800 tabular-nums">{{ $rp($stats['voucher_total']) }}</span></p>
             </div>
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -85,7 +85,7 @@
                             <td class="px-6 py-3 text-slate-600 whitespace-nowrap">{{ $p->created_at->format('d M Y H:i') }}</td>
                             <td class="px-6 py-3 font-semibold text-slate-700">{{ $p->queue_number ?? '-' }}</td>
                             <td class="px-6 py-3">
-                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $p->payment_method === 'qris' ? 'bg-violet-100 text-violet-700' : 'bg-amber-100 text-amber-700' }}">{{ strtoupper($p->payment_method) }}</span>
+                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $p->payment_method === 'qris' ? 'bg-violet-100 text-violet-700' : ($p->payment_method === 'voucher' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700') }}">{{ strtoupper($p->payment_method) }}</span>
                             </td>
                             <td class="px-6 py-3 text-slate-500 text-xs max-w-xs truncate">{{ $p->payment_items_label }}</td>
                             <td class="px-6 py-3 text-right font-semibold text-slate-800 tabular-nums whitespace-nowrap">{{ $rp($p->payment_total) }}</td>

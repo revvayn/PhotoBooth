@@ -1,17 +1,32 @@
 ﻿<div class="flex-1 min-h-0 flex flex-col">
-    <div class="pb-2 flex items-center justify-between gap-3">
-        <a href="{{ route('spa', ['step' => 'frame']) }}" data-back-btn
-           class="inline-flex items-center gap-1.5 rounded-full bg-white/80 ring-1 ring-rose-100 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-white transition shrink-0">
-            <x-icon name="arrow-left" class="w-4 h-4" /> Ganti Frame
-        </a>
-        <h2 class="font-display font-bold text-2xl">Sesi Foto</h2>
-        <span class="text-sm text-slate-500 text-right">Ambil <strong>{{ $photoCount }} foto</strong> untuk {{ count($items) }} frame</span>
+    <div class="pb-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        @if (($metode ?? '') === 'voucher')
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 ring-1 ring-emerald-200 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-emerald-700 shrink-0">
+                <x-icon name="check" class="w-4 h-4" /> Voucher {{ $voucher['code'] ?? '' }}
+            </span>
+        @else
+            <a href="{{ ($fromSpa ?? true) ? route('spa', ['step' => 'frame']) : route('frame') }}" data-back-btn
+               class="inline-flex items-center gap-1.5 rounded-full bg-white/80 ring-1 ring-rose-100 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-white transition shrink-0">
+                <x-icon name="arrow-left" class="w-4 h-4" /> <span class="hidden sm:inline">Ganti</span> Frame
+            </a>
+        @endif
+        <div class="text-center min-w-0">
+            <h2 class="font-display font-bold text-xl sm:text-2xl leading-none">Sesi Foto</h2>
+            <p class="text-[11px] sm:text-sm text-slate-500 mt-1">
+                Ambil <strong>{{ $photoCount }} foto</strong> untuk {{ count($items) }} frame
+            </p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/80 ring-1 ring-rose-100 px-3 py-2 text-xs font-bold text-slate-600 shrink-0" data-photo-progress-wrap>
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+            <span data-photo-progress>0/{{ $photoCount }}</span>
+        </span>
     </div>
 
     @if (count($items) > 1)
-        <div class="flex flex-wrap gap-2 mb-2" data-frame-tabs role="tablist" aria-label="Pilih frame">
+        <div class="flex flex-wrap gap-1.5 sm:gap-2 mb-2 shrink-0" data-frame-tabs role="tablist" aria-label="Pilih frame">
             @foreach ($items as $index => $item)
                 <button type="button" role="tab" data-frame-tab="{{ $index }}" data-frame-photo-count="{{ $item['photo_count'] }}"
+                        aria-selected="{{ $index === 0 ? 'true' : 'false' }}"
                         class="px-3 py-1.5 rounded-full text-xs font-semibold ring-1 ring-rose-200 transition-all {{ $index === 0 ? 'bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200' : 'text-rose-600 bg-white/80' }}">
                     {{ $item['name'] }}@if ($item['qty'] > 1) <span class="opacity-80">x{{ $item['qty'] }}</span>@endif
                     <span class="ml-1 text-[10px] font-bold opacity-90" data-tab-status>{{ $item['photo_count'] }} foto</span>
@@ -21,58 +36,73 @@
     @endif
 
     <div class="flex-1 min-h-0 flex flex-col sm:flex-row gap-2 items-center sm:items-stretch sm:justify-center">
-    <div class="order-2 sm:order-1 flex sm:flex-col gap-2 overflow-x-auto sm:overflow-hidden shrink-0 w-full sm:w-24 min-h-0 pb-1 sm:pb-0" data-shot-thumbs data-photo-count="{{ $photoCount }}">
-        @php($gi = 0)
-        @foreach ($items as $index => $item)
-            <div class="flex gap-2 flex-1 min-w-0 sm:flex-col sm:w-full sm:flex-1 sm:min-h-0 shrink-0 {{ count($items) > 1 && $index !== 0 ? 'hidden' : '' }}" data-frame-slots="{{ $index }}">
-                @foreach (range(1, $item['photo_count']) as $local)
-                    @php($gidx = $gi++)
-                    <div class="relative rounded-xl overflow-hidden border border-rose-200 h-16 flex-1 min-w-0 sm:h-auto sm:w-full sm:flex-1 sm:min-h-0 bg-white shadow-sm" data-shot-item="{{ $gidx }}">
-                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                            <span class="text-xl leading-none text-rose-300" data-shot-icon><x-icon name="film" class="w-6 h-6" /></span>
-                            <span class="text-[10px] font-semibold text-slate-500 leading-tight">{{ $item['name'] }} {{ $local }}</span>
-                            <span class="text-[10px] text-slate-400 leading-tight" data-shot-status>Menunggu</span>
+        <div class="order-2 sm:order-1 flex sm:flex-col gap-2 overflow-x-auto sm:overflow-hidden shrink-0 w-full sm:w-24 min-h-0 pb-1 sm:pb-0" data-shot-thumbs data-photo-count="{{ $photoCount }}">
+            @php($gi = 0)
+            @foreach ($items as $index => $item)
+                <div class="flex gap-2 flex-1 min-w-0 sm:flex-col sm:w-full sm:flex-1 sm:min-h-0 shrink-0 {{ count($items) > 1 && $index !== 0 ? 'hidden' : '' }}" data-frame-slots="{{ $index }}">
+                    @foreach (range(1, $item['photo_count']) as $local)
+                        @php($gidx = $gi++)
+                        <div class="relative rounded-xl overflow-hidden border border-rose-200 h-16 flex-1 min-w-0 sm:h-auto sm:w-full sm:flex-1 sm:min-h-0 bg-white shadow-sm" data-shot-item="{{ $gidx }}">
+                            <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-1">
+                                <span class="text-xl leading-none text-rose-300" data-shot-icon><x-icon name="film" class="w-6 h-6" /></span>
+                                <span class="text-[10px] font-semibold text-slate-500 leading-tight truncate max-w-full">{{ $item['name'] }} {{ $local }}</span>
+                                <span class="text-[10px] text-slate-400 leading-tight" data-shot-status>Menunggu</span>
+                            </div>
+                            <img class="hidden w-full h-full object-cover" data-shot-img alt="Foto {{ $local }}">
+                            <button type="button" data-retake="{{ $gidx }}" class="hidden absolute bottom-1 inset-x-0 mx-auto w-fit text-[10px] font-semibold bg-slate-800/80 text-white backdrop-blur px-2 py-1 rounded-full hover:bg-slate-800 transition">
+                                Ulangi
+                            </button>
                         </div>
-                        <img class="hidden w-full h-full object-cover" data-shot-img alt="Foto {{ $local }}">
-                        <button type="button" data-retake="{{ $gidx }}" class="hidden absolute bottom-1 inset-x-0 mx-auto w-fit text-[10px] font-semibold bg-slate-800/80 text-white backdrop-blur px-2 py-1 rounded-full hover:bg-slate-800 transition">
-                            Ulangi
-                        </button>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
+            @endforeach
+        </div>
+
+        <div class="order-1 sm:order-2 relative isolate rounded-[2rem] overflow-hidden bg-slate-900 shadow-2xl shrink-0 w-full aspect-square sm:w-auto sm:h-full sm:aspect-square sm:max-w-[720px] min-h-0 ring-1 ring-white/20">
+            <video id="camera" class="w-full h-full object-cover hidden" autoplay playsinline muted></video>
+
+            <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/70 text-white hidden" data-camera-loading>
+                <span class="animate-spin w-10 h-10 border-4 border-white/30 border-t-white rounded-full mb-3"></span>
+                <p class="text-sm font-medium">Mempersiapkan kamera...</p>
             </div>
-        @endforeach
+
+            <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/85 text-white hidden" data-camera-error>
+                <span class="mb-3 text-slate-500"><x-icon name="camera" class="w-12 h-12" /></span>
+                <p class="font-semibold px-6 text-center" data-error-title>Kamera tidak ditemukan</p>
+                <p class="text-sm text-slate-300 mt-1 px-8 text-center">Izinkan akses kamera atau pastikan perangkatmu memiliki webcam.</p>
+                <button type="button" data-camera-retry class="mt-3 rounded-full bg-white/15 hover:bg-white/25 ring-1 ring-white/25 px-4 py-2 text-xs font-semibold transition">
+                    Coba Lagi
+                </button>
+            </div>
+
+            <div class="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/40 hidden" data-countdown-overlay>
+                <span class="font-display font-extrabold text-[6rem] sm:text-[9rem] leading-none text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)] tabular-nums" data-countdown-num>3</span>
+            </div>
+
+            <div class="absolute inset-0 z-10 bg-white hidden" data-flash-overlay></div>
+
+            {{-- Panduan singkat di atas preview kamera. --}}
+            <div class="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center p-3">
+                <span class="rounded-full bg-slate-900/45 backdrop-blur px-3 py-1 text-[11px] sm:text-xs font-medium text-white/90">
+                    Hadapkan wajah ke kamera &amp; tersenyum
+                </span>
+            </div>
+
+            <div class="absolute inset-x-0 bottom-0 p-3 flex flex-col items-center gap-2">
+                <button type="button" data-shoot-btn class="px-8 sm:px-10 py-3 rounded-full bg-white text-slate-900 font-display font-bold text-base sm:text-lg shadow-xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/50">
+                    <x-icon name="camera" class="w-5 h-5 inline-block align-middle" /> Mulai Foto
+                </button>
+
+                <a href="{{ route('spa', ['step' => 'review']) }}" data-next-btn class="hidden w-full max-w-sm text-center rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold px-6 py-3 shadow-lg hover:scale-105 active:scale-95 transition-transform">
+                    Lanjut ke Hasil Foto
+                    <x-icon name="arrow-right" class="w-4 h-4 inline-block align-middle" />
+                </a>
+            </div>
+        </div>
     </div>
 
-    <div class="order-1 sm:order-2 relative isolate rounded-[2rem] overflow-hidden bg-slate-900 shadow-2xl shrink-0 w-full aspect-square sm:w-auto sm:h-full sm:aspect-square sm:max-w-[720px] min-h-0">
-        <video id="camera" class="w-full h-full object-cover hidden" autoplay playsinline muted></video>
-
-        <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/70 text-white hidden" data-camera-loading>
-            <span class="animate-spin w-10 h-10 border-4 border-white/30 border-t-white rounded-full mb-3"></span>
-            <p class="text-sm font-medium">Mempersiapkan kamera...</p>
-        </div>
-
-        <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/85 text-white hidden" data-camera-error>
-            <span class="mb-3 text-slate-500"><x-icon name="camera" class="w-12 h-12" /></span>
-            <p class="font-semibold" data-error-title>Kamera tidak ditemukan</p>
-            <p class="text-sm text-slate-300 mt-1 px-8 text-center">Izinkan akses kamera atau pastikan perangkatmu memiliki webcam.</p>
-        </div>
-
-        <div class="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/40 hidden" data-countdown-overlay>
-            <span class="font-display font-extrabold text-[6rem] sm:text-[9rem] leading-none text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)] tabular-nums" data-countdown-num>3</span>
-        </div>
-
-        <div class="absolute inset-0 z-10 bg-white hidden" data-flash-overlay></div>
-
-        <div class="absolute inset-x-0 bottom-0 p-3 flex flex-col items-center gap-2">
-            <button type="button" data-shoot-btn class="px-10 py-3 rounded-full bg-white text-slate-900 font-display font-bold text-lg shadow-xl hover:scale-105 transition-transform">
-                <x-icon name="camera" class="w-5 h-5 inline-block align-middle" /> Mulai Foto
-            </button>
-
-            <a href="{{ route('spa', ['step' => 'filter']) }}" data-next-btn class="hidden w-full max-w-sm text-center rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold px-6 py-3 shadow-lg hover:scale-105 transition-transform">
-                Lanjut
-            </a>
-        </div>
+    <div class="flex flex-col items-center gap-1.5 pt-1 shrink-0">
+        <p class="hidden text-sm font-medium text-red-600 text-center" data-photo-error aria-live="assertive"></p>
+        <div class="flex flex-wrap justify-center gap-2" data-camera-switch></div>
     </div>
-    </div>
-    <div class="flex flex-wrap justify-center gap-2 pt-1 shrink-0" data-camera-switch></div>
 </div>

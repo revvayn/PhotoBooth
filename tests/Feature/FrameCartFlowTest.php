@@ -42,12 +42,16 @@ class FrameCartFlowTest extends TestCase
     {
         $this->post('/mulai');
 
+        $this->post('/metode', ['metode' => 'qris'])->assertRedirect('/frame');
         $this->get('/frame')->assertOk()->assertSee('data-frame-option')->assertSee('data-cart-total');
 
         // cart: 2x kpop + 1x neon
-        $this->post('/frame', ['cart' => ['kpop' => 2, 'neon' => 1]])->assertRedirect('/foto');
+        $this->post('/frame', ['cart' => ['kpop' => 2, 'neon' => 1]])->assertRedirect('/pembayaran');
 
         $this->assertSame(['kpop' => 2, 'neon' => 1], session('cart'));
+
+        $this->get('/pembayaran')->assertOk()->assertSee('90.000');
+        $this->post('/pembayaran')->assertRedirect('/foto');
 
         $foto = $this->get('/foto');
         $foto->assertOk();
@@ -60,20 +64,12 @@ class FrameCartFlowTest extends TestCase
         // 7 foto: 3 kpop + 4 neon
         $photos = array_map(fn () => $this->photo(), range(1, 7));
         $this->post('/foto', ['photos' => $photos])
-            ->assertJsonFragment(['redirect' => 'http://localhost/filter']);
+            ->assertJsonFragment(['redirect' => 'http://localhost/review']);
 
         $saved = session('photos');
         $this->assertCount(3, $saved['kpop']);
         $this->assertCount(4, $saved['neon']);
 
-        $this->post('/filter', ['filter' => 'asli'])->assertRedirect('/metode');
-
-        $this->get('/metode')->assertOk()->assertSee('90.000');
-
-        $this->post('/metode', ['metode' => 'qris'])->assertRedirect('/pembayaran');
-        $this->get('/pembayaran')->assertOk()->assertSee('90.000');
-
-        $this->post('/pembayaran')->assertRedirect('/review');
         $this->get('/review')->assertOk()->assertSee('data-strip-canvas');
         $this->assertStringContainsString('K-pop', $this->get('/review')->getContent());
         $this->assertStringContainsString('Neon', $this->get('/review')->getContent());
@@ -84,23 +80,25 @@ class FrameCartFlowTest extends TestCase
     public function test_cart_price_is_per_frame_qty(): void
     {
         $this->post('/mulai');
+        $this->post('/metode', ['metode' => 'qris']);
 
-        $this->post('/frame', ['cart' => ['kpop' => 3, 'neon' => 2]])->assertRedirect('/foto');
+        $this->post('/frame', ['cart' => ['kpop' => 3, 'neon' => 2]])->assertRedirect('/pembayaran');
+
+        $this->get('/pembayaran')->assertSee('150.000');
+        $this->post('/pembayaran')->assertRedirect('/foto');
 
         $photos = array_map(fn () => $this->photo(), range(1, 7));
-        $this->post('/foto', ['photos' => $photos])->assertJsonPath('redirect', 'http://localhost/filter');
+        $this->post('/foto', ['photos' => $photos])->assertJsonPath('redirect', 'http://localhost/review');
 
-        $this->post('/filter', ['filter' => 'asli']);
-
-        $this->get('/metode')->assertSee('150.000');
-        $this->post('/metode', ['metode' => 'cash']);
-        $this->get('/pembayaran')->assertSee('150.000');
+        $this->get('/review')->assertSee('150.000');
     }
 
     public function test_spa_foto_countdown_overlay_is_not_the_panel(): void
     {
         $this->post('/mulai');
+        $this->post('/metode', ['metode' => 'qris', 'from_spa' => 1]);
         $this->post('/frame', ['cart' => ['kpop' => 1], 'from_spa' => 1]);
+        $this->post('/pembayaran', ['from_spa' => 1]);
 
         $html = $this->get('/spa?step=foto')->assertOk()->getContent();
 
@@ -112,22 +110,36 @@ class FrameCartFlowTest extends TestCase
         );
     }
 
-    public function test_spa_foto_store_redirects_to_filter_panel(): void
+    public function test_spa_foto_store_redirects_to_review_panel(): void
     {
         $this->post('/mulai');
-        $this->post('/frame', ['cart' => ['kpop' => 1]]);
+        $this->post('/metode', ['metode' => 'qris', 'from_spa' => 1]);
+        $this->post('/frame', ['cart' => ['kpop' => 1], 'from_spa' => 1]);
+        $this->post('/pembayaran', ['from_spa' => 1]);
 
         $photos = array_map(fn () => $this->photo(), range(1, 3));
         $this->post('/foto', ['photos' => $photos, 'from_spa' => 1])
-            ->assertJsonPath('redirect', 'http://localhost/spa?step=filter');
+            ->assertJsonPath('redirect', 'http://localhost/spa?step=review');
 
-        $this->assertSame('filter', session('spa_step'));
+        $this->assertSame('review', session('spa_step'));
     }
 
     public function test_empty_cart_is_rejected(): void
     {
         $this->post('/mulai');
+        $this->post('/metode', ['metode' => 'qris']);
 
         $this->post('/frame', ['cart' => []])->assertSessionHasErrors('cart');
+    }
+
+    public function test_spa_starts_at_payment_method_and_has_no_filter_step(): void
+    {
+        $html = $this->get('/spa')->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/data-spa-step-dot="metode" data-state="active"/', $html);
+        $this->assertStringNotContainsString('data-spa-step-dot="filter"', $html);
+        $this->assertStringNotContainsString('data-spa-panel="filter"', $html);
+        $this->assertStringContainsString('data-metode-option="qris"', $html);
+        $this->assertStringContainsString('data-metode-option="voucher"', $html);
     }
 }

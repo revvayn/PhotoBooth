@@ -31,8 +31,8 @@
             <p class="text-2xl font-bold text-slate-800 mt-1 tabular-nums">{{ $rp($summary['qris']) }}</p>
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <p class="text-xs font-medium text-slate-500">Tunai</p>
-            <p class="text-2xl font-bold text-slate-800 mt-1 tabular-nums">{{ $rp($summary['cash']) }}</p>
+            <p class="text-xs font-medium text-slate-500">Voucher</p>
+            <p class="text-2xl font-bold text-slate-800 mt-1 tabular-nums">{{ $rp($summary['voucher']) }}</p>
         </div>
     </div>
 
@@ -50,7 +50,8 @@
             <select name="metode" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-400">
                 <option value="">Semua</option>
                 <option value="qris" @selected($filters['metode'] === 'qris')>QRIS</option>
-                <option value="cash" @selected($filters['metode'] === 'cash')>Tunai</option>
+                <option value="voucher" @selected($filters['metode'] === 'voucher')>Voucher</option>
+                <option value="cash" @selected($filters['metode'] === 'cash')>Tunai (lama)</option>
             </select>
         </div>
         <div>
@@ -93,7 +94,7 @@
                             </td>
                             <td class="px-6 py-3 font-semibold text-slate-700">{{ $p->queue_number ?? '-' }}</td>
                             <td class="px-6 py-3">
-                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $p->payment_method === 'qris' ? 'bg-violet-100 text-violet-700' : 'bg-amber-100 text-amber-700' }}">{{ strtoupper($p->payment_method) }}</span>
+                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $p->payment_method === 'qris' ? 'bg-violet-100 text-violet-700' : ($p->payment_method === 'voucher' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700') }}">{{ strtoupper($p->payment_method) }}</span>
                             </td>
                             <td class="px-6 py-3 text-slate-500 text-xs">
                                 {{ $p->payment_items_label }}

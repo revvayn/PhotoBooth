@@ -41,6 +41,7 @@ class LogController extends Controller
                 'revenue' => $sum($payments),
                 'qris' => $sum($payments->filter(fn ($p) => $p->payment_method === 'qris')),
                 'cash' => $sum($payments->filter(fn ($p) => $p->payment_method === 'cash')),
+                'voucher' => $sum($payments->filter(fn ($p) => $p->payment_method === 'voucher')),
             ],
         ]);
     }
@@ -72,7 +73,7 @@ class LogController extends Controller
     {
         $data = $request->validate([
             'q' => ['nullable', 'string', 'max:50'],
-            'metode' => ['nullable', 'in:qris,cash'],
+            'metode' => ['nullable', 'in:qris,cash,voucher'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date'],
             'sort' => ['nullable', 'in:created_at,queue_number,metode,total'],

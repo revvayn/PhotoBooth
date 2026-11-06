@@ -31,6 +31,8 @@ class DashboardController extends Controller
             'qris_count' => $byMethod($payments, 'qris')->count(),
             'cash_total' => $sum($byMethod($payments, 'cash')),
             'cash_count' => $byMethod($payments, 'cash')->count(),
+            'voucher_total' => $sum($byMethod($payments, 'voucher')),
+            'voucher_count' => $byMethod($payments, 'voucher')->count(),
             'photos_total' => (int) $payments->sum(fn ($p) => $p->payment_photo_count),
         ];
 

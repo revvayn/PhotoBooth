@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\Admin\AppearanceController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FrameController;
 use App\Http\Controllers\Admin\LogController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\PhotoboothController;
 use App\Http\Middleware\AdminAuth;
 use Illuminate\Support\Facades\Route;
@@ -47,8 +49,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(AdminAuth::class)->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::resource('frames', FrameController::class)->except(['show']);
+        Route::resource('vouchers', VoucherController::class)->except(['show']);
         Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
         Route::get('/logs/export', [LogController::class, 'export'])->name('logs.export');
+        Route::get('/appearance', [AppearanceController::class, 'index'])->name('appearance.index');
+        Route::put('/appearance', [AppearanceController::class, 'update'])->name('appearance.update');
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
     });
