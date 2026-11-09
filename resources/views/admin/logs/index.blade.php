@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Log Pembayaran - Photobooth Admin')
+@section('title', 'Log Pembayaran - '.\App\Support\Brand::get()['name'].' Admin')
 @section('page-title', 'Log Pembayaran')
 
 @php
@@ -18,26 +18,26 @@
 <div class="space-y-6">
     {{-- Ringkasan sesuai filter --}}
     <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
             <p class="text-xs font-medium text-slate-500">Transaksi</p>
             <p class="text-2xl font-bold text-slate-800 mt-1">{{ $summary['count'] }}</p>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
             <p class="text-xs font-medium text-slate-500">Total Pendapatan</p>
             <p class="text-2xl font-bold text-rose-600 mt-1 tabular-nums">{{ $rp($summary['revenue']) }}</p>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
             <p class="text-xs font-medium text-slate-500">QRIS</p>
             <p class="text-2xl font-bold text-slate-800 mt-1 tabular-nums">{{ $rp($summary['qris']) }}</p>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
             <p class="text-xs font-medium text-slate-500">Voucher</p>
             <p class="text-2xl font-bold text-slate-800 mt-1 tabular-nums">{{ $rp($summary['voucher']) }}</p>
         </div>
     </div>
 
     {{-- Filter --}}
-    <form method="GET" action="{{ route('admin.logs.index') }}" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-wrap items-end gap-3">
+    <form method="GET" action="{{ route('admin.logs.index') }}" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 flex flex-wrap items-end gap-3">
         <input type="hidden" name="sort" value="{{ $filters['sort'] }}">
         <input type="hidden" name="dir" value="{{ $filters['dir'] }}">
         <div>
@@ -73,7 +73,7 @@
     </form>
 
     {{-- Tabel --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>

@@ -19,7 +19,9 @@ class SettingController extends Controller
             'cam_width' => Setting::get('cam_width', '1024'),
             'cam_height' => Setting::get('cam_height', '768'),
             'countdown' => Setting::get('countdown', '3'),
-            'session_seconds' => (string) ((int) (Setting::get('session_seconds', '600') ?: 600) / 60),
+            'session_selection_minutes' => (string) ((int) (Setting::get('session_selection_seconds', '600') ?: 600) / 60),
+            'session_photo_minutes' => (string) ((int) (Setting::get('session_photo_seconds', '300') ?: 300) / 60),
+            'session_review_minutes' => (string) ((int) (Setting::get('session_review_seconds', '300') ?: 300) / 60),
             'has_cashier_pin' => ! empty(Setting::get('cashier_pin_hash')),
             'mail_host' => Setting::get('mail_host', ''),
             'mail_port' => Setting::get('mail_port', '587'),
@@ -44,7 +46,9 @@ class SettingController extends Controller
             'cam_width' => 'required|in:640,1024,1280,1920',
             'cam_height' => 'required|in:480,768,720,1080',
             'countdown' => 'required|integer|min:3|max:10',
-            'session_minutes' => 'required|integer|min:2|max:60',
+            'session_selection_minutes' => 'required|integer|min:1|max:60',
+            'session_photo_minutes' => 'required|integer|min:1|max:60',
+            'session_review_minutes' => 'required|integer|min:1|max:60',
             'cashier_pin' => 'nullable|digits_between:4,8',
             'remove_cashier_pin' => 'nullable|boolean',
             'mail_host' => 'nullable|string|max:255',
@@ -57,7 +61,12 @@ class SettingController extends Controller
         ]);
 
         // Nilai khusus diproses terpisah dari loop generik di bawah.
-        Setting::set('session_seconds', (string) ((int) $data['session_minutes'] * 60));
+        Setting::set('session_selection_seconds', (string) ((int) $data['session_selection_minutes'] * 60));
+        Setting::set('session_photo_seconds', (string) ((int) $data['session_photo_minutes'] * 60));
+        Setting::set('session_review_seconds', (string) ((int) $data['session_review_minutes'] * 60));
+
+        // Kompatibilitas lama: session_seconds tetap diisi berdasarkan selection.
+        Setting::set('session_seconds', (string) ((int) $data['session_selection_minutes'] * 60));
 
         if ($request->boolean('remove_cashier_pin')) {
             Setting::set('cashier_pin_hash', '');
@@ -70,7 +79,7 @@ class SettingController extends Controller
             unset($data['mail_password']);
         }
 
-        unset($data['session_minutes'], $data['cashier_pin'], $data['remove_cashier_pin'], $data['qris_image'], $data['remove_qris_image']);
+        unset($data['session_selection_minutes'], $data['session_photo_minutes'], $data['session_review_minutes'], $data['cashier_pin'], $data['remove_cashier_pin'], $data['qris_image'], $data['remove_qris_image']);
 
         foreach ($data as $key => $value) {
             Setting::set($key, (string) ($value ?? ''));

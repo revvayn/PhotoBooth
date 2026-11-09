@@ -48,6 +48,7 @@ class FrameController extends Controller
         $validated['is_active'] = $request->boolean('is_active', false);
         $validated['sort_order'] = $request->integer('sort_order', 0);
         $validated['price'] = $validated['price'] ?? 30000;
+        $validated['category'] = $validated['category'] ?? 'Umum';
         unset($validated['frame_image']);
 
         $frame = Frame::create($validated);
@@ -88,6 +89,7 @@ class FrameController extends Controller
         $validated['is_active'] = $request->boolean('is_active', false);
         $validated['sort_order'] = $request->integer('sort_order', 0);
         $validated['price'] = $validated['price'] ?? 30000;
+        $validated['category'] = $validated['category'] ?? 'Umum';
         unset($validated['frame_image']);
 
         $frame->update($validated);

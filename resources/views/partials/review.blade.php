@@ -1,11 +1,12 @@
 <div class="flex-1 min-h-0 flex flex-col items-center">
+    @php($brand = $brand ?? \App\Support\Brand::get())
     <div class="text-center mb-2 sm:mb-3">
         <div class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-100 mb-2">
             <x-icon name="check" class="w-3.5 h-3.5" />
             {{ ($metode ?? '') === 'voucher' ? 'Voucher terverifikasi' : 'Pembayaran diterima' }}
         </div>
-        <h2 class="font-display font-bold text-xl sm:text-2xl">Fotomu Sudah Jadi!</h2>
-        <p class="text-slate-500 text-xs sm:text-sm mt-0.5">Cetak, unduh, atau kirim hasilnya ke email</p>
+        <h2 class="font-display font-bold text-xl sm:text-2xl">{{ $brand['review_title'] }}</h2>
+        <p class="text-slate-500 text-xs sm:text-sm mt-0.5">{{ $brand['review_subtitle'] }}</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-[1fr_340px] gap-4 sm:gap-5 w-full max-w-4xl items-start">
@@ -88,7 +89,7 @@
             <form method="POST" action="{{ route('selesai.store') }}" data-finish-form>
                 @csrf
                 <button type="submit" class="w-full rounded-full bg-white ring-1 ring-rose-200 text-rose-600 font-semibold py-3 hover:bg-rose-50 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400">
-                    Selesai &amp; Sesi Baru
+                    {{ $brand['finish_label'] }}
                 </button>
             </form>
         </div>

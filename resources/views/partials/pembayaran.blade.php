@@ -1,11 +1,12 @@
 <div class="flex-1 min-h-0 flex flex-col">
+    @php($brand = $brand ?? \App\Support\Brand::get())
     <div class="text-center mb-2">
         <div class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700 ring-1 ring-amber-100 mb-2">
             <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
             Menunggu pembayaran
         </div>
-        <h2 class="font-display font-bold text-2xl">Konfirmasi QRIS</h2>
-        <p class="text-slate-500 text-sm mt-0.5">Bayar sekarang, lalu lanjut ke sesi foto.</p>
+        <h2 class="font-display font-bold text-2xl">{{ $brand['payment_title'] }}</h2>
+        <p class="text-slate-500 text-sm mt-0.5">{{ $brand['payment_subtitle'] }}</p>
     </div>
 
     <div class="flex flex-col items-center justify-center flex-1 min-h-0">
@@ -23,7 +24,7 @@
             <p class="text-xs text-slate-500">{{ $merchant }} &middot; NMID {{ $nmid }}</p>
             <p class="text-sm text-slate-400 mt-1.5">Antrian <span class="font-bold text-rose-500">{{ $queue }}</span></p>
             <p class="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-500 leading-snug">
-                Buka aplikasi e-wallet / m-banking, scan QR di atas, lalu tekan konfirmasi.
+                {{ $brand['payment_note'] }}
             </p>
         </div>
 

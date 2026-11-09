@@ -21,14 +21,29 @@ function showToast(message, tone = 'error') {
     if (!box) return;
 
     box.textContent = message;
-    box.classList.toggle('bg-slate-900', tone !== 'success');
-    box.classList.toggle('bg-emerald-600', tone === 'success');
+    box.classList.remove('bg-slate-900', 'bg-emerald-600', 'bg-amber-600', 'bg-red-600');
+    const cls = tone === 'success' ? 'bg-emerald-600'
+        : (tone === 'warning' ? 'bg-amber-600'
+        : (tone === 'error' ? 'bg-red-600' : 'bg-slate-900'));
+    box.classList.add(cls);
     box.classList.remove('hidden');
     box.classList.add('flex', 'items-center');
+    requestAnimationFrame(() => {
+        box.classList.remove('opacity-0', '-translate-y-3');
+        box.classList.add('opacity-100', 'translate-y-0');
+    });
 
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => box.classList.add('hidden'), 4200);
+    toastTimer = setTimeout(() => {
+        box.classList.add('opacity-0', '-translate-y-3');
+        box.classList.remove('opacity-100', 'translate-y-0');
+        setTimeout(() => {
+            box.classList.add('hidden');
+            box.classList.remove('flex', 'items-center');
+        }, 300);
+    }, 4000);
 }
+window.showToast = showToast;
 
 /* ---------------- Session Timer ---------------- */
 
@@ -191,6 +206,7 @@ function initPhotoSession() {
         activeFrame = fIdx;
         slotGroups.forEach((g, i) => g.classList.toggle('hidden', i !== fIdx));
         paintTabs();
+        renderFotoPreview();
     };
 
     const paintTabs = () => {
@@ -391,6 +407,41 @@ function initPhotoSession() {
         }
     };
 
+    const activeFrameIndex = () => {
+        const tab = document.querySelector('[data-frame-tab][aria-selected="true"]');
+        return tab ? parseInt(tab.dataset.frameTab || '0', 10) : 0;
+    };
+
+    const renderFotoPreview = async () => {
+        const canvas = document.querySelector('[data-foto-preview]');
+        if (!canvas) return;
+        const idx = activeFrame;
+        const container = document.querySelector(`[data-frame-slots="${idx}"]`);
+        if (!container) { canvas.classList.add('hidden'); return; }
+        const frameImage = container.dataset.frameImage || null;
+        let slots = [];
+        try { slots = JSON.parse(container.dataset.frameSlotsJson || '[]'); } catch (e) { slots = []; }
+        // collect photos for this frame's slots
+        const allShots = [...document.querySelectorAll('[data-shot-item]')];
+        // map global shot index -> photo dataUrl already in photos[]
+        // slots correspond to first N photos of this frame; find their global indices
+        const frameShotItems = [...container.querySelectorAll('[data-shot-item]')];
+        const framePhotos = frameShotItems.map((it) => {
+            const gidx = parseInt(it.dataset.shotItem, 10);
+            return photos[gidx] || null;
+        });
+        const hasAny = framePhotos.some(Boolean);
+        const hint = document.querySelector('[data-foto-preview-hint]');
+        if (!hasAny) { canvas.classList.add('hidden'); if (hint) hint.classList.remove('hidden'); return; }
+        canvas.classList.remove('hidden');
+        if (hint) hint.classList.add('hidden');
+        try {
+            await buildStripFrame(canvas, framePhotos, 'asli', frameImage, slots && slots.length ? slots : null);
+        } catch (e) {
+            canvas.classList.add('hidden');
+        }
+    };
+
     const setCountdownVisible = (visible) => {
         if (!countdown) return;
         countdown.classList.toggle('hidden', !visible);
@@ -424,6 +475,7 @@ function initPhotoSession() {
         updateSlot(i, dataUrl);
         paintTabs();
         updateNext();
+        renderFotoPreview();
     };
 
     const runShoot = async () => {
@@ -880,7 +932,14 @@ async function loadImages(urls) {
                     const img = new Image();
                     img.onload = () => resolve(img);
                     img.onerror = () => resolve(null);
-                    img.crossOrigin = 'anonymous';
+                    try {
+                        const u = new URL(url, window.location.href);
+                        if (u.origin !== window.location.origin) {
+                            img.crossOrigin = 'anonymous';
+                        }
+                    } catch (e) {
+                        img.crossOrigin = 'anonymous';
+                    }
                     img.src = url;
                 })
         )

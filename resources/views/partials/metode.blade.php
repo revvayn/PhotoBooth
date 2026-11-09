@@ -1,3 +1,4 @@
+@php($brand = $brand ?? \App\Support\Brand::get())
 @php($sel = in_array($metode ?? null, ['qris', 'voucher'], true) ? $metode : 'qris')
 <div class="flex-1 min-h-0 flex flex-col items-center justify-center py-2">
     <div class="w-full max-w-xl text-center mb-4 sm:mb-5">
@@ -5,8 +6,8 @@
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             Langkah 1 &middot; Bayar dulu, lalu foto
         </div>
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-1">Pilih Pembayaran</h2>
-        <p class="text-slate-500 text-sm sm:text-base">Pilih QRIS atau gunakan voucher sebelum memilih frame.</p>
+        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-1">{{ $brand['method_title'] }}</h2>
+        <p class="text-slate-500 text-sm sm:text-base">{{ $brand['method_subtitle'] }}</p>
     </div>
 
     <form method="POST" action="{{ route('metode') }}" class="w-full max-w-xl" data-metode-form>

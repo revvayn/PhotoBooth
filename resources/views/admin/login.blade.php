@@ -4,26 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login - Photobooth Admin</title>
+    @php
+        $brand = \App\Support\Brand::get();
+    @endphp
+    <title>Login - {{ $brand['name'] }} Admin</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Poppins', sans-serif; }
-        h1, h2, h3, h4, h5, h6, .font-heading { font-family: 'Baloo 2', cursive; }
-    </style>
+    @include('partials.fonts', ['brand' => $brand])
+    @include('partials.branding', ['brand' => $brand])
 </head>
-<body class="min-h-screen bg-gradient-to-br from-rose-500 via-pink-500 to-fuchsia-500 flex items-center justify-center p-4">
+<body class="admin-theme min-h-screen bg-gradient-to-br from-rose-500 via-pink-500 to-fuchsia-500 flex items-center justify-center p-4">
 
     <div class="w-full max-w-md">
         <div class="bg-white rounded-2xl shadow-2xl p-8">
             {{-- Logo & Title --}}
             <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl mb-4 shadow-lg">
-                    <span class="text-3xl text-white"><x-icon name="camera" class="w-8 h-8 text-white" /></span>
-                </div>
-                <h1 class="font-heading text-2xl font-bold text-slate-800">Photobooth Admin</h1>
+                <x-brand-mark size="w-16 h-16" rounded="rounded-2xl" icon="w-8 h-8" class="mx-auto mb-4" />
+                <h1 class="font-heading text-2xl font-bold text-slate-800">{{ $brand['name'] }} Admin</h1>
                 <p class="text-slate-500 text-sm mt-1">Masuk ke panel administrasi</p>
             </div>
 
@@ -63,8 +59,9 @@
             </form>
         </div>
 
-        <p class="text-center text-white/60 text-xs mt-6">&copy; {{ date('Y') }} Photobooth Admin Panel</p>
+        <p class="text-center text-white/60 text-xs mt-6">&copy; {{ date('Y') }} {{ $brand['name'] }} Admin Panel</p>
     </div>
 
+    @include('partials.toast')
 </body>
 </html>

@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Frame;
 use App\Models\Setting;
 use App\Models\Voucher;
+use App\Support\Brand;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,11 +28,14 @@ class PhotoboothController extends Controller
         'neon' => 'Neon',
     ];
 
-    /** Durasi sesi sebelum bayar (detik); bisa diubah admin di Pengaturan. */
-    private const DEFAULT_SESSION_SECONDS = 600;
+    /** Durasi default seleksi (metode, frame, pembayaran) sebelum bayar (detik). */
+    private const DEFAULT_SELECTION_SECONDS = 600;
 
-    /** Waktu baru setelah pembayaran: review, kirim email, cetak. */
-    private const AFTER_PAYMENT_SECONDS = 300;
+    /** Durasi default sesi foto setelah pembayaran (detik). */
+    private const DEFAULT_PHOTO_SECONDS = 300;
+
+    /** Durasi default review, cetak, kirim email setelah foto (detik). */
+    private const DEFAULT_REVIEW_SECONDS = 300;
 
     public function welcome(Request $request)
     {
@@ -45,7 +49,7 @@ class PhotoboothController extends Controller
         return view('welcome', [
             'frameCount' => $activeFrames->count(),
             'minPrice' => (int) $activeFrames->min('price'),
-            'durationMinutes' => (int) round($this->sessionSeconds() / 60),
+            'durationMinutes' => (int) round($this->sessionSelectionSeconds() / 60),
         ]);
     }
 
@@ -83,7 +87,7 @@ class PhotoboothController extends Controller
             $queue = '#'.rand(1000, 9999 );
             $request->session()->put('queue', $queue);
             $request->session()->put('started_at', now()->timestamp);
-            $request->session()->put('total_seconds', $this->sessionSeconds());
+            $request->session()->put('total_seconds', $this->sessionSelectionSeconds());
             $this->resetCartSession($request);
         }
 
@@ -164,7 +168,7 @@ class PhotoboothController extends Controller
 
         $request->session()->put('queue', $queue);
         $request->session()->put('started_at', now()->timestamp);
-        $request->session()->put('total_seconds', $this->sessionSeconds());
+        $request->session()->put('total_seconds', $this->sessionSelectionSeconds());
         $request->session()->put('spa_step', 'metode');
 
         $this->resetCartSession($request);
@@ -179,7 +183,7 @@ class PhotoboothController extends Controller
         return view('tutorial', [
             'queue' => session('queue'),
             'step' => 1,
-            'durationMinutes' => (int) round($this->sessionSeconds() / 60),
+            'durationMinutes' => (int) round($this->sessionSelectionSeconds() / 60),
         ]);
     }
 
@@ -255,6 +259,10 @@ class PhotoboothController extends Controller
             return redirect()->route('home');
         }
 
+        // Mulai atau perpanjang timer khusus untuk sesi foto.
+        $request->session()->put('started_at', now()->timestamp);
+        $request->session()->put('total_seconds', $this->sessionPhotoSeconds());
+
         return view('foto', [
             'queue' => session('queue'),
             'items' => $this->cartItems(),
@@ -329,7 +337,7 @@ class PhotoboothController extends Controller
         // Pastikan masih ada waktu untuk review, cetak, unduh, dan kirim email.
         $remaining = $this->remainingSeconds();
         $request->session()->put('started_at', now()->timestamp);
-        $request->session()->put('total_seconds', max($remaining, self::AFTER_PAYMENT_SECONDS));
+        $request->session()->put('total_seconds', max($remaining, $this->sessionReviewSeconds()));
         $request->session()->put('spa_step', 'review');
 
         $redirect = $request->boolean('from_spa')
@@ -465,7 +473,7 @@ class PhotoboothController extends Controller
         // Voucher sudah dibayar di awal; beri sisa waktu yang cukup untuk
         // sesi foto + review tanpa memperpanjang tanpa batas.
         $request->session()->put('started_at', now()->timestamp);
-        $request->session()->put('total_seconds', max($oldRemaining, self::AFTER_PAYMENT_SECONDS));
+        $request->session()->put('total_seconds', max($oldRemaining, $this->sessionReviewSeconds()));
 
         $this->logPayment(0, [
             'voucher_code' => $voucher->code,
@@ -525,10 +533,10 @@ class PhotoboothController extends Controller
 
             $remaining = $this->remainingSeconds();
             $request->session()->put('paid', true);
-            // Pembayaran kini terjadi sebelum sesi foto. Sisakan waktu yang
-            // cukup untuk memotret + review, bukan hanya 5 menit.
+            // Pembayaran kini terjadi sebelum sesi foto. Waktu untuk sesi foto
+            // dan review diatur terpisah di Pengaturan.
             $request->session()->put('started_at', now()->timestamp);
-            $request->session()->put('total_seconds', max($remaining, self::AFTER_PAYMENT_SECONDS));
+            $request->session()->put('total_seconds', max($remaining, $this->sessionReviewSeconds()));
 
             $this->logPayment();
         }
@@ -545,6 +553,10 @@ class PhotoboothController extends Controller
     public function review(Request $request)
     {
         $this->requirePrereq($request, ['paid', 'photos']);
+
+        // Perpanjang timer khusus untuk tahap review, cetak, dan kirim email.
+        $request->session()->put('started_at', now()->timestamp);
+        $request->session()->put('total_seconds', $this->sessionReviewSeconds());
 
         $photos = session('photos', []);
 
@@ -793,32 +805,34 @@ class PhotoboothController extends Controller
      */
     private function flowSteps(string $metode): array
     {
+        $brand = Brand::get();
+
         if ($metode === 'voucher') {
             return [
-                ['key' => 'metode', 'label' => 'Voucher'],
-                ['key' => 'foto', 'label' => 'Foto'],
-                ['key' => 'review', 'label' => 'Selesai'],
+                ['key' => 'metode', 'label' => $brand['step_voucher']],
+                ['key' => 'foto', 'label' => $brand['step_photo']],
+                ['key' => 'review', 'label' => $brand['step_review']],
             ];
         }
 
         if ($metode === 'qris') {
             return [
-                ['key' => 'metode', 'label' => 'Bayar'],
-                ['key' => 'frame', 'label' => 'Frame'],
-                ['key' => 'pembayaran', 'label' => 'Konfirmasi'],
-                ['key' => 'foto', 'label' => 'Foto'],
-                ['key' => 'review', 'label' => 'Selesai'],
+                ['key' => 'metode', 'label' => $brand['step_method']],
+                ['key' => 'frame', 'label' => $brand['step_frame']],
+                ['key' => 'pembayaran', 'label' => $brand['step_payment']],
+                ['key' => 'foto', 'label' => $brand['step_photo']],
+                ['key' => 'review', 'label' => $brand['step_review']],
             ];
         }
 
         // Sebelum metode dipilih, tampilkan alur QRIS (pilihan default) agar
         // stepper tidak berubah panjang saat pelanggan menekan QRIS.
         return [
-            ['key' => 'metode', 'label' => 'Pilih Bayar'],
-            ['key' => 'frame', 'label' => 'Frame'],
-            ['key' => 'pembayaran', 'label' => 'Konfirmasi'],
-            ['key' => 'foto', 'label' => 'Foto'],
-            ['key' => 'review', 'label' => 'Selesai'],
+            ['key' => 'metode', 'label' => $brand['step_choose']],
+            ['key' => 'frame', 'label' => $brand['step_frame']],
+            ['key' => 'pembayaran', 'label' => $brand['step_payment']],
+            ['key' => 'foto', 'label' => $brand['step_photo']],
+            ['key' => 'review', 'label' => $brand['step_review']],
         ];
     }
 
@@ -871,11 +885,42 @@ class PhotoboothController extends Controller
         ]);
     }
 
+    /**
+     * Durasi tahap seleksi (metode, frame, pembayaran) sebelum pembayaran.
+     */
+    private function sessionSelectionSeconds(): int
+    {
+        $seconds = (int) Setting::get('session_selection_seconds', (string) self::DEFAULT_SELECTION_SECONDS);
+
+        return max(60, min(3600, $seconds ?: self::DEFAULT_SELECTION_SECONDS));
+    }
+
+    /**
+     * Durasi sesi foto setelah pembayaran dikonfirmasi.
+     */
+    private function sessionPhotoSeconds(): int
+    {
+        $seconds = (int) Setting::get('session_photo_seconds', (string) self::DEFAULT_PHOTO_SECONDS);
+
+        return max(60, min(3600, $seconds ?: self::DEFAULT_PHOTO_SECONDS));
+    }
+
+    /**
+     * Durasi tahap review, cetak, unduh, dan kirim email setelah foto selesai.
+     */
+    private function sessionReviewSeconds(): int
+    {
+        $seconds = (int) Setting::get('session_review_seconds', (string) self::DEFAULT_REVIEW_SECONDS);
+
+        return max(60, min(3600, $seconds ?: self::DEFAULT_REVIEW_SECONDS));
+    }
+
+    /**
+     * Kompatibilitas lama: durasi seleksi (digunakan welcome dan tutorial).
+     */
     private function sessionSeconds(): int
     {
-        $seconds = (int) Setting::get('session_seconds', (string) self::DEFAULT_SESSION_SECONDS);
-
-        return max(120, min(3600, $seconds ?: self::DEFAULT_SESSION_SECONDS));
+        return $this->sessionSelectionSeconds();
     }
 
     /**
@@ -884,7 +929,7 @@ class PhotoboothController extends Controller
      */
     private function remainingSeconds(): int
     {
-        $total = (int) session('total_seconds', self::DEFAULT_SESSION_SECONDS);
+        $total = (int) session('total_seconds', self::DEFAULT_SELECTION_SECONDS);
         $elapsed = now()->timestamp - (int) session('started_at', now()->timestamp);
 
         return max(0, $total - $elapsed);

@@ -10,7 +10,7 @@
 <div class="flex-1 min-h-0 flex flex-col items-center justify-center text-center py-4">
     <div class="inline-flex items-center gap-2 rounded-full bg-white/70 backdrop-blur px-4 py-1.5 text-xs font-semibold text-rose-600 ring-1 ring-rose-100 shadow-sm mb-5">
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        Siap dipakai &middot; {{ $frameCount ?? 0 }} frame tersedia
+        {{ $brand['welcome_badge'] }} &middot; {{ $frameCount ?? 0 }} frame tersedia
     </div>
 
     <x-brand-mark size="w-24 h-24 sm:w-28 sm:h-28" rounded="rounded-[2rem]" icon="w-14 h-14 sm:w-16 sm:h-16" class="animate-bounce-slow mb-5" />
@@ -26,7 +26,7 @@
         @csrf
         <button type="submit" class="group relative px-14 sm:px-16 py-4 sm:py-5 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white text-xl sm:text-2xl font-display font-bold shadow-xl shadow-rose-300 hover:shadow-2xl hover:scale-105 active:scale-95 transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-300">
             <span class="inline-flex items-center gap-2">
-                Mulai
+                {{ $brand['start_label'] }}
                 <x-icon name="arrow-right" class="w-6 h-6 text-white" />
             </span>
             <span class="absolute inset-0 rounded-full bg-white/20 opacity-0 group-hover:animate-ping-slow group-hover:opacity-100 transition-opacity"></span>

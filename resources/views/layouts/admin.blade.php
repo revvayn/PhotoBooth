@@ -4,17 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Photobooth Admin')</title>
+    @php
+        $brand = \App\Support\Brand::get();
+    @endphp
+    <title>@yield('title', $brand['name'].' Admin')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Poppins', sans-serif; }
-        h1, h2, h3, h4, h5, h6, .font-heading { font-family: 'Baloo 2', cursive; }
-    </style>
+    @include('partials.fonts', ['brand' => $brand])
+    @include('partials.branding', ['brand' => $brand])
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="admin-theme bg-gray-100 min-h-screen">
 
     {{-- Mobile Overlay --}}
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden" onclick="toggleSidebar()"></div>
@@ -24,13 +22,13 @@
         {{-- Logo --}}
         <div class="px-6 py-5 border-b border-slate-700/50">
             <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
-                <span class="text-3xl text-white"><x-icon name="camera" class="w-7 h-7 text-white" /></span>
-                <span class="font-heading text-xl font-bold bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent">Photobooth Admin</span>
+                <x-brand-mark size="w-9 h-9" rounded="rounded-xl" icon="w-5 h-5" />
+                <span class="font-heading text-xl font-bold bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent">{{ $brand['name'] }} Admin</span>
             </a>
         </div>
 
         {{-- Navigation --}}
-        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
             <a href="{{ route('admin.dashboard') }}"
                class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('admin.dashboard') ? 'bg-rose-500/20 text-rose-400 font-medium' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,6 +52,21 @@
                 </svg>
                 <span>Voucher</span>
             </a>
+
+            @if (request()->routeIs('admin.vouchers.index', 'admin.vouchers.create', 'admin.vouchers.edit'))
+                <div class="ml-4 pl-4 border-l border-slate-700/50 space-y-0.5">
+                    <a href="{{ route('admin.vouchers.index', ['type' => 'cash']) }}"
+                       class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 {{ request('type') === 'cash' ? 'bg-rose-500/15 text-rose-400 font-medium' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ request('type') === 'cash' ? 'bg-rose-400' : 'bg-slate-600' }}"></span>
+                        <span>Cash</span>
+                    </a>
+                    <a href="{{ route('admin.vouchers.index', ['type' => 'event']) }}"
+                       class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 {{ request('type') === 'event' ? 'bg-rose-500/15 text-rose-400 font-medium' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ request('type') === 'event' ? 'bg-rose-400' : 'bg-slate-600' }}"></span>
+                        <span>Event</span>
+                    </a>
+                </div>
+            @endif
 
             <a href="{{ route('admin.logs.index') }}"
                class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('admin.logs.*') ? 'bg-rose-500/20 text-rose-400 font-medium' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
@@ -125,18 +138,6 @@
 
         {{-- Page Content --}}
         <main class="p-6">
-            @if(session('success'))
-                <div class="mb-6 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="mb-6 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                    {{ session('error') }}
-                </div>
-            @endif
-
             @yield('content')
         </main>
     </div>
@@ -149,5 +150,6 @@
             overlay.classList.toggle('hidden');
         }
     </script>
+    @include('partials.toast')
 </body>
 </html>

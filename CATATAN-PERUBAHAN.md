@@ -11,7 +11,7 @@ Timpa file di proyekmu dengan file di zip ini (struktur folder sama), lalu:
 - QRIS: pilih frame -> konfirmasi/scan QRIS -> sesi foto. Total mengikuti frame yang dipilih.
 - Voucher: masukkan kode -> frame dan jumlah cetak otomatis -> langsung sesi foto. Pelanggan tidak bisa memilih frame/jumlah lagi.
 - Langkah filter dihapus dari alur dan stepper. Rute lama `/filter` tetap ada sebagai pengalihan agar tautan lama tidak error.
-- Timer sesi tidak lagi ke-reset di tiap langkah (dihitung dari server). Durasi bisa diatur di Admin > Pengaturan.
+- Timer sesi tidak lagi ke-reset di tiap langkah (dihitung dari server). Durasi bisa diatur di Admin > Pengaturan > Sesi & Kasir (2–60 menit).
 - Pembayaran QRIS dilakukan sebelum sesi foto, dan setelah foto selesai pelanggan tetap mendapat waktu untuk cetak/kirim.
 - Tombol Kembali di tiap langkah (Ganti metode, Ganti Frame, Foto Ulang).
 - Kamera hanya menyala di langkah Foto.
@@ -22,13 +22,22 @@ Timpa file di proyekmu dengan file di zip ini (struktur folder sama), lalu:
 - QR invoice memakai nomor antrian yang benar.
 
 ## Admin
-- Voucher: buat/edit/hapus kode, pilih frame + jumlah cetak, batas pemakaian, masa berlaku, dan status aktif.
-- Tampilan: ubah nama brand, tagline, teks sambutan/footer, logo, gambar latar, serta warna utama/sekunder/aksen/gradien kiosk.
-- Warna brand diterapkan lewat CSS variable dan override kelas Tailwind yang sudah ada, jadi tampilan kiosk ikut berubah tanpa mengubah semua komponen.
+- Voucher: buat/edit/hapus kode dengan dua tipe:
+  - **Cash**: satu kode voucher tunggal (perilaku lama).
+  - **Event**: untuk acara seperti pernikahan. Atur nama event, tanggal, jumlah foto per voucher, dan jumlah orang. Sistem otomatis membuat kode voucher unik untuk setiap orang (mis. WEDDING-001, WEDDING-002, dst.).
+- Halaman daftar voucher memiliki sub-menu **Cash** dan **Event** di sidebar tepat di bawah menu Voucher. Menu Voucher sendiri menampilkan semua voucher, sedangkan sub-menu memfilter per tipe.
+- Cetak Invoice dan Cetak Voucher tersedia untuk setiap kode voucher dari halaman daftar voucher. Tampilan cetak dihapuskan sidebar admin agar bersih saat dicetak/di-export ke PDF.
+- Tampilan: kini lebih sederhana, fokus pada identitas brand (nama, tagline, teks sambutan, footer, logo, gambar latar). Warna kini memakai palet default yang konsisten (rose/violet) agar tampilan tetap rapi.
+  - Branding kini ikut diterapkan ke **sidebar & login admin, halaman cetak invoice/voucher, email hasil foto**, serta seluruh panel kiosk (termasuk badge status, tombol, ring, border, shadow, dan gradient).
+  - Pemetaan warna diperluas: rose/pink → primary, emerald/green → success, violet/teal/blue/indigo/sky/cyan → secondary, fuchsia/purple → accent, amber/orange/yellow → warning, red → danger.
 - Log hanya mencatat pembayaran (aktivitas lain, termasuk aksi admin, tidak dicatat lagi).
 - Dashboard: pendapatan hari ini/total, per metode (QRIS/Voucher), grafik 7 hari, pembayaran terbaru.
 - Log Pembayaran: filter (antrian, metode, tanggal), urut kolom, total ringkasan, ekspor CSV.
-- Pengaturan: durasi sesi, PIN kasir; password SMTP tidak lagi tampil di HTML.
+- Pengaturan waktu kini dibagi per tahap di Admin > Pengaturan > Sesi & Kasir:
+  - **Durasi Pilih Metode & Frame** (default 10 menit): waktu untuk memilih metode pembayaran, frame, dan konfirmasi QRIS sebelum waktu habis.
+  - **Durasi Sesi Foto** (default 5 menit): waktu pelanggan untuk mengambil semua foto setelah pembayaran dikonfirmasi.
+  - **Durasi Review & Kirim** (default 5 menit): waktu pelanggan untuk review, cetak, unduh, dan kirim email setelah foto selesai.
+- Pengaturan lama `session_seconds` tetap dipertahankan untuk kompatibilitas dan diisi otomatis berdasarkan durasi pilihan.
 - Login dibatasi 6 percobaan/menit; pesan error bahasa Indonesia.
 - Daftar frame: kolom harga dan urutan.
 

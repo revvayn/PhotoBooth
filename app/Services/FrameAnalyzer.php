@@ -62,6 +62,16 @@ class FrameAnalyzer
 
         $slots = [];
         foreach ($components as $comp) {
+            // Abaikan komponen yang menyentuh tepi gambar: itu latar transparan,
+            // bukan lubang foto.
+            if (! empty($comp['touchesBorder'])) {
+                continue;
+            }
+            // Abaikan komponen yang terlalu besar (mis. latar transparan yang
+            // terkurung) — bukan lubang foto.
+            if ($comp['area'] > (int) ($totalCells * 0.5)) {
+                continue;
+            }
             if ($comp['area'] < $minArea) {
                 continue;
             }
@@ -140,10 +150,15 @@ class FrameAnalyzer
                 $maxX = $x;
                 $minY = $y;
                 $maxY = $y;
+                $touchesBorder = false;
 
                 while ($queue) {
                     [$cx, $cy] = array_pop($queue);
                     $area++;
+
+                    if ($cx === 0 || $cy === 0 || $cx === $cols - 1 || $cy === $rows - 1) {
+                        $touchesBorder = true;
+                    }
 
                     $minX = min($minX, $cx);
                     $maxX = max($maxX, $cx);
@@ -170,6 +185,7 @@ class FrameAnalyzer
                     'w' => $maxX - $minX + 1,
                     'h' => $maxY - $minY + 1,
                     'area' => $area,
+                    'touchesBorder' => $touchesBorder,
                 ];
             }
         }

@@ -9,9 +9,7 @@
     @endphp
     <title>@yield('title', $brand['name'])</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials.fonts', ['brand' => $brand])
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.branding', ['brand' => $brand])
@@ -49,20 +47,6 @@
             </header>
         @endif
 
-        @if (session('expired'))
-            <div class="mb-2 shrink-0 rounded-2xl bg-amber-50 ring-1 ring-amber-200 text-amber-800 text-sm px-4 py-3 flex items-center gap-2">
-                <x-icon name="clock" class="w-5 h-5 shrink-0" />
-                <span>Sesi sebelumnya sudah berakhir. Yuk mulai sesi baru.</span>
-            </div>
-        @endif
-
-        @if (session('finished'))
-            <div class="mb-2 shrink-0 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800 text-sm px-4 py-3 flex items-center gap-2">
-                <x-icon name="check" class="w-5 h-5 shrink-0" />
-                <span>Terima kasih sudah foto di {{ $brand['name'] }}! Sesi baru siap dimulai.</span>
-            </div>
-        @endif
-
         <main class="flex-1 min-h-0 flex flex-col overflow-y-auto">
             @yield('content')
 
@@ -82,9 +66,7 @@
         </footer>
     </div>
 
-    <div class="pointer-events-none fixed inset-x-0 top-3 z-[90] flex justify-center px-4" data-toast-region aria-live="assertive">
-        <div data-toast class="hidden pointer-events-auto max-w-md w-full rounded-2xl bg-slate-900 text-white text-sm font-medium px-4 py-3 shadow-2xl ring-1 ring-white/10"></div>
-    </div>
+    @include('partials.toast')
 
     {{-- Lembar cetak: diisi JS saat tombol Cetak ditekan, hanya tampil di mode print. --}}
     <div id="print-sheet" class="hidden"></div>

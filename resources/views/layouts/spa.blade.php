@@ -10,9 +10,7 @@
     @endphp
     <title>{{ $brand['name'] }} — {{ ucfirst($step ?? 'metode') }}</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials.fonts', ['brand' => $brand])
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.branding', ['brand' => $brand])
@@ -96,26 +94,24 @@
 
         <main class="flex-1 min-h-0 flex flex-col overflow-hidden" data-spa-main>
             <section data-spa-panel="metode" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ $activeKey === 'metode' ? '' : 'hidden' }}">
-                @include('partials.metode', ['step' => 1])
+                @include('partials.metode', ['step' => 1, 'brand' => $brand])
             </section>
             <section data-spa-panel="frame" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ $activeKey === 'frame' ? '' : 'hidden' }}">
-                @include('partials.frame', ['step' => 2])
+                @include('partials.frame', ['step' => 2, 'brand' => $brand])
             </section>
             <section data-spa-panel="pembayaran" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ $activeKey === 'pembayaran' ? '' : 'hidden' }}">
-                @include('partials.pembayaran', ['step' => 3])
+                @include('partials.pembayaran', ['step' => 3, 'brand' => $brand])
             </section>
             <section data-spa-panel="foto" data-cam-width="{{ $cam_width ?? 1024 }}" data-cam-height="{{ $cam_height ?? 768 }}" data-cam-countdown="{{ $countdown ?? 3 }}" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ $activeKey === 'foto' ? '' : 'hidden' }}">
-                @include('partials.foto', ['step' => 4])
+                @include('partials.foto', ['step' => 4, 'brand' => $brand])
             </section>
             <section data-spa-panel="review" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ $activeKey === 'review' ? '' : 'hidden' }}">
-                @include('partials.review', ['step' => 5])
+                @include('partials.review', ['step' => 5, 'brand' => $brand])
             </section>
         </main>
 
         {{-- Notifikasi ringan untuk error/bantuan singkat dari JS. --}}
-        <div class="pointer-events-none fixed inset-x-0 top-3 z-[90] flex justify-center px-4" data-toast-region aria-live="assertive">
-            <div data-toast class="hidden pointer-events-auto max-w-md w-full rounded-2xl bg-slate-900 text-white text-sm font-medium px-4 py-3 shadow-2xl ring-1 ring-white/10"></div>
-        </div>
+        @include('partials.toast')
 
         <div class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm" data-timeout-overlay>
             <div class="bg-white rounded-3xl p-8 text-center max-w-sm mx-4 shadow-2xl">

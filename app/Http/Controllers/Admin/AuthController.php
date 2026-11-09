@@ -29,7 +29,7 @@ class AuthController extends Controller
         if (Auth::guard('auth')->attempt($credentials)) {
             $request->session()->regenerate();
 
-            return redirect()->route('admin.dashboard');
+            return redirect()->route('admin.dashboard')->with('success', 'Login berhasil. Selamat datang!');
         }
 
         return back()->withErrors([
@@ -44,6 +44,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('admin.login');
+        return redirect()->route('admin.login')->with('success', 'Logout berhasil.');
     }
 }

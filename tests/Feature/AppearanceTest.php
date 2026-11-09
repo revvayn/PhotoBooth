@@ -38,13 +38,11 @@ class AppearanceTest extends TestCase
             ->assertRedirect();
 
         $this->assertSame('Momen Kita', Setting::get('brand_name'));
-        $this->assertSame('#112233', Setting::get('brand_primary'));
 
         $this->get('/')
             ->assertOk()
             ->assertSee('Momen Kita')
-            ->assertSee('Selamat datang di Momen Kita.')
-            ->assertSee('--brand-primary: #112233', false);
+            ->assertSee('Selamat datang di Momen Kita.');
     }
 
     public function test_logo_upload_and_removal(): void
@@ -69,14 +67,25 @@ class AppearanceTest extends TestCase
         Storage::disk('public')->assertMissing($path);
     }
 
-    public function test_invalid_brand_color_is_rejected(): void
+    public function test_extended_appearance_settings_apply_to_kiosk_and_admin(): void
     {
         $admin = User::factory()->create();
 
         $this->actingAs($admin, 'auth')
-            ->put('/admin/appearance', $this->payload(['brand_primary' => 'merah']))
-            ->assertSessionHasErrors('brand_primary');
+            ->put('/admin/appearance', $this->payload())
+            ->assertRedirect();
 
-        $this->assertNull(Setting::get('brand_primary'));
+        $this->get('/spa')
+            ->assertOk()
+            ->assertSee('Momen Kita');
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Momen Kita');
+
+        $this->actingAs($admin, 'auth')
+            ->get('/admin/appearance')
+            ->assertOk()
+            ->assertSee('Identitas Brand');
     }
 }

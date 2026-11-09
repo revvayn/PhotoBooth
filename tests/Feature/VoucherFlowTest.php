@@ -142,6 +142,17 @@ class VoucherFlowTest extends TestCase
         $this->get('/admin/vouchers/create')->assertOk()->assertSee('K-pop Frame');
         $this->get('/admin/vouchers/'.$voucher->id.'/edit')->assertOk()->assertSee('PB-TEST');
         $this->get('/admin/appearance')->assertOk()->assertSee('Identitas Brand');
+
+        $this->get('/admin/vouchers/'.$voucher->id.'/print-invoice')
+            ->assertOk()
+            ->assertSee('INVOICE')
+            ->assertSee('Voucher Test')
+            ->assertSee('id="print-sheet"', false);
+        $this->get('/admin/vouchers/'.$voucher->id.'/print-voucher')
+            ->assertOk()
+            ->assertSee('PB-TEST')
+            ->assertSee('Cara Penggunaan')
+            ->assertSee('id="print-sheet"', false);
     }
 
     public function test_admin_can_create_voucher_with_frame_quantities(): void
@@ -150,6 +161,7 @@ class VoucherFlowTest extends TestCase
 
         $this->actingAs($admin, 'auth')
             ->post('/admin/vouchers', [
+                'type' => 'cash',
                 'name' => 'Voucher Event',
                 'code' => 'pb-event',
                 'description' => 'Event kantor',
@@ -166,6 +178,6 @@ class VoucherFlowTest extends TestCase
         $this->assertSame(5, $voucher->max_uses);
         $this->assertTrue($voucher->expires_at->isEndOfDay());
         $this->assertTrue($voucher->isUsable());
-        $this->assertTrue($voucher->is_active);
+        $this->assertSame('cash', $voucher->type);
     }
 }

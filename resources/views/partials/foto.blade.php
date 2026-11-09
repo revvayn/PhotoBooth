@@ -1,33 +1,39 @@
-﻿<div class="flex-1 min-h-0 flex flex-col">
-    <div class="pb-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
-        @if (($metode ?? '') === 'voucher')
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 ring-1 ring-emerald-200 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-emerald-700 shrink-0">
-                <x-icon name="check" class="w-4 h-4" /> Voucher {{ $voucher['code'] ?? '' }}
-            </span>
-        @else
-            <a href="{{ ($fromSpa ?? true) ? route('spa', ['step' => 'frame']) : route('frame') }}" data-back-btn
-               class="inline-flex items-center gap-1.5 rounded-full bg-white/80 ring-1 ring-rose-100 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-white transition shrink-0">
-                <x-icon name="arrow-left" class="w-4 h-4" /> <span class="hidden sm:inline">Ganti</span> Frame
-            </a>
-        @endif
+﻿<div class="flex-1 min-h-0 flex flex-col gap-3">
+    @php($brand = $brand ?? \App\Support\Brand::get())
+    {{-- Header --}}
+    <div class="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div class="flex items-center gap-2">
+            @if (($metode ?? '') === 'voucher')
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 ring-1 ring-emerald-200 px-3 py-1.5 text-xs sm:text-sm font-semibold text-emerald-700">
+                    <x-icon name="check" class="w-4 h-4" /> Voucher {{ $voucher['code'] ?? '' }}
+                </span>
+            @else
+                <a href="{{ ($fromSpa ?? true) ? route('spa', ['step' => 'frame']) : route('frame') }}" data-back-btn
+                   class="inline-flex items-center gap-1.5 rounded-full bg-white/80 ring-1 ring-rose-100 px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-white transition">
+                    <x-icon name="arrow-left" class="w-4 h-4" /> <span class="hidden sm:inline">Ganti Frame</span>
+                </a>
+            @endif
+        </div>
+
         <div class="text-center min-w-0">
-            <h2 class="font-display font-bold text-xl sm:text-2xl leading-none">Sesi Foto</h2>
+            <h2 class="font-display font-bold text-xl sm:text-2xl leading-none">{{ $brand['photo_title'] }}</h2>
             <p class="text-[11px] sm:text-sm text-slate-500 mt-1">
                 Ambil <strong>{{ $photoCount }} foto</strong> untuk {{ count($items) }} frame
             </p>
         </div>
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/80 ring-1 ring-rose-100 px-3 py-2 text-xs font-bold text-slate-600 shrink-0" data-photo-progress-wrap>
+
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/80 ring-1 ring-rose-100 px-3 py-1.5 text-xs font-bold text-slate-600 shrink-0 self-center" data-photo-progress-wrap>
             <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
             <span data-photo-progress>0/{{ $photoCount }}</span>
         </span>
     </div>
 
     @if (count($items) > 1)
-        <div class="flex flex-wrap gap-1.5 sm:gap-2 mb-2 shrink-0" data-frame-tabs role="tablist" aria-label="Pilih frame">
+        <div class="shrink-0 flex flex-wrap justify-center gap-1.5 sm:gap-2" data-frame-tabs role="tablist" aria-label="Pilih frame">
             @foreach ($items as $index => $item)
                 <button type="button" role="tab" data-frame-tab="{{ $index }}" data-frame-photo-count="{{ $item['photo_count'] }}"
                         aria-selected="{{ $index === 0 ? 'true' : 'false' }}"
-                        class="px-3 py-1.5 rounded-full text-xs font-semibold ring-1 ring-rose-200 transition-all {{ $index === 0 ? 'bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200' : 'text-rose-600 bg-white/80' }}">
+                        class="px-3 py-1.5 rounded-full text-xs font-semibold ring-1 transition-all {{ $index === 0 ? 'bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200' : 'text-rose-600 bg-white/80 ring-rose-200' }}">
                     {{ $item['name'] }}@if ($item['qty'] > 1) <span class="opacity-80">x{{ $item['qty'] }}</span>@endif
                     <span class="ml-1 text-[10px] font-bold opacity-90" data-tab-status>{{ $item['photo_count'] }} foto</span>
                 </button>
@@ -35,14 +41,15 @@
         </div>
     @endif
 
-    <div class="flex-1 min-h-0 flex flex-col sm:flex-row gap-2 items-center sm:items-stretch sm:justify-center">
+    <div class="flex-1 min-h-0 flex flex-col sm:flex-row gap-3 items-stretch justify-center">
+        {{-- Thumbnail slot (kiri) --}}
         <div class="order-2 sm:order-1 flex sm:flex-col gap-2 overflow-x-auto sm:overflow-hidden shrink-0 w-full sm:w-24 min-h-0 pb-1 sm:pb-0" data-shot-thumbs data-photo-count="{{ $photoCount }}">
             @php($gi = 0)
             @foreach ($items as $index => $item)
-                <div class="flex gap-2 flex-1 min-w-0 sm:flex-col sm:w-full sm:flex-1 sm:min-h-0 shrink-0 {{ count($items) > 1 && $index !== 0 ? 'hidden' : '' }}" data-frame-slots="{{ $index }}">
+                <div class="flex gap-2 flex-1 min-w-0 sm:flex-col sm:w-full sm:flex-1 sm:min-h-0 shrink-0 {{ count($items) > 1 && $index !== 0 ? 'hidden' : '' }}" data-frame-slots="{{ $index }}" data-frame-image="{{ $item['image_url'] }}" data-frame-slots-json='@json($item['slots'] ?? [])'>
                     @foreach (range(1, $item['photo_count']) as $local)
                         @php($gidx = $gi++)
-                        <div class="relative rounded-xl overflow-hidden border border-rose-200 h-16 flex-1 min-w-0 sm:h-auto sm:w-full sm:flex-1 sm:min-h-0 bg-white shadow-sm" data-shot-item="{{ $gidx }}">
+                        <div class="relative rounded-xl overflow-hidden border border-rose-200 bg-white shadow-sm h-16 flex-1 min-w-0 sm:h-auto sm:w-full sm:flex-1 sm:min-h-0" data-shot-item="{{ $gidx }}">
                             <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-1">
                                 <span class="text-xl leading-none text-rose-300" data-shot-icon><x-icon name="film" class="w-6 h-6" /></span>
                                 <span class="text-[10px] font-semibold text-slate-500 leading-tight truncate max-w-full">{{ $item['name'] }} {{ $local }}</span>
@@ -58,7 +65,8 @@
             @endforeach
         </div>
 
-        <div class="order-1 sm:order-2 relative isolate rounded-[2rem] overflow-hidden bg-slate-900 shadow-2xl shrink-0 w-full aspect-square sm:w-auto sm:h-full sm:aspect-square sm:max-w-[720px] min-h-0 ring-1 ring-white/20">
+        {{-- Kamera --}}
+        <div class="order-1 sm:order-2 relative isolate rounded-3xl overflow-hidden bg-slate-900 shadow-2xl shrink-0 w-full aspect-square sm:w-auto sm:h-full sm:aspect-square sm:max-w-[640px] min-h-0 ring-1 ring-white/20">
             <video id="camera" class="w-full h-full object-cover hidden" autoplay playsinline muted></video>
 
             <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/70 text-white hidden" data-camera-loading>
@@ -81,10 +89,9 @@
 
             <div class="absolute inset-0 z-10 bg-white hidden" data-flash-overlay></div>
 
-            {{-- Panduan singkat di atas preview kamera. --}}
             <div class="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center p-3">
                 <span class="rounded-full bg-slate-900/45 backdrop-blur px-3 py-1 text-[11px] sm:text-xs font-medium text-white/90">
-                    Hadapkan wajah ke kamera &amp; tersenyum
+                    {{ $brand['photo_hint'] }}
                 </span>
             </div>
 
@@ -97,6 +104,15 @@
                     Lanjut ke Hasil Foto
                     <x-icon name="arrow-right" class="w-4 h-4 inline-block align-middle" />
                 </a>
+            </div>
+        </div>
+
+        {{-- Pratinjau frame (samping kamera) --}}
+        <div class="order-3 shrink-0 flex items-center justify-center">
+            <div class="flex flex-col items-center gap-2">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pratinjau</p>
+                <canvas data-foto-preview class="hidden rounded-2xl shadow-xl ring-1 ring-rose-100 bg-white" style="max-height: 360px; width: auto; max-width: 280px;"></canvas>
+                <p class="text-[10px] text-slate-400" data-foto-preview-hint>Belum ada foto</p>
             </div>
         </div>
     </div>

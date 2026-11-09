@@ -9,9 +9,9 @@
 @section('content')
 @php
     $steps = [
-        ['Pilih Pembayaran', 'Pilih QRIS atau masukkan kode voucher di awal, sebelum memilih frame.'],
-        ['Pilih Frame', 'Khusus QRIS: ketuk frame favorit dan atur jumlah cetak. Pemakai voucher langsung ke sesi foto.'],
-        ['Sesi Foto', 'Berdiri di depan kamera dan ambil semua foto. Bisa diulang bila kurang pas.'],
+        [$brand['method_title'], 'Pilih QRIS atau masukkan kode voucher di awal, sebelum memilih frame.'],
+        [$brand['frame_title'], 'Khusus QRIS: ketuk frame favorit dan atur jumlah cetak. Pemakai voucher langsung ke sesi foto.'],
+        [$brand['photo_title'], 'Berdiri di depan kamera dan ambil semua foto. Bisa diulang bila kurang pas.'],
         ['Cetak & Kirim', 'Cetak hasilnya, unduh softfile, atau kirim ke email.'],
     ];
 @endphp
@@ -46,7 +46,7 @@
 
         <div class="mt-4 flex justify-center">
             <a href="{{ route('spa') }}" class="inline-flex items-center justify-center w-full max-w-xs px-8 py-3.5 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-lg shadow-lg shadow-rose-200 hover:shadow-xl hover:scale-105 active:scale-95 transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-300">
-                Mulai &amp; Pilih Pembayaran
+                {{ $brand['start_label'] }} &amp; {{ $brand['method_title'] }}
                 <x-icon name="arrow-right" class="w-5 h-5 text-white ml-1.5" />
             </a>
         </div>

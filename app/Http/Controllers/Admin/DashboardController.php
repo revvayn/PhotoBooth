@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Frame;
+use App\Models\Voucher;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -34,6 +35,17 @@ class DashboardController extends Controller
             'voucher_total' => $sum($byMethod($payments, 'voucher')),
             'voucher_count' => $byMethod($payments, 'voucher')->count(),
             'photos_total' => (int) $payments->sum(fn ($p) => $p->payment_photo_count),
+            'avg_ticket' => $payments->count() > 0 ? (int) round($sum($payments) / $payments->count()) : 0,
+            'avg_photos' => $payments->count() > 0 ? round($payments->sum(fn ($p) => $p->payment_photo_count) / $payments->count(), 1) : 0,
+        ];
+
+        $voucherStats = [
+            'total' => Voucher::count(),
+            'active' => Voucher::active()->count(),
+            'used' => (int) Voucher::sum('used_count'),
+            'exhausted' => Voucher::whereColumn('used_count', '>=', 'max_uses')->where('max_uses', '>', 0)->count(),
+            'cash' => Voucher::cash()->count(),
+            'event' => Voucher::event()->count(),
         ];
 
         // Pendapatan 7 hari terakhir (termasuk hari ini).
@@ -50,6 +62,8 @@ class DashboardController extends Controller
             ];
         });
 
+        $stats['peak_day'] = $week->sortByDesc('revenue')->first()['label'] ?? '-';
+
         return view('admin.dashboard', [
             'stats' => $stats,
             'week' => $week,
@@ -57,6 +71,7 @@ class DashboardController extends Controller
             'framesActive' => Frame::active()->count(),
             'framesTotal' => Frame::count(),
             'recent' => $payments->take(8),
+            'voucherStats' => $voucherStats,
         ]);
     }
 }

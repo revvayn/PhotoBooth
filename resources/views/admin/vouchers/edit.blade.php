@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Edit Voucher - Photobooth Admin')
+@section('title', 'Edit Voucher - '.\App\Support\Brand::get()['name'].' Admin')
 @section('page-title', 'Edit Voucher')
 
 @section('content')

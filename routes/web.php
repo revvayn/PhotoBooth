@@ -50,6 +50,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::resource('frames', FrameController::class)->except(['show']);
         Route::resource('vouchers', VoucherController::class)->except(['show']);
+        Route::get('/vouchers/{voucher}/print-invoice', [VoucherController::class, 'printInvoice'])->name('vouchers.print-invoice');
+        Route::get('/vouchers/{voucher}/print-voucher', [VoucherController::class, 'printVoucher'])->name('vouchers.print-voucher');
         Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
         Route::get('/logs/export', [LogController::class, 'export'])->name('logs.export');
         Route::get('/appearance', [AppearanceController::class, 'index'])->name('appearance.index');

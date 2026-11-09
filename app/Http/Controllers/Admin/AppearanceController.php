@@ -6,20 +6,52 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class AppearanceController extends Controller
 {
+    /** Pilihan font yang didukung (dimuat dari Google Fonts). */
+    public const FONTS = [
+        'Baloo 2',
+        'Poppins',
+        'Fredoka',
+        'Quicksand',
+        'Nunito',
+        'Inter',
+        'DM Sans',
+        'Space Grotesk',
+    ];
+
+    /** Pilihan skala sudut (border radius). */
+    public const RADIUS = ['sm', 'md', 'lg', 'xl'];
+
     public const DEFAULTS = [
+        // Identitas brand
         'brand_name' => 'Photobooth',
         'brand_tagline' => 'Sesi foto kamu',
+        'brand_welcome' => 'Abadikan momen terbaikmu bareng teman dan keluarga. Foto langsung jadi — tinggal cetak atau kirim ke email.',
+        'brand_footer' => 'Photobooth',
+
+        // Warna teks
+        'brand_text' => '#1e293b',
+        'brand_heading' => '#0f172a',
+        'brand_muted' => '#64748b',
+
+        // Warna brand
         'brand_primary' => '#f43f5e',
         'brand_secondary' => '#7c3aed',
         'brand_accent' => '#d946ef',
+        'brand_success' => '#10b981',
+        'brand_warning' => '#f59e0b',
+        'brand_danger' => '#ef4444',
         'brand_bg_from' => '#ffe4e6',
         'brand_bg_via' => '#fdf4ff',
         'brand_bg_to' => '#ede9fe',
-        'brand_welcome' => 'Abadikan momen terbaikmu bareng teman dan keluarga. Foto langsung jadi — tinggal cetak atau kirim ke email.',
-        'brand_footer' => 'Photobooth',
+
+        // Tipografi & bentuk
+        'brand_heading_font' => 'Baloo 2',
+        'brand_body_font' => 'Poppins',
+        'brand_radius' => 'md',
     ];
 
     public function index()
@@ -40,14 +72,14 @@ class AppearanceController extends Controller
         $data = $request->validate([
             'brand_name' => ['required', 'string', 'max:50'],
             'brand_tagline' => ['nullable', 'string', 'max:100'],
-            'brand_primary' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'brand_secondary' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'brand_accent' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'brand_bg_from' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'brand_bg_via' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'brand_bg_to' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'brand_welcome' => ['nullable', 'string', 'max:500'],
             'brand_footer' => ['nullable', 'string', 'max:100'],
+
+            'brand_name' => ['required', 'string', 'max:50'],
+            'brand_tagline' => ['nullable', 'string', 'max:100'],
+            'brand_welcome' => ['nullable', 'string', 'max:500'],
+            'brand_footer' => ['nullable', 'string', 'max:100'],
+
             'brand_logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
             'brand_bg_image' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:8192'],
             'remove_brand_logo' => ['nullable', 'boolean'],

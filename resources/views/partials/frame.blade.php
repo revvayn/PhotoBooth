@@ -1,12 +1,13 @@
 ﻿<div class="flex-1 min-h-0 flex flex-col">
+    @php($brand = $brand ?? \App\Support\Brand::get())
     <div class="text-center mb-2">
         <div class="inline-flex items-center justify-center gap-2">
             <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-400 to-violet-500 text-white flex items-center justify-center shadow-md shadow-rose-200">
                 <x-icon name="photo" class="w-4 h-4 text-white" />
             </span>
-            <h2 class="font-display font-bold text-2xl">Pilih Frame</h2>
+            <h2 class="font-display font-bold text-2xl">{{ $brand['frame_title'] }}</h2>
         </div>
-        <p class="text-slate-500 text-sm mt-1">Metode QRIS aktif. Pilih frame, lalu konfirmasi pembayaran sebelum sesi foto.</p>
+        <p class="text-slate-500 text-sm mt-1">{{ $brand['frame_subtitle'] }}</p>
         <a href="{{ ($fromSpa ?? true) ? route('spa', ['step' => 'metode']) : route('metode') }}" class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-rose-600 transition">
             <x-icon name="arrow-left" class="w-3 h-3" /> Ganti metode pembayaran
         </a>

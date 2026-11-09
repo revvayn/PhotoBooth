@@ -1,15 +1,18 @@
 @extends('layouts.admin')
 
-@section('title', 'Kelola Frame - Photobooth Admin')
+@section('title', 'Kelola Frame - '.\App\Support\Brand::get()['name'].' Admin')
 @section('page-title', 'Kelola Frame')
 
 @section('content')
 <div class="space-y-6">
     {{-- Header --}}
-    <div class="flex items-center justify-between">
-        <p class="text-slate-500 text-sm">Kelola semua frame photobooth</p>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+            <h2 class="font-heading text-xl font-bold text-slate-800">Kelola Frame</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Kelola semua frame photobooth yang ditampilkan ke pelanggan.</p>
+        </div>
         <a href="{{ route('admin.frames.create') }}"
-           class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 hover:from-rose-600 hover:to-pink-600 transition-all duration-200">
+           class="inline-flex items-center gap-2 px-5 py-2.5 bg-rose-500 text-white text-sm font-semibold rounded-2xl shadow-sm hover:bg-rose-600 transition-colors self-start sm:self-auto">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -18,7 +21,7 @@
     </div>
 
     {{-- Frames Table --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
