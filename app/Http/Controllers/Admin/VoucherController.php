@@ -252,6 +252,80 @@ class VoucherController extends Controller
             ->with('success', 'Voucher '.$voucher->code.' berhasil diperbarui.');
     }
 
+    public function destroyFiltered(Request $request)
+    {
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'type' => ['nullable', 'in:cash,event'],
+            'status' => ['nullable', 'in:active,inactive,expired,exhausted'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+        ]);
+
+        $filters = array_merge(['q' => '', 'type' => '', 'status' => '', 'from' => '', 'to' => ''], $filters);
+        foreach ($filters as $key => $value) {
+            $filters[$key] = $value ?? '';
+        }
+        $filters['q'] = trim((string) $filters['q']);
+
+        if ($filters['q'] === '' && $filters['type'] === '' && $filters['status'] === '' && $filters['from'] === '' && $filters['to'] === '') {
+            return redirect()
+                ->route('admin.vouchers.index', $request->only(['sort', 'dir', 'page']))
+                ->with('error', 'Pilih minimal satu filter sebelum menghapus.');
+        }
+
+        $query = Voucher::query()
+            ->when($filters['type'] === Voucher::TYPE_CASH, fn ($query) => $query->cash())
+            ->when($filters['type'] === Voucher::TYPE_EVENT, fn ($query) => $query->event())
+            ->when($filters['from'] !== '', fn ($query) => $query->whereDate('created_at', '>=', $filters['from']))
+            ->when($filters['to'] !== '', fn ($query) => $query->whereDate('created_at', '<=', $filters['to']));
+
+        $this->applyStatusFilter($query, $filters['status']);
+
+        $all = $query->orderByDesc('created_at')->get();
+
+        if ($filters['q'] !== '') {
+            $term = $filters['q'];
+            $matchingBatches = $all
+                ->filter(fn (Voucher $voucher) => $this->voucherMatches($voucher, $term))
+                ->pluck('event_batch')
+                ->filter()
+                ->unique()
+                ->all();
+
+            $all = $all->filter(function (Voucher $voucher) use ($term, $matchingBatches) {
+                if ($this->voucherMatches($voucher, $term)) {
+                    return true;
+                }
+
+                return $voucher->isEvent() && in_array($voucher->event_batch, $matchingBatches, true);
+            })->values();
+        }
+
+        // Untuk event, hapus seluruh batch agar tidak menyisakan kode anggota.
+        $toDelete = collect();
+        $eventBatches = [];
+        foreach ($all as $voucher) {
+            if ($voucher->isEvent() && $voucher->event_batch) {
+                if (! in_array($voucher->event_batch, $eventBatches, true)) {
+                    $eventBatches[] = $voucher->event_batch;
+                    $toDelete = $toDelete->merge(Voucher::where('event_batch', $voucher->event_batch)->get());
+                }
+            } else {
+                $toDelete->push($voucher);
+            }
+        }
+
+        $count = $toDelete->count();
+        foreach ($toDelete as $voucher) {
+            $voucher->delete();
+        }
+
+        return redirect()
+            ->route('admin.vouchers.index', $request->only(['q', 'type', 'status', 'from', 'to']))
+            ->with('success', $count.' voucher sesuai filter berhasil dihapus.');
+    }
+
     public function show(Voucher $voucher)
     {
         if ($voucher->isEvent() && $voucher->event_batch) {
@@ -385,6 +459,11 @@ class VoucherController extends Controller
                 $rules['number_of_people'] = ['required', 'integer', 'min:1', 'max:10000'];
             }
         }
+
+        $request->merge([
+            'cost_per_hour' => str_replace('.', '', (string) $request->input('cost_per_hour')),
+            'total_cost' => str_replace('.', '', (string) $request->input('total_cost')),
+        ]);
 
         $data = $request->validate($rules);
 

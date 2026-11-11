@@ -6,6 +6,7 @@
 @section('content')
 @php
     $createType = in_array($type, ['cash', 'event'], true) ? $type : 'cash';
+    $hasActiveFilters = $filters['q'] !== '' || $filters['type'] !== '' || $filters['status'] !== '' || $filters['from'] !== '' || $filters['to'] !== '';
     $statusLabels = [
         'active' => 'Aktif',
         'inactive' => 'Nonaktif',
@@ -144,6 +145,13 @@
                     Terapkan
                 </button>
                 <a href="{{ route('admin.vouchers.index') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">Reset</a>
+                <button type="button" data-bulk-delete-open
+                        class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl ring-1 ring-red-200 bg-red-50 text-red-600 text-sm font-bold hover:bg-red-100 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50"
+                        @disabled(! $hasActiveFilters || $vouchers->total() === 0)
+                        title="{{ $hasActiveFilters ? 'Hapus semua voucher yang cocok dengan filter' : 'Pilih filter terlebih dahulu' }}">
+                    <x-icon name="trash" class="w-4 h-4" />
+                    Hapus filter
+                </button>
             </div>
         </div>
 
@@ -270,4 +278,43 @@
         @endif
     </div>
 </div>
+{{-- Modal hapus berdasarkan filter --}}
+<div data-bulk-delete-modal class="fixed inset-0 z-[90] hidden items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Hapus voucher sesuai filter">
+    <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-black/5">
+        <div class="flex items-start gap-4">
+            <span class="w-12 h-12 shrink-0 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center">
+                <x-icon name="trash" class="w-6 h-6" />
+            </span>
+            <div class="min-w-0">
+                <h2 class="font-heading text-lg font-bold text-slate-800">Hapus voucher sesuai filter?</h2>
+                <p class="text-sm text-slate-500 mt-1.5">
+                    <strong class="font-bold text-slate-700">{{ $vouchers->total() }} voucher</strong>
+                    sesuai filter akan dihapus permanen.
+                </p>
+                @if ($filters['q'] !== '' || $filters['type'] !== '' || $filters['status'] !== '')
+                    <p class="mt-2 text-xs text-slate-400">
+                        {{ $filters['q'] !== '' ? 'Pencarian: '.$filters['q'] : '' }}
+                        @if ($filters['q'] !== '' && ($filters['type'] !== '' || $filters['status'] !== '')) &middot; @endif
+                        {{ $filters['type'] !== '' ? 'Tipe: '.strtoupper($filters['type']) : '' }}
+                        @if ($filters['type'] !== '' && $filters['status'] !== '') &middot; @endif
+                        {{ $filters['status'] !== '' ? 'Status: '.$filters['status'] : '' }}
+                    </p>
+                @endif
+                <p class="mt-2 text-xs font-medium text-red-600">Tindakan ini tidak bisa dibatalkan.</p>
+            </div>
+        </div>
+        <form method="POST" action="{{ route('admin.vouchers.destroy-filtered') }}" data-bulk-delete-form class="mt-5 grid grid-cols-2 gap-2">
+            @csrf
+            @method('DELETE')
+            @foreach (['q', 'type', 'status', 'from', 'to'] as $key)
+                <input type="hidden" name="{{ $key }}" value="{{ $filters[$key] }}">
+            @endforeach
+            <button type="button" data-bulk-delete-cancel class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-bold hover:bg-slate-200 transition">Batal</button>
+            <button type="submit" class="px-4 py-2.5 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition disabled:opacity-70" data-bulk-delete-confirm>
+                Ya, hapus
+            </button>
+        </form>
+    </div>
+</div>
+
 @endsection

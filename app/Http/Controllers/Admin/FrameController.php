@@ -32,7 +32,7 @@ class FrameController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'category' => 'nullable|string|max:255',
+            'category' => 'nullable|string|in:2R,4R,A4',
             'caption' => 'nullable|string|max:255',
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer|min:0',
@@ -48,7 +48,7 @@ class FrameController extends Controller
         $validated['is_active'] = $request->boolean('is_active', false);
         $validated['sort_order'] = $request->integer('sort_order', 0);
         $validated['price'] = $validated['price'] ?? 30000;
-        $validated['category'] = $validated['category'] ?? 'Umum';
+        $validated['category'] = $validated['category'] ?? '2R';
         unset($validated['frame_image']);
 
         $frame = Frame::create($validated);
@@ -73,7 +73,7 @@ class FrameController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'category' => 'nullable|string|max:255',
+            'category' => 'nullable|string|in:2R,4R,A4',
             'caption' => 'nullable|string|max:255',
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer|min:0',
@@ -89,7 +89,7 @@ class FrameController extends Controller
         $validated['is_active'] = $request->boolean('is_active', false);
         $validated['sort_order'] = $request->integer('sort_order', 0);
         $validated['price'] = $validated['price'] ?? 30000;
-        $validated['category'] = $validated['category'] ?? 'Umum';
+        $validated['category'] = $validated['category'] ?? '2R';
         unset($validated['frame_image']);
 
         $frame->update($validated);

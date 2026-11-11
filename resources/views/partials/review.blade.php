@@ -34,7 +34,7 @@
 
         <div class="flex flex-col gap-3 w-full md:sticky md:top-2">
             <div class="k-card p-5 shadow-xl shadow-rose-100/50">
-                <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Ringkasan Pesanan</p>
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Ringkasan</p>
                 <div class="text-sm text-slate-600 space-y-1">
                     <p>Antrian: <span class="font-bold text-rose-500">{{ $queue }}</span></p>
                     <p class="flex justify-between gap-2">
@@ -74,12 +74,12 @@
 
             <form method="POST" action="{{ route('email.send') }}" data-email-form class="space-y-2.5">
                 @csrf
-                <label for="email-input" class="block text-sm font-semibold text-slate-700">Kirim ke Email</label>
+                <label for="email-input" class="block text-sm font-semibold text-slate-700">Email</label>
                 <input type="email" name="email" id="email-input" placeholder="email@contoh.com" required autocomplete="email" class="k-field">
                 <p class="hidden text-sm text-red-600" data-email-error aria-live="assertive"></p>
                 <p class="hidden text-sm text-emerald-600" data-email-success aria-live="polite"></p>
                 <button type="submit" data-email-submit class="k-btn k-btn-dark w-full !py-3.5">
-                    <x-icon name="envelope" class="w-5 h-5 text-white" /> Kirim Softfile
+                    <x-icon name="envelope" class="w-5 h-5 text-white" /> Kirim
                 </button>
             </form>
 

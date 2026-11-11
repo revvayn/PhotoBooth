@@ -237,9 +237,10 @@
                                 </div>
                                 <div>
                                     <label for="cost_per_hour" class="mb-1.5 block text-sm font-medium text-slate-700">Biaya per Jam (Rp) <span class="text-red-500">*</span></label>
-                                    <input type="number" id="cost_per_hour" name="cost_per_hour" min="0"
-                                           value="{{ old('cost_per_hour', $isEdit ? $voucher->cost_per_hour : '') }}"
-                                           class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-800 focus:border-sky-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 @error('cost_per_hour') border-red-300 @enderror">
+                                    <input type="text" inputmode="numeric" id="cost_per_hour" name="cost_per_hour" data-rupiah
+                                           value="{{ old('cost_per_hour', $isEdit ? number_format($voucher->cost_per_hour, 0, ',', '.') : '') }}"
+                                           class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-800 focus:border-sky-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 @error('cost_per_hour') border-red-300 @enderror"
+                                           placeholder="0">
                                 </div>
                             </div>
                             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -259,7 +260,7 @@
 
                         <div class="sm:col-span-2">
                             <label for="total_cost" class="mb-1.5 block text-sm font-medium text-slate-700">Total Biaya Estimasi (Rp)</label>
-                            <input type="number" id="total_cost" name="total_cost" min="0" value="{{ $totalCostValue }}" readonly
+                            <input type="text" id="total_cost" name="total_cost" value="{{ number_format((int) $totalCostValue, 0, ',', '.') }}" readonly inputmode="numeric" data-rupiah
                                    class="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-slate-600 focus:outline-none">
                             <p class="mt-1.5 text-xs text-slate-400">Dihitung otomatis dari harga frame, jumlah, dan jumlah orang.</p>
                             @error('total_cost')<p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>@enderror
@@ -533,11 +534,17 @@
             return value > 0 ? value : 0;
         }
 
+        function formatRupiah(value) {
+            const digits = String(value ?? '').replace(/\\D/g, '');
+            if (!digits) return '';
+            return digits.replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.');
+        }
+
         function costPerHour() {
             if (!isEvent) return 0;
             const el = document.getElementById('cost_per_hour');
             if (!el) return 0;
-            const value = parseInt(el.value || '0', 10);
+            const value = parseInt(String(el.value || '0').replace(/\\D/g, ''), 10);
             return value > 0 ? value : 0;
         }
 
@@ -620,7 +627,7 @@
                     noteEl.textContent = discount > 0 ? 'Harga asli Rp. ' + originalTotal.toLocaleString('id-ID') + ' - diskon ' + discount + '%' : '';
                 }
             }
-            if (totalCostEl) totalCostEl.value = finalTotal;
+            if (totalCostEl) totalCostEl.value = formatRupiah(finalTotal);
         }
 
         function refresh() {
@@ -640,6 +647,17 @@
         });
 
         togglePricingMode();
+
+        document.querySelectorAll('[data-rupiah]').forEach((input) => {
+            input.addEventListener('input', () => {
+                const cursor = input.selectionStart || 0;
+                const beforeLength = input.value.length;
+                input.value = formatRupiah(input.value);
+                const afterLength = input.value.length;
+                const nextCursor = Math.max(0, cursor + (afterLength - beforeLength));
+                input.selectionStart = input.selectionEnd = nextCursor;
+            });
+        });
 
         form.addEventListener('submit', (event) => {
             if (!validateThrough(lastStep)) {

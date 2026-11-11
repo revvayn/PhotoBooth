@@ -3,10 +3,7 @@
 @php($cur = old('metode', $sel))
 <div class="flex-1 min-h-0 flex flex-col items-center justify-center py-2">
     <div class="w-full max-w-xl text-center mb-4 sm:mb-5">
-        <div class="inline-flex items-center gap-2 rounded-full bg-white/70 backdrop-blur px-3 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-rose-100 mb-2">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            Langkah 1 &middot; Bayar dulu, lalu foto
-        </div>
+
         <h2 class="k-title">{{ $brand['method_title'] }}</h2>
         <p class="text-slate-500 text-sm sm:text-base mt-1">{{ $brand['method_subtitle'] }}</p>
     </div>
@@ -27,7 +24,7 @@
                     class="k-card k-option flex h-full flex-col items-center gap-2.5 p-5 sm:p-6 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 {{ $cur === 'qris' ? 'ring-2 ring-rose-500' : '' }}">
                 <span class="k-icon w-14 h-14 sm:w-16 sm:h-16 rounded-2xl"><x-icon name="qr" class="w-7 h-7 sm:w-8 sm:h-8 text-white" /></span>
                 <span class="font-display font-extrabold text-xl text-slate-900 leading-none">QRIS</span>
-                <span class="text-xs text-slate-500 leading-relaxed">Pilih frame dulu agar totalnya pas, lalu scan QRIS sebelum sesi foto.</span>
+                <span class="text-xs text-slate-500 leading-relaxed">Scan QRIS.</span>
             </button>
 
             <button type="button" data-metode-option="voucher" aria-pressed="{{ $cur === 'voucher' ? 'true' : 'false' }}"
@@ -36,7 +33,7 @@
                     <svg class="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
                 </span>
                 <span class="font-display font-extrabold text-xl text-slate-900 leading-none">Voucher</span>
-                <span class="text-xs text-slate-500 leading-relaxed">Frame dan jumlah cetak sudah ditentukan. Langsung masuk sesi foto.</span>
+                <span class="text-xs text-slate-500 leading-relaxed">Langsung foto.</span>
             </button>
         </div>
 
@@ -46,7 +43,7 @@
                    autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="50"
                    placeholder="Contoh: PB-OPENING"
                    class="k-field text-center font-mono text-xl font-bold tracking-[0.2em] uppercase placeholder:text-slate-300 placeholder:text-base placeholder:tracking-widest @error('voucher_code') !border-red-300 @enderror">
-            <p class="mt-2 text-[11px] text-slate-400 text-center">Masukkan kode dari kasir. Voucher langsung dipakai saat tombol di bawah ditekan.</p>
+            <p class="mt-2 text-[11px] text-slate-400 text-center">Kode dari kasir.</p>
             @error('voucher_code')<p class="mt-2 text-sm text-red-500 text-center">{{ $message }}</p>@enderror
         </div>
 
@@ -55,8 +52,6 @@
             <x-icon name="arrow-right" class="w-5 h-5 text-white" />
         </button>
 
-        <p class="mt-3 text-center text-[11px] text-slate-400">
-            Dengan voucher, kamu tidak perlu memilih frame atau jumlah cetak.
-        </p>
+
     </form>
 </div>

@@ -4,7 +4,7 @@
         <a href="{{ ($fromSpa ?? true) ? route('spa', ['step' => 'metode']) : route('metode') }}" data-back-btn aria-label="Ganti metode pembayaran"
            class="k-btn k-btn-ghost justify-self-start !px-3.5 !text-xs">
             <x-icon name="arrow-left" class="w-4 h-4" />
-            <span class="hidden sm:inline">Ganti metode</span>
+
         </a>
         <div class="text-center">
             <div class="inline-flex items-center justify-center gap-2">
@@ -46,7 +46,7 @@
         <div class="flex-1 min-h-0 grid md:grid-cols-[minmax(0,1fr)_280px] gap-4 items-stretch">
             {{-- Grid responsif: 2 kolom di ponsel, 5 kolom di desktop.
                  content-center membuat baris sisa selalu seimbang di tengah. --}}
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 auto-rows-min content-center gap-2 sm:gap-2.5 min-w-0 py-0.5 md:py-1" data-frame-grid>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 auto-rows-min content-center gap-3 sm:gap-4 min-w-0 py-0.5 md:py-1" data-frame-grid>
                 @forelse ($allFrames as $frame)
                     @php($slotLabel = $frame->photo_count ? $frame->photo_count.'x' : '')
                     @php($inCart = isset($cart[$frame->slug]) && $cart[$frame->slug] > 0)
@@ -64,13 +64,12 @@
                             aria-pressed="{{ $inCart ? 'true' : 'false' }}"
                             class="k-card-solid k-option group relative flex flex-col min-w-0 !rounded-2xl p-2 ring-1 ring-black/5 shadow-md shadow-slate-900/5 transition-all duration-200 hover:shadow-xl hover:shadow-rose-200/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 {{ $inCart ? 'ring-2 ring-rose-500 shadow-lg shadow-rose-100' : '' }}">
                         <div class="relative">
-                            <div class="aspect-[4/5] rounded-xl overflow-hidden bg-slate-50">
+                            <div class="aspect-[4/5] rounded-2xl overflow-hidden bg-slate-50">
                                 @if ($frame->image_url)
                                     <img src="{{ $frame->image_url }}" alt="{{ $frame->name }}" loading="lazy" class="w-full h-full object-contain p-1">
                                 @else
-                                    <div class="w-full h-full flex flex-col items-center justify-center gap-1 text-slate-300">
-                                        <x-icon name="photo" class="w-7 h-7" />
-                                        <span class="text-[10px] font-medium">Tanpa gambar</span>
+                                    <div class="w-full h-full flex items-center justify-center text-slate-300">
+                                        <x-icon name="photo" class="w-8 h-8" />
                                     </div>
                                 @endif
                             </div>
@@ -82,9 +81,10 @@
                                 <span data-add-qty>{{ $cart[$frame->slug] ?? 0 }}</span>
                             </span>
                         </div>
-                        <div class="mt-auto pt-1.5 text-center leading-tight min-w-0">
-                            <span class="block text-xs sm:text-sm font-bold text-slate-800 leading-tight truncate">{{ $label }}</span>
-                            <span class="block text-xs font-semibold text-rose-600 tabular-nums truncate">Rp. {{ number_format($frame->price, 0, ',', '.') }}</span>
+                        <div class="mt-2 text-center leading-tight min-w-0">
+                            <span class="block text-sm sm:text-base font-bold text-slate-800 leading-tight truncate">{{ $label }}</span>
+                            <span class="block text-xs font-semibold text-slate-400 truncate">{{ $frame->category }} &middot; {{ $frame->photo_count }} foto</span>
+                            <span class="block text-sm font-semibold text-rose-600 tabular-nums truncate">Rp {{ number_format($frame->price, 0, ',', '.') }}</span>
                         </div>
                     </button>
                 @empty
@@ -92,13 +92,12 @@
                         <span class="w-12 h-12 rounded-full bg-white ring-1 ring-rose-100 flex items-center justify-center text-rose-300">
                             <x-icon name="photo" class="w-6 h-6" />
                         </span>
-                        <p class="text-sm font-semibold text-slate-600">Belum ada frame aktif</p>
-                        <p class="text-xs text-slate-400">Minta admin menambahkan frame terlebih dahulu.</p>
+                        <p class="text-sm font-semibold text-slate-600">Belum ada frame</p>
                     </div>
                 @endforelse
             </div>
 
-            <aside class="k-card flex flex-col p-5 shadow-xl shadow-rose-100/50">
+            <aside class="k-card flex flex-col p-4 shadow-xl shadow-rose-100/50">
                 <div class="flex items-center justify-between gap-2 mb-3">
                     <h3 class="flex items-center gap-2 font-display font-bold text-base">
                         <span class="w-7 h-7 rounded-lg bg-rose-50 ring-1 ring-rose-100 flex items-center justify-center text-rose-500">
@@ -117,7 +116,7 @@
                         <span class="w-8 h-8 rounded-full bg-white ring-1 ring-rose-100 flex items-center justify-center text-rose-400 shrink-0">
                             <x-icon name="bag" class="w-4 h-4" />
                         </span>
-                        <p class="text-sm text-slate-400 leading-snug">Belum ada frame. Ketuk kartu di kiri untuk menambah.</p>
+                        <p class="text-xs text-slate-400 leading-snug">Ketuk frame untuk menambah.</p>
                     </div>
                 </div>
 
@@ -130,7 +129,7 @@
                     Lanjut ke Pembayaran
                     <x-icon name="arrow-right" class="w-5 h-5 text-white" />
                 </button>
-                <p class="mt-1.5 text-[10px] text-center text-slate-400">Harga dihitung per frame &times; jumlah cetak</p>
+
             </aside>
         </div>
     </form>

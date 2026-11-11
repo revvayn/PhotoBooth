@@ -7,10 +7,7 @@
             <span class="hidden sm:inline">Ubah frame</span>
         </a>
         <div class="text-center">
-            <div class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700 ring-1 ring-amber-100 mb-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                Menunggu pembayaran
-            </div>
+
             <h2 class="k-title">{{ $brand['payment_title'] }}</h2>
         </div>
         <span class="k-pill justify-self-end !text-xs">
@@ -18,7 +15,7 @@
             QRIS
         </span>
     </div>
-    <p class="text-slate-500 text-sm text-center mb-3 shrink-0">{{ $brand['payment_subtitle'] }}</p>
+
 
     <div class="flex flex-col items-center justify-center flex-1 min-h-0">
         <div class="k-card w-full max-w-sm p-5 sm:p-6 text-center shadow-2xl shadow-rose-100/60">
@@ -36,11 +33,9 @@
             @endif
 
             <p class="text-3xl sm:text-4xl font-display font-extrabold tracking-tight text-slate-900 tabular-nums" data-qris-price>Rp. {{ number_format($total, 0, ',', '.') }}</p>
-            <p class="text-xs text-slate-400 mt-1.5">{{ $merchant }} &middot; NMID {{ $nmid }}</p>
+
             <p class="text-sm text-slate-400 mt-1.5">Antrian <span class="font-bold text-rose-500">{{ $queue }}</span></p>
-            <p class="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-500 leading-snug">
-                {{ $brand['payment_note'] }}
-            </p>
+
         </div>
 
         <form method="POST" action="{{ route('pembayaran') }}" data-pay-form class="mt-4 w-full max-w-sm space-y-3">

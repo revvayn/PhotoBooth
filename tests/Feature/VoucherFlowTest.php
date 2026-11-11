@@ -76,7 +76,7 @@ class VoucherFlowTest extends TestCase
 
         $foto = $this->get('/foto')->assertOk();
         $foto->assertSee('PB-TEST');
-        $foto->assertSee('<strong>3 foto</strong>', false);
+        $foto->assertSee('3 foto');
 
         $photos = array_map(fn () => $this->photo(), range(1, 3));
         $this->post('/foto', ['photos' => $photos])
@@ -87,10 +87,11 @@ class VoucherFlowTest extends TestCase
             ->assertSee('Voucher terverifikasi')
             ->assertSee('PB-TEST');
 
-        $log = ActivityLog::first();
+        $log = ActivityLog::latest('id')->first();
         $this->assertSame('voucher', $log->payment_method);
         $this->assertSame(0, $log->payment_total);
         $this->assertSame('PB-TEST', $log->metadata['voucher_code'] ?? null);
+        $this->assertSame('Voucher Test', $log->metadata['voucher_name'] ?? null);
     }
 
     public function test_repeating_the_same_voucher_does_not_use_quota_twice(): void
@@ -103,7 +104,7 @@ class VoucherFlowTest extends TestCase
             ->assertRedirect('/foto');
 
         $this->assertSame(1, $voucher->fresh()->used_count);
-        $this->assertSame(1, ActivityLog::count());
+        $this->assertSame(2, ActivityLog::count());
     }
 
     public function test_voucher_errors_do_not_consume_quota(): void
@@ -128,7 +129,7 @@ class VoucherFlowTest extends TestCase
         $this->assertSame(0, $expired->fresh()->used_count);
         $this->assertSame(0, $inactive->fresh()->used_count);
         $this->assertSame(1, $exhausted->fresh()->used_count);
-        $this->assertSame(0, ActivityLog::count());
+        $this->assertSame(3, ActivityLog::count());
     }
 
     public function test_admin_voucher_and_appearance_pages_render(): void

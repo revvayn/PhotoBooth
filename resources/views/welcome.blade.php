@@ -10,7 +10,7 @@
 <div class="flex-1 min-h-0 flex flex-col items-center justify-center text-center py-4">
     <div class="inline-flex items-center gap-2 rounded-full bg-white/70 backdrop-blur px-4 py-1.5 text-xs font-semibold text-rose-600 ring-1 ring-rose-100 shadow-sm mb-5">
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        {{ $brand['welcome_badge'] }} &middot; {{ $frameCount ?? 0 }} frame tersedia
+        {{ $frameCount ?? 0 }} frame
     </div>
 
     <x-brand-mark size="w-24 h-24 sm:w-28 sm:h-28" rounded="rounded-[2rem]" icon="w-12 h-12 sm:w-14 sm:h-14" class="mb-6 shadow-2xl" />
@@ -49,7 +49,7 @@
     </div>
 
     <p class="mt-4 text-[11px] sm:text-xs text-slate-400 max-w-md">
-        Punya voucher? Pilih <strong>Voucher</strong> di awal &mdash; frame dan jumlah cetak otomatis, langsung ke sesi foto.
+        Voucher? pilih Voucher di awal.
     </p>
 </div>
 @endsection

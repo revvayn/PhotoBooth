@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\ActivityLog;
+use App\Models\Frame;
 use Illuminate\Database\Eloquent\Model;
 
 class Voucher extends Model
@@ -45,6 +47,42 @@ class Voucher extends Model
         'total_cost' => 'integer',
         'discount' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (Voucher $voucher): void {
+            $frames = Frame::whereIn('slug', array_keys(is_array($voucher->items) ? $voucher->items : []))
+                ->get()
+                ->keyBy('slug');
+
+            $items = collect(is_array($voucher->items) ? $voucher->items : [])
+                ->map(fn ($qty, $slug) => [
+                    'name' => $frames->get($slug)?->name ?? $slug,
+                    'qty' => (int) $qty,
+                    'price' => (int) ($frames->get($slug)?->price ?? 0),
+                ])
+                ->values()
+                ->all();
+
+            $total = $voucher->isEvent()
+                ? (int) $voucher->total_cost
+                : (int) $voucher->cost_per_person;
+
+            ActivityLog::create([
+                'session_id' => 'voucher:'.$voucher->id,
+                'queue_number' => $voucher->code,
+                'action' => ActivityLog::PAYMENT,
+                'metadata' => [
+                    'metode' => 'voucher',
+                    'total' => $total,
+                    'photo_count' => (int) $voucher->photo_count,
+                    'items' => $items,
+                    'ip' => request()->ip(),
+                    'voucher_code' => $voucher->code,
+                ],
+            ]);
+        });
+    }
 
     public const TYPE_CASH = 'cash';
     public const TYPE_EVENT = 'event';

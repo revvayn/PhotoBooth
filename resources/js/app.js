@@ -1524,8 +1524,6 @@ function initAdminLogs() {
     const deleteModal = document.querySelector('[data-delete-modal]');
     const deleteForm = document.querySelector('[data-delete-form]');
     const deleteLabel = document.querySelector('[data-delete-label]');
-    const bulkModal = document.querySelector('[data-bulk-delete-modal]');
-    const bulkForm = document.querySelector('[data-bulk-delete-form]');
     const template = root.dataset.downloadTemplate || '';
 
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -1681,33 +1679,6 @@ function initAdminLogs() {
         if (event.target === deleteModal) closeDelete();
     });
 
-    const closeBulkDelete = () => {
-        if (!bulkModal) return;
-        bulkModal.classList.add('hidden');
-        bulkModal.classList.remove('flex');
-        document.body.style.overflow = '';
-    };
-
-    document.querySelector('[data-bulk-delete-open]')?.addEventListener('click', () => {
-        if (!bulkModal) return;
-        bulkModal.classList.remove('hidden');
-        bulkModal.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-    });
-
-    document.querySelector('[data-bulk-delete-cancel]')?.addEventListener('click', closeBulkDelete);
-    bulkModal?.addEventListener('click', (event) => {
-        if (event.target === bulkModal) closeBulkDelete();
-    });
-
-    bulkForm?.addEventListener('submit', () => {
-        const button = bulkForm.querySelector('[data-bulk-delete-confirm]');
-        if (button) {
-            button.disabled = true;
-            button.textContent = 'Menghapus...';
-        }
-    });
-
     deleteForm?.addEventListener('submit', () => {
         const button = deleteForm.querySelector('button[type="submit"]');
         if (button) {
@@ -1718,12 +1689,52 @@ function initAdminLogs() {
 
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape') return;
-        if (bulkModal && !bulkModal.classList.contains('hidden')) {
-            closeBulkDelete();
-        } else if (deleteModal && !deleteModal.classList.contains('hidden')) {
+        if (deleteModal && !deleteModal.classList.contains('hidden')) {
             closeDelete();
         } else if (modal && !modal.classList.contains('hidden')) {
             closeModal();
+        }
+    });
+}
+
+/* ---------------- Bulk delete modal (log & voucher) ---------------- */
+function initBulkDeleteModal() {
+    const modal = document.querySelector('[data-bulk-delete-modal]');
+    if (!modal) return;
+
+    const form = document.querySelector('[data-bulk-delete-form]');
+    const openBtn = document.querySelector('[data-bulk-delete-open]');
+    const cancelBtn = document.querySelector('[data-bulk-delete-cancel]');
+
+    const close = () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = '';
+    };
+
+    const open = () => {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    };
+
+    openBtn?.addEventListener('click', open);
+    cancelBtn?.addEventListener('click', close);
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) close();
+    });
+
+    form?.addEventListener('submit', () => {
+        const button = form.querySelector('[data-bulk-delete-confirm]');
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Menghapus...';
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+            close();
         }
     });
 }
@@ -1745,4 +1756,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initFinishForm();
     initDateRangeFilter();
     initAdminLogs();
+    initBulkDeleteModal();
 });

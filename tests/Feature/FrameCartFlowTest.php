@@ -56,7 +56,7 @@ class FrameCartFlowTest extends TestCase
         $foto = $this->get('/foto');
         $foto->assertOk();
         $foto->assertSee('data-photo-count=');
-        $foto->assertSee('<strong>7 foto</strong>', false);
+        $foto->assertSee('7 foto');
         $foto->assertSee('data-frame-tab');
         $foto->assertSee('K-pop Frame');
         $foto->assertSee('Neon Frame');

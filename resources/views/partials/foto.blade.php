@@ -18,7 +18,7 @@
 
         <div class="text-center">
             <h2 class="k-title">{{ $brand['photo_title'] }}</h2>
-            <p class="text-sm text-slate-500 mt-1">Ambil <strong>{{ $photoCount }} foto</strong> untuk {{ count($items) }} frame</p>
+            <p class="text-sm text-slate-500 mt-1">{{ $photoCount }} foto</p>
         </div>
 
         <span class="k-pill justify-self-end tabular-nums" data-photo-progress-wrap>
@@ -71,13 +71,13 @@
 
                 <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/70 text-white hidden" data-camera-loading>
                     <span class="animate-spin w-10 h-10 border-4 border-white/30 border-t-white rounded-full mb-3"></span>
-                    <p class="text-sm font-medium">Menyiapkan kamera…</p>
+                    <p class="text-sm font-medium">Kamera...</p>
                 </div>
 
                 <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/85 text-white hidden" data-camera-error>
                     <span class="mb-3 text-slate-500"><x-icon name="camera" class="w-12 h-12" /></span>
                     <p class="font-semibold px-6 text-center" data-error-title>Kamera tidak ditemukan</p>
-                    <p class="text-sm text-slate-300 mt-1 px-8 text-center">Izinkan akses kamera atau pastikan perangkatmu memiliki webcam.</p>
+                    <p class="text-sm text-slate-300 mt-1 px-8 text-center">Izinkan akses kamera.</p>
                     <button type="button" data-camera-retry class="mt-3 rounded-full bg-white/15 hover:bg-white/25 ring-1 ring-white/25 px-4 py-2 text-xs font-semibold transition">
                         Coba Lagi
                     </button>
@@ -91,24 +91,15 @@
 
                 <div class="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center p-3">
                     <span class="rounded-full bg-slate-900/45 backdrop-blur px-3 py-1 text-[11px] sm:text-xs font-medium text-white/90">
-                        {{ $brand['photo_hint'] }}
+                        Foto
                     </span>
                 </div>
 
-                <div class="absolute inset-x-0 bottom-0 p-3 flex flex-col items-center gap-2">
-                    <button type="button" data-shoot-btn class="px-9 sm:px-12 py-3.5 rounded-full bg-white text-slate-900 font-display font-extrabold text-lg shadow-2xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/50">
-                        <x-icon name="camera" class="w-5 h-5 inline-block align-middle" /> Mulai Foto
-                    </button>
 
-                    <a href="{{ route('spa', ['step' => 'review']) }}" data-next-btn class="k-btn hidden w-full max-w-sm">
-                        Lanjut ke Hasil Foto
-                        <x-icon name="arrow-right" class="w-5 h-5 text-white" />
-                    </a>
-                </div>
             </div>
         </div>
 
-        {{-- Pratinjau frame (kanan, lebar sama dengan rail kiri) --}}
+        {{-- Pratinjau frame (kanan) --}}
         <div class="order-3 flex items-center justify-center w-full lg:w-auto min-h-0">
             <div class="k-card flex w-full flex-col items-center gap-2 p-3">
                 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pratinjau</p>
@@ -118,7 +109,18 @@
         </div>
     </div>
 
-    <div class="flex flex-col items-center gap-1.5 pt-1 shrink-0">
+    <div class="flex flex-col items-center gap-3 pt-2 shrink-0 w-full">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
+            <button type="button" data-shoot-btn class="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-slate-900 font-display font-extrabold text-base sm:text-lg shadow-2xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/50">
+                <x-icon name="camera" class="w-5 h-5" /> Mulai Foto
+            </button>
+
+            <a href="{{ route('spa', ['step' => 'review']) }}" data-next-btn class="hidden w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-rose-500 to-violet-500 text-white font-display font-extrabold text-base sm:text-lg shadow-2xl hover:scale-105 active:scale-95 transition-transform focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-300">
+                Lanjut ke Hasil
+                <x-icon name="arrow-right" class="w-5 h-5 text-white" />
+            </a>
+        </div>
+
         <p class="hidden text-sm font-medium text-red-600 text-center" data-photo-error aria-live="assertive"></p>
         <div class="flex flex-wrap justify-center gap-2" data-camera-switch></div>
     </div>

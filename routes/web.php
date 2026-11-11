@@ -50,6 +50,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::resource('frames', FrameController::class)->except(['show']);
         Route::resource('vouchers', VoucherController::class)->except(['show']);
+        Route::delete('/vouchers/filter', [VoucherController::class, 'destroyFiltered'])->name('vouchers.destroy-filtered');
         Route::get('/vouchers/{voucher}', [VoucherController::class, 'show'])->name('vouchers.show');
         Route::get('/vouchers/{voucher}/print-invoice', [VoucherController::class, 'printInvoice'])->name('vouchers.print-invoice');
         Route::get('/vouchers/{voucher}/print-voucher', [VoucherController::class, 'printVoucher'])->name('vouchers.print-voucher');

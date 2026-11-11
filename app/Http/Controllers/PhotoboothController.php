@@ -481,10 +481,13 @@ class PhotoboothController extends Controller
         // Voucher sudah dibayar di awal; beri sisa waktu yang cukup untuk
         // sesi foto + review tanpa memperpanjang tanpa batas.
         $request->session()->put('started_at', now()->timestamp);
-        $request->session()->put('total_seconds', max($oldRemaining, $this->sessionReviewSeconds()));
+        $request->session()->put('total_seconds', max($oldRemaining, $this->sessionPhotoSeconds() + $this->sessionReviewSeconds()));
 
         $this->logPayment(0, [
+            'voucher_id' => $voucher->id,
             'voucher_code' => $voucher->code,
+            'voucher_name' => $voucher->name,
+            'voucher_type' => $voucher->type,
             'voucher_value' => $this->total(),
         ]);
 
@@ -544,7 +547,7 @@ class PhotoboothController extends Controller
             // Pembayaran kini terjadi sebelum sesi foto. Waktu untuk sesi foto
             // dan review diatur terpisah di Pengaturan.
             $request->session()->put('started_at', now()->timestamp);
-            $request->session()->put('total_seconds', max($remaining, $this->sessionReviewSeconds()));
+            $request->session()->put('total_seconds', max($remaining, $this->sessionPhotoSeconds() + $this->sessionReviewSeconds()));
 
             $this->logPayment();
         }
