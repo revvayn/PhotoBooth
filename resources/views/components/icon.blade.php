@@ -56,10 +56,62 @@
             <path d="M19 12H5"/>
             <path d="m11 6-6 6 6 6"/>
             @break
+        @case('calendar')
+            <rect x="3" y="5" width="18" height="16" rx="2"/>
+            <path d="M8 3v4M16 3v4M3 10h18"/>
+            @break
+        @case('download')
+            <path d="M12 3v12"/>
+            <path d="m7 10 5 5 5-5"/>
+            <path d="M4 21h16"/>
+            @break
+        @case('trash')
+            <path d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7"/>
+            <path d="M10 11v6M14 11v6M9 7V4h6v3M4 7h16"/>
+            @break
+        @case('eye')
+            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/>
+            <circle cx="12" cy="12" r="3"/>
+            @break
+        @case('search')
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m21 21-4.3-4.3"/>
+            @break
+        @case('chevron-left')
+            <path d="m15 18-6-6 6-6"/>
+            @break
+        @case('chevron-right')
+            <path d="m9 18 6-6-6-6"/>
+            @break
+        @case('x')
+            <path d="M18 6 6 18M6 6l12 12"/>
+            @break
+        @case('filter')
+            <path d="M4 5h16l-6 7v6l-4 2v-8L4 5z"/>
+            @break
+        @case('sparkles')
+            <path d="m12 3 1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3z"/>
+            <path d="M19 14l.9 2.1L22 17l-2.1.9L19 20l-.9-2.1L16 17l2.1-.9L19 14z"/>
+            @break
         @case('sliders')
             <path d="M4 8h10M18 8h2M4 16h4M12 16h8"/>
             <circle cx="16" cy="8" r="2"/>
             <circle cx="10" cy="16" r="2"/>
+            @break
+        @case('plus')
+            <path d="M12 5v14M5 12h14"/>
+            @break
+        @case('pencil')
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+            @break
+        @case('receipt')
+            <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/>
+            <path d="M9 8h6M9 12h6M9 16h3"/>
+            @break
+        @case('ticket')
+            <path d="M4 7a2 2 0 0 0 2-2h12a2 2 0 0 0 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 0-2 2H6a2 2 0 0 0-2-2v-3a2 2 0 0 0 0-4V7z"/>
+            <path d="M13 5v14" stroke-dasharray="2 2"/>
             @break
         @default
             <circle cx="12" cy="12" r="9"/>

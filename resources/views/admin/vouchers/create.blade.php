@@ -4,7 +4,7 @@
 @section('page-title', 'Buat Voucher')
 
 @section('content')
-<div class="max-w-3xl mx-auto">
+<div class="max-w-6xl mx-auto">
     @include('admin.vouchers._form', ['type' => $type ?? 'cash'])
 </div>
 @endsection

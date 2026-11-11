@@ -12,13 +12,13 @@
         <div class="mx-auto mb-3 w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center ring-8 ring-emerald-50">
             <x-icon name="check" class="w-8 h-8" />
         </div>
-        <h2 class="font-display font-bold text-2xl sm:text-3xl">Terima kasih!</h2>
+        <h2 class="k-title">Terima kasih!</h2>
         <p class="text-slate-500 text-sm mt-1">Sesi fotomu sudah selesai. Sampai jumpa lagi!</p>
     </div>
 
-    <div class="flex gap-3 overflow-x-auto max-w-full px-1 pb-1 mb-3">
+    <div class="flex gap-4 overflow-x-auto max-w-full px-2 pt-1 pb-3 mb-3">
         @forelse ($items as $item)
-            <div class="shrink-0 w-[150px] sm:w-[180px] overflow-hidden rounded-2xl shadow-xl shadow-rose-100 ring-1 ring-rose-100 bg-white" data-strip-container>
+            <div class="shrink-0 w-[150px] sm:w-[180px] overflow-hidden rounded-2xl shadow-xl shadow-rose-100/60 ring-1 ring-black/5 bg-white" data-strip-container>
                 <canvas class="w-full h-auto block" data-strip-canvas
                         data-photos='@json($item['photos'] ?? [])'
                         data-filters='@json($item['filter_map'] ?? [])'
@@ -42,16 +42,14 @@
         </p>
     @endif
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-sm">
-        <button type="button" data-strip-download class="text-center rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold px-6 py-3 shadow-lg shadow-rose-200 hover:scale-105 active:scale-95 transition-transform focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-300">
-            Unduh Softfile
+    <div class="flex flex-wrap items-center justify-center gap-3">
+        <button type="button" data-strip-download class="k-btn">
+            <x-icon name="photo" class="w-4 h-4 text-white" /> Unduh Softfile
         </button>
 
         <form method="POST" action="{{ route('selesai.store') }}">
             @csrf
-            <button type="submit" class="w-full rounded-full bg-slate-800 text-white font-display font-bold px-6 py-3 shadow-md hover:bg-slate-900 hover:scale-105 active:scale-95 transition-transform focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-400">
-                Sesi Baru
-            </button>
+            <button type="submit" class="k-btn k-btn-dark">Sesi Baru</button>
         </form>
     </div>
 

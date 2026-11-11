@@ -12,10 +12,13 @@
     @include('partials.fonts', ['brand' => $brand])
     @include('partials.branding', ['brand' => $brand])
 </head>
-<body class="admin-theme min-h-screen bg-gradient-to-br from-rose-500 via-pink-500 to-fuchsia-500 flex items-center justify-center p-4">
+<body class="admin-theme min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style="background: linear-gradient(180deg, {{ $brand['bg_from'] }} 0%, {{ $brand['bg_via'] }} 48%, {{ $brand['bg_to'] }} 100%);">
 
-    <div class="w-full max-w-md">
-        <div class="bg-white rounded-2xl shadow-2xl p-8">
+    <div aria-hidden="true" class="pointer-events-none fixed inset-0" style="background: radial-gradient(ellipse 80% 55% at 50% 0%, color-mix(in srgb, {{ $brand['primary'] }} 16%, transparent), transparent 72%), radial-gradient(ellipse 80% 55% at 50% 100%, color-mix(in srgb, {{ $brand['secondary'] }} 14%, transparent), transparent 72%);"></div>
+
+    <div class="relative z-10 w-full max-w-md">
+        <div class="bg-white rounded-3xl shadow-2xl shadow-slate-900/10 border border-slate-200 p-8">
             {{-- Logo & Title --}}
             <div class="text-center mb-8">
                 <x-brand-mark size="w-16 h-16" rounded="rounded-2xl" icon="w-8 h-8" class="mx-auto mb-4" />
@@ -41,25 +44,26 @@
                 <div>
                     <label for="email" class="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
                     <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus
-                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent transition-all duration-200"
+                           class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent transition-all duration-200"
                            placeholder="admin@photobooth.com">
                 </div>
 
                 <div>
                     <label for="password" class="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
                     <input type="password" id="password" name="password" required
-                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent transition-all duration-200"
+                           class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent transition-all duration-200"
                            placeholder="Masukkan password">
                 </div>
 
                 <button type="submit"
-                        class="w-full py-3 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 hover:from-rose-600 hover:to-pink-600 transition-all duration-200 active:scale-[0.98]">
+                        class="w-full py-3.5 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 hover:brightness-105 active:scale-[0.98] focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-100"
+                        style="background: linear-gradient(120deg, var(--brand-primary), var(--brand-secondary)); box-shadow: 0 16px 30px -16px var(--brand-primary-shadow);">
                     Masuk
                 </button>
             </form>
         </div>
 
-        <p class="text-center text-white/60 text-xs mt-6">&copy; {{ date('Y') }} {{ $brand['name'] }} Admin Panel</p>
+        <p class="text-center text-slate-500 text-xs mt-6">&copy; {{ date('Y') }} {{ $brand['name'] }} Admin Panel</p>
     </div>
 
     @include('partials.toast')

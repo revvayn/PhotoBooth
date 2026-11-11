@@ -1,4 +1,4 @@
-﻿<div class="flex-1 min-h-0 flex flex-col">
+<div class="flex-1 min-h-0 flex flex-col">
     <div class="text-center mb-2">
         <div class="inline-flex items-center justify-center gap-2">
             <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-400 to-violet-500 text-white flex items-center justify-center shadow-md shadow-rose-200">

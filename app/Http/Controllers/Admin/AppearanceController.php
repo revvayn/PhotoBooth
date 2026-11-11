@@ -20,6 +20,7 @@ class AppearanceController extends Controller
         'Inter',
         'DM Sans',
         'Space Grotesk',
+        'Plus Jakarta Sans',
     ];
 
     /** Pilihan skala sudut (border radius). */
@@ -33,24 +34,24 @@ class AppearanceController extends Controller
         'brand_footer' => 'Photobooth',
 
         // Warna teks
-        'brand_text' => '#1e293b',
+        'brand_text' => '#334155',
         'brand_heading' => '#0f172a',
         'brand_muted' => '#64748b',
 
         // Warna brand
-        'brand_primary' => '#f43f5e',
-        'brand_secondary' => '#7c3aed',
-        'brand_accent' => '#d946ef',
-        'brand_success' => '#10b981',
-        'brand_warning' => '#f59e0b',
-        'brand_danger' => '#ef4444',
-        'brand_bg_from' => '#ffe4e6',
-        'brand_bg_via' => '#fdf4ff',
-        'brand_bg_to' => '#ede9fe',
+        'brand_primary' => '#4f46e5',
+        'brand_secondary' => '#0891b2',
+        'brand_accent' => '#7c3aed',
+        'brand_success' => '#059669',
+        'brand_warning' => '#d97706',
+        'brand_danger' => '#e11d48',
+        'brand_bg_from' => '#eef2ff',
+        'brand_bg_via' => '#f8fafc',
+        'brand_bg_to' => '#ecfeff',
 
         // Tipografi & bentuk
-        'brand_heading_font' => 'Baloo 2',
-        'brand_body_font' => 'Poppins',
+        'brand_heading_font' => 'Plus Jakarta Sans',
+        'brand_body_font' => 'Inter',
         'brand_radius' => 'md',
     ];
 

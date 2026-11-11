@@ -13,23 +13,20 @@
         {{ $brand['welcome_badge'] }} &middot; {{ $frameCount ?? 0 }} frame tersedia
     </div>
 
-    <x-brand-mark size="w-24 h-24 sm:w-28 sm:h-28" rounded="rounded-[2rem]" icon="w-14 h-14 sm:w-16 sm:h-16" class="animate-bounce-slow mb-5" />
+    <x-brand-mark size="w-24 h-24 sm:w-28 sm:h-28" rounded="rounded-[2rem]" icon="w-12 h-12 sm:w-14 sm:h-14" class="mb-6 shadow-2xl" />
 
-    <h1 class="font-display font-extrabold text-5xl sm:text-6xl bg-gradient-to-r from-rose-500 to-violet-600 bg-clip-text text-transparent mb-3">
+    <h1 class="font-display font-extrabold tracking-tight text-5xl sm:text-7xl bg-gradient-to-r from-rose-500 to-violet-600 bg-clip-text text-transparent pb-1 mb-3">
         {{ $brand['name'] }}
     </h1>
-    <p class="text-slate-500 text-base sm:text-lg max-w-md mb-8 leading-relaxed">
+    <p class="text-slate-500 text-lg sm:text-xl max-w-md mb-8 leading-snug">
         {{ $brand['welcome'] }}
     </p>
 
     <form method="POST" action="{{ route('mulai') }}">
         @csrf
-        <button type="submit" class="group relative px-14 sm:px-16 py-4 sm:py-5 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white text-xl sm:text-2xl font-display font-bold shadow-xl shadow-rose-300 hover:shadow-2xl hover:scale-105 active:scale-95 transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-300">
-            <span class="inline-flex items-center gap-2">
-                {{ $brand['start_label'] }}
-                <x-icon name="arrow-right" class="w-6 h-6 text-white" />
-            </span>
-            <span class="absolute inset-0 rounded-full bg-white/20 opacity-0 group-hover:animate-ping-slow group-hover:opacity-100 transition-opacity"></span>
+        <button type="submit" class="k-btn !px-14 sm:!px-20 !py-5 !text-2xl hover:scale-105">
+            {{ $brand['start_label'] }}
+            <x-icon name="arrow-right" class="w-6 h-6 text-white" />
         </button>
     </form>
 
@@ -40,24 +37,18 @@
         @endif
     </p>
 
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-10 w-full max-w-2xl">
-        @foreach ([
-            ['icon' => 'card', 'color' => 'bg-rose-100 text-rose-600', 'title' => 'Bayar / Voucher'],
-            ['icon' => 'photo', 'color' => 'bg-fuchsia-100 text-fuchsia-600', 'title' => 'Pilih Frame'],
-            ['icon' => 'camera', 'color' => 'bg-emerald-100 text-emerald-600', 'title' => 'Sesi Foto'],
-            ['icon' => 'printer', 'color' => 'bg-violet-100 text-violet-600', 'title' => 'Cetak & Kirim'],
-        ] as $i => $item)
-            <div class="flex flex-col items-center gap-2 rounded-2xl bg-white/55 backdrop-blur px-2 py-3 ring-1 ring-white/60">
-                <span class="relative w-11 h-11 rounded-2xl {{ $item['color'] }} flex items-center justify-center">
-                    <x-icon :name="$item['icon']" class="w-5 h-5" />
-                    <span class="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-white text-[9px] font-bold text-slate-500 ring-1 ring-slate-100 flex items-center justify-center">{{ $i + 1 }}</span>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-10 w-full max-w-2xl">
+        @foreach ([['card', 'Bayar / Voucher'], ['photo', 'Pilih Frame'], ['camera', 'Sesi Foto'], ['printer', 'Cetak & Kirim']] as $item)
+            <div class="k-card flex flex-col items-center gap-2.5 px-2 py-4 sm:px-3 sm:py-5">
+                <span class="k-icon w-12 h-12 sm:w-14 sm:h-14 rounded-2xl">
+                    <x-icon :name="$item[0]" class="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                 </span>
-                <span class="text-xs sm:text-sm font-semibold text-slate-600">{{ $item['title'] }}</span>
+                <span class="text-xs sm:text-sm font-semibold text-slate-600 text-center leading-tight">{{ $item[1] }}</span>
             </div>
         @endforeach
     </div>
 
-    <p class="mt-4 text-[11px] sm:text-xs text-slate-400">
+    <p class="mt-4 text-[11px] sm:text-xs text-slate-400 max-w-md">
         Punya voucher? Pilih <strong>Voucher</strong> di awal &mdash; frame dan jumlah cetak otomatis, langsung ke sesi foto.
     </p>
 </div>

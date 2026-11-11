@@ -9,6 +9,7 @@
         'Inter' => '400;500;600;700;800',
         'DM Sans' => '400;500;700',
         'Space Grotesk' => '400;500;600;700',
+        'Plus Jakarta Sans' => '400;500;600;700;800',
     ];
     $fontFamilies = collect([$brand['heading_font'] ?? 'Baloo 2', $brand['body_font'] ?? 'Poppins'])
         ->filter()

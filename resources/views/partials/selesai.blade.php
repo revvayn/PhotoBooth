@@ -1,4 +1,4 @@
-﻿<div class="flex-1 flex flex-col items-center">
+<div class="flex-1 flex flex-col items-center">
     <div class="text-center mb-6">
         <h2 class="font-display font-bold text-3xl">Review Foto</h2>
         <p class="text-slate-500 text-sm mt-1">Berikut hasil frame yang sudah dibuat</p>

@@ -13,7 +13,14 @@ class Voucher extends Model
         'items',
         'type',
         'event_name',
+        'event_batch',
+        'event_code',
+        'pricing_mode',
         'event_date',
+        'start_time',
+        'end_time',
+        'duration_hours',
+        'cost_per_hour',
         'photos_per_voucher',
         'number_of_people',
         'total_cost',
@@ -28,10 +35,13 @@ class Voucher extends Model
         'items' => 'array',
         'max_uses' => 'integer',
         'used_count' => 'integer',
+        'event_date' => 'date',
         'expires_at' => 'datetime',
         'is_active' => 'boolean',
         'photos_per_voucher' => 'integer',
         'number_of_people' => 'integer',
+        'duration_hours' => 'integer',
+        'cost_per_hour' => 'integer',
         'total_cost' => 'integer',
         'discount' => 'integer',
     ];
@@ -158,8 +168,40 @@ class Voucher extends Model
         return $query->where('is_active', true);
     }
 
+    public function eventWindow(): array
+    {
+        if (! $this->isEvent() || ! $this->event_date) {
+            return [null, null];
+        }
+
+        $start = $this->event_date->copy()->startOfDay();
+        $end = null;
+
+        if ($this->start_time) {
+            [$hour, $minute] = array_pad(explode(':', $this->start_time), 2, 0);
+            $start = $this->event_date->copy()->setTime((int) $hour, (int) $minute);
+        }
+
+        if ($this->end_time) {
+            [$hour, $minute] = array_pad(explode(':', $this->end_time), 2, 0);
+            $end = $this->event_date->copy()->setTime((int) $hour, (int) $minute);
+            if ($end->lessThanOrEqualTo($start)) {
+                $end = $end->addDay();
+            }
+        } elseif ((int) $this->duration_hours > 0) {
+            $end = $start->copy()->addHours((int) $this->duration_hours);
+        }
+
+        return [$start, $end];
+    }
+
     public function isExpired(): bool
     {
+        if ($this->isEvent() && $this->event_date && ($this->start_time || $this->end_time || (int) $this->duration_hours > 0)) {
+            [, $end] = $this->eventWindow();
+            return $end !== null && now()->gt($end);
+        }
+
         return $this->expires_at !== null && $this->expires_at->isPast();
     }
 
@@ -170,7 +212,18 @@ class Voucher extends Model
 
     public function isUsable(): bool
     {
-        return $this->is_active && ! $this->isExpired() && ! $this->isExhausted();
+        if (! $this->is_active || $this->isExpired() || $this->isExhausted()) {
+            return false;
+        }
+
+        if ($this->isEvent() && $this->event_date && ($this->start_time || $this->end_time || (int) $this->duration_hours > 0)) {
+            [$start] = $this->eventWindow();
+            if ($start !== null && now()->lt($start)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function getRemainingUsesAttribute(): ?int

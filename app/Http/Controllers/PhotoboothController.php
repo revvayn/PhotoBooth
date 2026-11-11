@@ -8,6 +8,7 @@ use App\Models\Frame;
 use App\Models\Setting;
 use App\Models\Voucher;
 use App\Support\Brand;
+use App\Support\QueueNumber;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -84,7 +85,7 @@ class PhotoboothController extends Controller
         }
 
         if (! $request->session()->has('queue')) {
-            $queue = '#'.rand(1000, 9999 );
+            $queue = QueueNumber::next();
             $request->session()->put('queue', $queue);
             $request->session()->put('started_at', now()->timestamp);
             $request->session()->put('total_seconds', $this->sessionSelectionSeconds());
@@ -164,7 +165,7 @@ class PhotoboothController extends Controller
     {
         $this->deletePhotos($request->session()->getId());
         $request->session()->regenerate();
-        $queue = '#'.rand(1000, 9999);
+        $queue = QueueNumber::next();
 
         $request->session()->put('queue', $queue);
         $request->session()->put('started_at', now()->timestamp);
@@ -334,6 +335,13 @@ class PhotoboothController extends Controller
         }
 
         $request->session()->put('photos', $saved);
+
+        // Arsip admin tidak boleh menghalangi pelanggan menyelesaikan sesi.
+        try {
+            $this->archivePhotos($request, $saved);
+        } catch (\Throwable $error) {
+            report($error);
+        }
         // Pastikan masih ada waktu untuk review, cetak, unduh, dan kirim email.
         $remaining = $this->remainingSeconds();
         $request->session()->put('started_at', now()->timestamp);
@@ -770,7 +778,7 @@ class PhotoboothController extends Controller
      */
     private function resetCartSession(Request $request, array $keep = []): void
     {
-        $forget = ['cart', 'photos', 'filter', 'filters', 'metode', 'paid', 'email', 'voucher', 'voucher_value'];
+        $forget = ['cart', 'photos', 'filter', 'filters', 'metode', 'paid', 'email', 'voucher', 'voucher_value', 'payment_log_id'];
         $request->session()->forget(array_diff($forget, $keep));
     }
 
@@ -871,7 +879,7 @@ class PhotoboothController extends Controller
             'price' => $item['price'],
         ], $this->cartItems());
 
-        ActivityLog::create([
+        $log = ActivityLog::create([
             'session_id' => session()->getId(),
             'queue_number' => session('queue'),
             'action' => ActivityLog::PAYMENT,
@@ -883,6 +891,8 @@ class PhotoboothController extends Controller
                 'ip' => request()->ip(),
             ], $extra),
         ]);
+
+        session()->put('payment_log_id', $log->id);
     }
 
     /**
@@ -933,6 +943,103 @@ class PhotoboothController extends Controller
         $elapsed = now()->timestamp - (int) session('started_at', now()->timestamp);
 
         return max(0, $total - $elapsed);
+    }
+
+    /**
+     * Simpan salinan permanen foto + detail frame ke folder arsip milik log
+     * pembayaran. Folder sesi tetap dihapus saat sesi selesai, sedangkan arsip
+     * ini dipakai admin untuk melihat dan mengunduh hasil foto pelanggan.
+     */
+    private function archivePhotos(Request $request, array $saved): void
+    {
+        $logId = (int) session('payment_log_id', 0);
+        $log = $logId > 0
+            ? ActivityLog::payments()->whereKey($logId)->first()
+            : null;
+
+        // Bila log yang tersimpan sudah dihapus admin, pakai pembayaran
+        // terakhir di sesi ini sebagai jaring pengaman.
+        if (! $log) {
+            $log = ActivityLog::payments()
+                ->forSession($request->session()->getId())
+                ->latest('id')
+                ->first();
+        }
+
+        if (! $log) {
+            return;
+        }
+
+        $sessionId = $request->session()->getId();
+        $existingArchive = $log->metadata['archive_dir'] ?? null;
+        $directory = is_string($existingArchive) && str_starts_with($existingArchive, 'arsip/')
+            ? $existingArchive
+            : 'arsip/'.$log->id.'-'.bin2hex(random_bytes(12));
+
+        Storage::disk('public')->deleteDirectory($directory);
+
+        $archived = [];
+        foreach ($saved as $slug => $urls) {
+            foreach ($urls as $index => $url) {
+                $name = basename((string) parse_url($url, PHP_URL_PATH));
+                if ($name === '') {
+                    continue;
+                }
+
+                $source = 'photos/'.$sessionId.'/'.$name;
+                if (! Storage::disk('public')->exists($source)) {
+                    continue;
+                }
+
+                Storage::disk('public')->copy($source, $directory.'/'.$name);
+                $archived[$slug][$index] = '/storage/'.$directory.'/'.$name;
+            }
+        }
+
+        $items = collect($this->cartItems())->map(function (array $item) use ($archived, $directory) {
+            $photos = array_values($archived[$item['slug']] ?? []);
+            $frameUrl = $item['image_url'];
+
+            // Ikutkan gambar frame ke arsip agar hasil lama tetap utuh
+            // walaupun frame diubah atau dihapus dari admin.
+            if (is_string($frameUrl) && $frameUrl !== '') {
+                $framePath = parse_url($frameUrl, PHP_URL_PATH);
+                $framePath = is_string($framePath) ? ltrim($framePath, '/') : '';
+                if (str_starts_with($framePath, 'storage/')) {
+                    $framePath = substr($framePath, strlen('storage/'));
+                }
+                if ($framePath !== '' && Storage::disk('public')->exists($framePath)) {
+                    $extension = pathinfo($framePath, PATHINFO_EXTENSION) ?: 'png';
+                    $name = preg_replace('/[^a-z0-9_-]+/i', '-', $item['slug']) ?: 'frame';
+                    $target = $directory.'/frame-'.$name.'.'.$extension;
+                    Storage::disk('public')->copy($framePath, $target);
+                    $frameUrl = '/storage/'.$target;
+                }
+            }
+
+            return [
+                'slug' => $item['slug'],
+                'name' => $item['name'],
+                'qty' => $item['qty'],
+                'price' => $item['price'],
+                'photo_count' => $item['photo_count'],
+                'image_url' => $frameUrl,
+                'slots' => $item['slots'],
+                'caption' => $item['caption'],
+                'photos' => $photos,
+                'filters' => array_values($this->itemFilterMap($item['slug'], $photos)),
+            ];
+        })->all();
+
+        $metadata = $log->metadata ?? [];
+        $metadata['items'] = $items;
+        $metadata['photos'] = $archived;
+        $metadata['archive_dir'] = $directory;
+        $metadata['filters'] = session('filters', []);
+        $metadata['archived_at'] = now()->toIso8601String();
+
+        $log->metadata = $metadata;
+        $log->save();
     }
 
     private function deletePhotos(string $sessionId): void

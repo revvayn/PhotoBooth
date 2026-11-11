@@ -19,27 +19,30 @@
       @if ($brand['bg_image_url']) style="--brand-bg-image: url('{{ $brand['bg_image_url'] }}')" @endif>
 
     <div aria-hidden="true" class="pointer-events-none fixed inset-0 overflow-hidden">
-        <div class="absolute -top-24 -left-24 w-80 h-80 rounded-full blur-3xl" style="background: color-mix(in srgb, {{ $brand['primary'] }} 30%, transparent);"></div>
-        <div class="absolute -bottom-32 -right-16 w-96 h-96 rounded-full blur-3xl" style="background: color-mix(in srgb, {{ $brand['secondary'] }} 30%, transparent);"></div>
+        <div class="absolute inset-0" style="background: radial-gradient(ellipse 80% 55% at 50% 0%, color-mix(in srgb, {{ $brand['primary'] }} 15%, transparent), transparent 72%), radial-gradient(ellipse 80% 55% at 50% 100%, color-mix(in srgb, {{ $brand['secondary'] }} 13%, transparent), transparent 72%);"></div>
+        <div class="absolute inset-0 k-grid-bg opacity-60"></div>
     </div>
 
-    <div class="relative z-10 h-dvh overflow-hidden flex flex-col px-3 sm:px-8 py-3 max-w-6xl mx-auto w-full min-h-0">
+    <div class="relative z-10 h-dvh overflow-hidden flex flex-col px-3 sm:px-8 py-3 sm:py-4 max-w-6xl mx-auto w-full min-h-0">
 
         @if (isset($step))
+            @php($remaining = max(0, (int) session('total_seconds', 600) - (now()->timestamp - (int) session('started_at', now()->timestamp))))
             <header class="flex items-center justify-between gap-3 mb-3 shrink-0">
                 <div class="flex items-center gap-3 min-w-0">
-                    <x-brand-mark size="w-10 h-10" rounded="rounded-2xl" />
+                    <x-brand-mark size="w-11 h-11" rounded="rounded-2xl" icon="w-6 h-6" />
                     <div class="min-w-0">
-                        <h1 class="font-display font-bold text-slate-800 leading-none truncate">{{ $brand['name'] }}</h1>
-                        <p class="text-xs text-slate-500 truncate">{{ $brand['tagline'] }} &middot; Antrian {{ $queue ?? '-' }}</p>
+                        <h1 class="font-display font-extrabold text-xl tracking-tight text-slate-900 leading-none truncate">{{ $brand['name'] }}</h1>
+                        <p class="text-xs text-slate-500 truncate mt-0.5">{{ $brand['tagline'] }}</p>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    @php($remaining = max(0, (int) session('total_seconds', 600) - (now()->timestamp - (int) session('started_at', now()->timestamp))))
-                    <div data-timer-pill class="flex items-center gap-2 rounded-full bg-white/80 backdrop-blur px-4 py-2 shadow-sm ring-1 ring-rose-100 transition-colors">
+                <div class="flex items-center gap-2 shrink-0">
+                    @if (!empty($queue))
+                        <span class="k-pill shadow-sm"><span class="text-rose-500">{{ $queue }}</span></span>
+                    @endif
+                    <div data-timer-pill class="k-pill shadow-sm transition-colors">
                         <x-icon name="clock" class="w-4 h-4 text-rose-500" />
-                        <span class="text-sm font-bold tabular-nums text-slate-700" data-session-timer data-total="{{ $remaining }}" aria-live="polite">
+                        <span class="tabular-nums" data-session-timer data-total="{{ $remaining }}" aria-live="polite">
                             <span data-session-timer-min>00</span>:<span data-session-timer-sec>00</span>
                         </span>
                     </div>
@@ -51,12 +54,11 @@
             @yield('content')
 
             <div class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm" data-timeout-overlay>
-                <div class="bg-white rounded-3xl p-8 text-center max-w-sm mx-4 shadow-2xl">
+                <div class="k-card-solid p-8 text-center max-w-sm mx-4 shadow-2xl">
                     <div class="mb-3 text-rose-400 flex justify-center"><x-icon name="clock" class="w-12 h-12" /></div>
-                    <h2 class="font-display font-bold text-xl mb-1">Waktu Sesi Habis</h2>
-                    <p class="text-sm text-slate-500 mb-2">Jangan khawatir, sesi baru bisa dimulai kapan saja.</p>
-                    <p class="text-xs text-slate-400 mb-5" data-timeout-note>Mengalihkan ke layar awal…</p>
-                    <a href="{{ route('home') }}" class="inline-block rounded-full bg-rose-500 text-white font-semibold px-8 py-3 hover:bg-rose-600">Kembali ke Awal</a>
+                    <h2 class="font-display font-extrabold text-2xl mb-1">Waktu habis</h2>
+                    <p class="text-sm text-slate-400 mb-5" data-timeout-note>Kembali ke awal…</p>
+                    <a href="{{ route('home') }}" class="k-btn">Mulai Lagi</a>
                 </div>
             </div>
         </main>
@@ -64,6 +66,7 @@
         <footer class="text-center text-xs text-slate-400 mt-3 shrink-0">
             &copy; {{ date('Y') }} {{ $brand['footer'] }}
         </footer>
+
     </div>
 
     @include('partials.toast')

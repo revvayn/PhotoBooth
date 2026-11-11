@@ -80,11 +80,11 @@
 
         /* ---------- Latar ---------- */
         .kiosk-theme {
-            background: linear-gradient(135deg, var(--brand-bg-from), var(--brand-bg-via), var(--brand-bg-to));
+            background: linear-gradient(180deg, var(--brand-bg-from) 0%, var(--brand-bg-via) 48%, var(--brand-bg-to) 100%);
             background-attachment: fixed;
         }
         .kiosk-theme.has-brand-bg {
-            background-image: linear-gradient(135deg, color-mix(in srgb, var(--brand-bg-from) 88%, transparent), color-mix(in srgb, var(--brand-bg-via) 80%, transparent), color-mix(in srgb, var(--brand-bg-to) 88%, transparent)), var(--brand-bg-image);
+            background-image: linear-gradient(180deg, color-mix(in srgb, var(--brand-bg-from) 88%, transparent), color-mix(in srgb, var(--brand-bg-via) 82%, transparent), color-mix(in srgb, var(--brand-bg-to) 88%, transparent)), var(--brand-bg-image);
             background-size: cover;
             background-position: center;
         }
@@ -133,11 +133,15 @@
         .kiosk-theme .border-pink-300,
         .kiosk-theme .border-pink-400 { border-color: var(--brand-primary) !important; }
         .kiosk-theme .shadow-rose-100,
-        .kiosk-theme .shadow-pink-100 { --tw-shadow-color: color-mix(in srgb, var(--brand-primary) 18%, transparent) !important; }
+        .kiosk-theme .shadow-pink-100,
+        .kiosk-theme .shadow-rose-100\/40,
+        .kiosk-theme .shadow-rose-100\/50,
+        .kiosk-theme .shadow-rose-100\/60 { --tw-shadow-color: color-mix(in srgb, var(--brand-primary) 14%, transparent) !important; }
         .kiosk-theme .shadow-rose-200,
-        .kiosk-theme .shadow-pink-200 { --tw-shadow-color: var(--brand-primary-shadow) !important; }
+        .kiosk-theme .shadow-pink-200,
+        .kiosk-theme .shadow-rose-200\/50 { --tw-shadow-color: var(--brand-primary-shadow) !important; }
         .kiosk-theme .shadow-rose-300,
-        .kiosk-theme .shadow-pink-300 { --tw-shadow-color: color-mix(in srgb, var(--brand-primary) 40%, transparent) !important; }
+        .kiosk-theme .shadow-pink-300 { --tw-shadow-color: color-mix(in srgb, var(--brand-primary) 34%, transparent) !important; }
 
         /* ---------- WARNA SUKSES (success: emerald & green) ---------- */
         .kiosk-theme .bg-emerald-500,
@@ -407,16 +411,16 @@
         .kiosk-theme .bg-gradient-to-br.from-rose-400.to-violet-500,
         .kiosk-theme .bg-gradient-to-r.from-rose-500.to-violet-600,
         .kiosk-theme .bg-gradient-to-br.from-rose-500.to-violet-600 {
-            background-image: linear-gradient(to right, var(--brand-primary), var(--brand-secondary)) !important;
+            background-image: linear-gradient(120deg, var(--brand-primary), var(--brand-secondary)) !important;
         }
         .kiosk-theme .bg-gradient-to-r.from-emerald-500.to-teal-500,
         .kiosk-theme .bg-gradient-to-br.from-emerald-500.to-teal-500 {
-            background-image: linear-gradient(to right, var(--brand-primary), var(--brand-secondary)) !important;
+            background-image: linear-gradient(120deg, var(--brand-primary), var(--brand-secondary)) !important;
         }
         .kiosk-theme .bg-gradient-to-r.from-violet-400.to-fuchsia-500,
         .kiosk-theme .bg-gradient-to-r.from-violet-500.to-fuchsia-600,
         .kiosk-theme .bg-gradient-to-r.from-rose-500.via-fuchsia-500.to-violet-500 {
-            background-image: linear-gradient(to right, var(--brand-secondary), var(--brand-accent)) !important;
+            background-image: linear-gradient(120deg, var(--brand-secondary), var(--brand-accent)) !important;
         }
     }
 
@@ -438,6 +442,7 @@
         .admin-theme .hover\:bg-rose-600:hover { background-color: var(--brand-primary-dark) !important; }
         .admin-theme .bg-rose-50 { background-color: var(--brand-primary-soft) !important; }
         .admin-theme .hover\:bg-rose-100:hover { background-color: color-mix(in srgb, var(--brand-primary) 16%, white) !important; }
+        .admin-theme .text-rose-700 { color: var(--brand-primary-dark) !important; }
         .admin-theme .bg-rose-500\/20 { background-color: color-mix(in srgb, var(--brand-primary) 20%, transparent) !important; }
         .admin-theme .bg-rose-500\/15 { background-color: color-mix(in srgb, var(--brand-primary) 15%, transparent) !important; }
         .admin-theme .bg-rose-500\/10 { background-color: color-mix(in srgb, var(--brand-primary) 10%, transparent) !important; }
@@ -448,12 +453,73 @@
         .admin-theme .ring-rose-100 { --tw-ring-color: var(--brand-primary-soft) !important; }
         .admin-theme .focus\:ring-rose-400:focus { --tw-ring-color: var(--brand-primary) !important; }
         .admin-theme .shadow-rose-200 { --tw-shadow-color: var(--brand-primary-shadow) !important; }
+
+        /* Aksen sekunder di panel admin (biru/cyan) dan aksen ungu. */
+        .admin-theme .bg-blue-500,
+        .admin-theme .bg-sky-500,
+        .admin-theme .bg-cyan-500,
+        .admin-theme .bg-teal-500,
+        .admin-theme .bg-indigo-500 { background-color: var(--brand-secondary) !important; }
+        .admin-theme .bg-blue-50,
+        .admin-theme .bg-sky-50,
+        .admin-theme .bg-cyan-50,
+        .admin-theme .bg-teal-50,
+        .admin-theme .bg-indigo-50 { background-color: var(--brand-secondary-soft) !important; }
+        .admin-theme .bg-blue-100,
+        .admin-theme .bg-sky-100,
+        .admin-theme .bg-cyan-100,
+        .admin-theme .bg-teal-100,
+        .admin-theme .bg-indigo-100 { background-color: color-mix(in srgb, var(--brand-secondary) 16%, white) !important; }
+        .admin-theme .text-blue-500,
+        .admin-theme .text-blue-600,
+        .admin-theme .text-blue-700,
+        .admin-theme .text-sky-500,
+        .admin-theme .text-sky-600,
+        .admin-theme .text-cyan-500,
+        .admin-theme .text-cyan-600,
+        .admin-theme .text-teal-500,
+        .admin-theme .text-teal-600,
+        .admin-theme .text-indigo-500,
+        .admin-theme .text-indigo-600 { color: var(--brand-secondary) !important; }
+        .admin-theme .border-blue-100,
+        .admin-theme .border-sky-100,
+        .admin-theme .border-cyan-100,
+        .admin-theme .border-teal-100,
+        .admin-theme .border-indigo-100 { border-color: var(--brand-secondary-soft) !important; }
+        .admin-theme .ring-blue-100,
+        .admin-theme .ring-sky-100,
+        .admin-theme .ring-cyan-100,
+        .admin-theme .ring-teal-100,
+        .admin-theme .ring-indigo-100 { --tw-ring-color: var(--brand-secondary-soft) !important; }
+
+        .admin-theme .bg-violet-500,
+        .admin-theme .bg-purple-500 { background-color: var(--brand-accent) !important; }
+        .admin-theme .bg-violet-50,
+        .admin-theme .bg-purple-50 { background-color: var(--brand-accent-soft) !important; }
+        .admin-theme .bg-violet-100,
+        .admin-theme .bg-purple-100 { background-color: color-mix(in srgb, var(--brand-accent) 16%, white) !important; }
+        .admin-theme .text-violet-500,
+        .admin-theme .text-violet-600,
+        .admin-theme .text-violet-700,
+        .admin-theme .text-purple-500,
+        .admin-theme .text-purple-600,
+        .admin-theme .text-purple-700 { color: var(--brand-accent) !important; }
+        .admin-theme .border-violet-100,
+        .admin-theme .border-purple-100 { border-color: var(--brand-accent-soft) !important; }
+        .admin-theme .ring-violet-100,
+        .admin-theme .ring-purple-100 { --tw-ring-color: var(--brand-accent-soft) !important; }
         .admin-theme .from-rose-400,
         .admin-theme .from-rose-500 { --tw-gradient-from: var(--brand-primary) !important; }
         .admin-theme .to-pink-400,
-        .admin-theme .to-pink-500 { --tw-gradient-to: var(--brand-primary) !important; }
+        .admin-theme .to-pink-500,
+        .admin-theme .to-violet-500,
+        .admin-theme .to-violet-600 { --tw-gradient-to: var(--brand-secondary) !important; }
         .admin-theme .via-pink-500 { --tw-gradient-via: var(--brand-accent) !important; }
         .admin-theme .to-fuchsia-500 { --tw-gradient-to: var(--brand-accent) !important; }
+        /* Body login juga memakai gradient brand (bukan turunan .admin-theme). */
+        .admin-theme.from-rose-500 { --tw-gradient-from: var(--brand-primary) !important; }
+        .admin-theme.via-pink-500 { --tw-gradient-via: var(--brand-secondary) !important; }
+        .admin-theme.to-fuchsia-500 { --tw-gradient-to: var(--brand-accent) !important; }
         .admin-theme .file\:bg-rose-50::file-selector-button { background-color: var(--brand-primary-soft) !important; }
         .admin-theme .file\:text-rose-600::file-selector-button { color: var(--brand-primary) !important; }
     }

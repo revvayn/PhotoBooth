@@ -95,12 +95,12 @@ function initTimer() {
         // Beri waktu singkat untuk membaca, lalu kembali ke layar awal supaya
         // kiosk tidak tertinggal di sesi yang sudah mati.
         let seconds = 10;
-        if (note) note.textContent = `Mengalihkan ke layar awal dalam ${seconds} detik…`;
+        if (note) note.textContent = `Kembali dalam ${seconds}…`;
         const redirectTimer = setInterval(() => {
             seconds -= 1;
             if (note) note.textContent = seconds > 0
-                ? `Mengalihkan ke layar awal dalam ${seconds} detik…`
-                : 'Mengalihkan ke layar awal…';
+                ? `Kembali dalam ${seconds}…`
+                : 'Kembali ke awal…';
             if (seconds <= 0) {
                 clearInterval(redirectTimer);
                 window.location.href = document.body.dataset.homeUrl || '/';
@@ -739,30 +739,27 @@ function initFrameCart() {
             cartEmpty.classList.remove('hidden');
             cartList.appendChild(cartEmpty);
         }
-        if (cartCount) cartCount.textContent = entries.length + (entries.length === 1 ? ' item' : ' item');
+        if (cartCount) cartCount.textContent = String(entries.length);
 
         entries.forEach(([slug, qty]) => {
             const info = FRAME_INFO[slug] || { name: slug, price: 0, img: '' };
             const row = document.createElement('div');
             // Dua baris: info + tombol qty. Satu baris membuat nama jadi "K…"
             // karena lebar aside hanya 230px.
-            row.className = 'rounded-xl bg-white/70 ring-1 ring-rose-100 p-2 flex flex-col gap-1.5';
+            row.className = 'rounded-2xl bg-white ring-1 ring-black/5 shadow-sm p-2.5 flex flex-col gap-2';
             row.innerHTML = `
-                <div class="flex items-center gap-2">
-                    <img src="${info.img}" alt="" class="w-9 h-11 rounded-lg object-contain bg-slate-50 ring-1 ring-slate-100 shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <img src="${info.img}" alt="" class="w-9 h-11 rounded-lg object-contain bg-slate-50 shrink-0">
                     <div class="flex-1 min-w-0">
-                        <p class="text-xs font-semibold truncate leading-tight">${info.name}</p>
-                        <p class="text-[11px] text-slate-400 truncate">${fmt(info.price)}</p>
+                        <p class="text-sm font-bold text-slate-800 truncate leading-tight">${info.name}</p>
+                        <p class="text-xs text-slate-400 truncate">${fmt(info.price)}</p>
                     </div>
-                    <button type="button" data-cart-remove="${slug}" class="text-slate-300 hover:text-rose-500 text-lg leading-none shrink-0" title="Hapus">×</button>
+                    <button type="button" data-cart-remove="${slug}" class="text-slate-300 hover:text-rose-500 text-xl leading-none shrink-0" aria-label="Hapus" title="Hapus">×</button>
                 </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-300">Jumlah</span>
-                    <div class="flex items-center gap-1.5">
-                        <button type="button" data-cart-dec="${slug}" class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-bold leading-none hover:bg-rose-50 hover:text-rose-600">−</button>
-                        <span class="text-xs font-bold w-4 text-center">${qty}</span>
-                        <button type="button" data-cart-inc="${slug}" class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-bold leading-none hover:bg-rose-50 hover:text-rose-600">+</button>
-                    </div>
+                <div class="flex items-center justify-end gap-2">
+                    <button type="button" data-cart-dec="${slug}" aria-label="Kurangi" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold leading-none hover:bg-rose-50 hover:text-rose-600">−</button>
+                    <span class="text-sm font-extrabold w-6 text-center tabular-nums">${qty}</span>
+                    <button type="button" data-cart-inc="${slug}" aria-label="Tambah" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold leading-none hover:bg-rose-50 hover:text-rose-600">+</button>
                 </div>
             `;
             cartList.appendChild(row);
@@ -883,7 +880,10 @@ function initMetodeSelect() {
         const isVoucher = input.value === 'voucher';
         voucherBox?.classList.toggle('hidden', !isVoucher);
         if (submitBtn) {
-            submitBtn.textContent = isVoucher ? 'Gunakan Voucher & Mulai Foto' : 'Lanjut Pilih Frame';
+            const label = isVoucher ? 'Gunakan Voucher & Mulai Foto' : 'Lanjut Pilih Frame';
+            const textNode = [...submitBtn.childNodes].find((n) => n.nodeType === 3 && n.textContent.trim() !== '');
+            if (textNode) textNode.textContent = '\n            ' + label + '\n            ';
+            else submitBtn.prepend(document.createTextNode(label));
         }
     };
 
@@ -1181,7 +1181,7 @@ function initEmailForm() {
             submitBtn.disabled = true;
             submitBtn.textContent = 'Mengirim…';
         }
-        showModal('Mengirim softfile...', 'Mohon tunggu sebentar');
+        showModal('Mengirim…', '');
 
         try {
             // Lampirkan strip yang sudah jadi (frame + filter), bukan foto mentah.
@@ -1231,7 +1231,7 @@ function initPrint() {
     if (!btn || !sheet) return;
 
     btn.addEventListener('click', async () => {
-        showModal('Menyiapkan cetakan...', 'Dialog cetak akan terbuka');
+        showModal('Menyiapkan cetakan…', '');
         try {
             await (window.__stripsReady || Promise.resolve());
             sheet.innerHTML = '';
@@ -1292,6 +1292,442 @@ function initFinishForm() {
     });
 }
 
+/* ---------------- Filter tanggal (log & voucher) ---------------- */
+
+function initDateRangeFilter() {
+    const picker = document.querySelector('[data-date-picker]');
+    if (!picker) return;
+
+    const form = picker.closest('form');
+    const fromInput = picker.querySelector('[data-date-from]');
+    const toInput = picker.querySelector('[data-date-to]');
+    const trigger = picker.querySelector('[data-date-trigger]');
+    const popover = picker.querySelector('[data-date-popover]');
+    const label = picker.querySelector('[data-date-label]');
+    const title = picker.querySelector('[data-date-title]');
+    const daysEl = picker.querySelector('[data-date-days]');
+    const weekdaysEl = picker.querySelector('[data-date-weekdays]');
+    const hint = picker.querySelector('[data-date-hint]');
+
+    if (!fromInput || !toInput || !trigger || !popover || !title || !daysEl) return;
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const keyOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const sameDay = (a, b) => a && b && a.getFullYear() === b.getFullYear()
+        && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    const parseKey = (value) => {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
+        return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : null;
+    };
+    const displayDate = (d) => d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    const addDays = (date, amount) => {
+        const copy = new Date(date);
+        copy.setDate(copy.getDate() + amount);
+        return copy;
+    };
+
+    let start = parseKey(fromInput.value);
+    let end = parseKey(toInput.value);
+    let view = start ? new Date(start) : new Date();
+    let isOpen = false;
+
+    const updateLabel = () => {
+        if (!label) return;
+        if (!start) {
+            label.textContent = 'Semua tanggal';
+        } else if (!end || sameDay(start, end)) {
+            label.textContent = displayDate(start);
+        } else {
+            label.textContent = displayDate(start) + ' – ' + displayDate(end);
+        }
+    };
+
+    const setOpen = (open) => {
+        isOpen = open;
+        popover.classList.toggle('hidden', !open);
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+
+    const render = () => {
+        title.textContent = view.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+
+        if (weekdaysEl) {
+            weekdaysEl.innerHTML = '';
+            ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].forEach((day) => {
+                const cell = document.createElement('span');
+                cell.textContent = day;
+                weekdaysEl.appendChild(cell);
+            });
+        }
+
+        const year = view.getFullYear();
+        const month = view.getMonth();
+        const firstOffset = (new Date(year, month, 1).getDay() + 6) % 7;
+        const totalDays = new Date(year, month + 1, 0).getDate();
+        const today = new Date();
+
+        daysEl.innerHTML = '';
+
+        for (let i = 0; i < firstOffset; i++) {
+            const blank = document.createElement('span');
+            blank.className = 'h-8';
+            daysEl.appendChild(blank);
+        }
+
+        for (let day = 1; day <= totalDays; day++) {
+            const date = new Date(year, month, day);
+            const inRange = start && end && date >= start && date <= end;
+            const isEdge = sameDay(date, start) || sameDay(date, end);
+            const isToday = sameDay(date, today);
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = String(day);
+            button.setAttribute('aria-selected', isEdge ? 'true' : 'false');
+            button.className = 'h-8 rounded-lg text-xs font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 '
+                + (isEdge
+                    ? 'bg-rose-500 text-white shadow-sm'
+                    : (inRange
+                        ? 'bg-rose-50 text-rose-700'
+                        : 'text-slate-600 hover:bg-slate-100'))
+                + (isToday && !isEdge ? ' ring-1 ring-rose-100' : '');
+
+            button.addEventListener('click', (event) => {
+                // Jangan biarkan klik tanggal menutup popover. Tombol hari
+                // diganti saat render(), jadi target klik sudah lepas dari DOM.
+                event.stopPropagation();
+                if (!start || (start && end)) {
+                    start = date;
+                    end = null;
+                } else if (date < start) {
+                    start = date;
+                    end = null;
+                } else {
+                    end = date;
+                }
+                render();
+            });
+
+            daysEl.appendChild(button);
+        }
+
+        if (hint) {
+            hint.textContent = !start
+                ? 'Pilih tanggal mulai'
+                : (!end ? 'Pilih tanggal akhir' : 'Rentang dipilih');
+        }
+    };
+
+    const apply = () => {
+        if (start && !end) {
+            end = new Date(start);
+        }
+        if (start && end) {
+            if (start > end) {
+                [start, end] = [end, start];
+            }
+            fromInput.value = keyOf(start);
+            toInput.value = keyOf(end);
+        } else {
+            fromInput.value = '';
+            toInput.value = '';
+        }
+        updateLabel();
+    };
+
+    trigger.addEventListener('click', () => {
+        setOpen(!isOpen);
+        if (isOpen) {
+            view = start ? new Date(start) : new Date();
+            render();
+        }
+    });
+
+    picker.querySelector('[data-date-prev]')?.addEventListener('click', () => {
+        view = new Date(view.getFullYear(), view.getMonth() - 1, 1);
+        render();
+    });
+    picker.querySelector('[data-date-next]')?.addEventListener('click', () => {
+        view = new Date(view.getFullYear(), view.getMonth() + 1, 1);
+        render();
+    });
+
+    picker.querySelectorAll('[data-date-preset]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const today = new Date();
+            const preset = button.dataset.datePreset;
+
+            if (preset === 'clear') {
+                start = null;
+                end = null;
+                view = new Date();
+            } else if (preset === 'today') {
+                start = new Date(today);
+                end = new Date(today);
+                view = new Date(today);
+            } else if (preset === '7' || preset === '30') {
+                const amount = preset === '7' ? 6 : 29;
+                end = new Date(today);
+                start = addDays(today, -amount);
+                view = new Date(start);
+            } else if (preset === 'month') {
+                start = new Date(today.getFullYear(), today.getMonth(), 1);
+                end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                view = new Date(start);
+            }
+
+            render();
+        });
+    });
+
+    picker.querySelector('[data-date-apply]')?.addEventListener('click', () => {
+        apply();
+        setOpen(false);
+        if (form) form.requestSubmit();
+    });
+
+    // Tombol "Terapkan" di luar popover juga harus memakai pilihan tanggal
+    // yang sedang aktif, meski pengguna belum menekan tombol di dalam popover.
+    form?.addEventListener('submit', () => apply());
+
+    document.addEventListener('click', (event) => {
+        if (!isOpen) return;
+        const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+        if (path.includes(picker) || picker.contains(event.target)) return;
+        setOpen(false);
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && isOpen) setOpen(false);
+    });
+
+    updateLabel();
+}
+
+function initAdminLogs() {
+    const root = document.querySelector('[data-log-root]');
+    const dataEl = document.getElementById('log-data');
+    if (!root || !dataEl) return;
+
+    let logs = {};
+    try {
+        logs = JSON.parse(dataEl.textContent || '{}') || {};
+    } catch (error) {
+        logs = {};
+    }
+
+    const modal = document.querySelector('[data-log-modal]');
+    const body = document.querySelector('[data-log-modal-body]');
+    const queueEl = document.querySelector('[data-log-modal-queue]');
+    const metaEl = document.querySelector('[data-log-modal-meta]');
+    const totalEl = document.querySelector('[data-log-modal-total]');
+    const zipLink = document.querySelector('[data-log-modal-zip]');
+    const deleteModal = document.querySelector('[data-delete-modal]');
+    const deleteForm = document.querySelector('[data-delete-form]');
+    const deleteLabel = document.querySelector('[data-delete-label]');
+    const bulkModal = document.querySelector('[data-bulk-delete-modal]');
+    const bulkForm = document.querySelector('[data-bulk-delete-form]');
+    const template = root.dataset.downloadTemplate || '';
+
+    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[char]));
+    const rp = (value) => 'Rp. ' + Number(value || 0).toLocaleString('id-ID');
+    const methodLabel = (method) => {
+        if (method === 'qris') return 'QRIS';
+        if (method === 'voucher') return 'Voucher';
+        if (method === 'cash') return 'Tunai';
+        return String(method || '-').toUpperCase();
+    };
+
+    const closeModal = () => {
+        if (!modal) return;
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        if (body) body.innerHTML = '';
+        document.body.style.overflow = '';
+    };
+
+    const openModal = (id) => {
+        const log = logs[String(id)];
+        if (!log || !modal || !body) return;
+
+        if (queueEl) queueEl.textContent = 'Antrian ' + log.queue;
+        if (metaEl) {
+            metaEl.textContent = [
+                log.time,
+                methodLabel(log.method),
+                log.voucher_code ? 'Voucher ' + log.voucher_code : null,
+            ].filter(Boolean).join(' · ');
+        }
+        if (totalEl) totalEl.textContent = rp(log.total);
+        if (zipLink) {
+            zipLink.href = template.replace('__ID__', String(log.id));
+            zipLink.style.display = log.has_photos ? '' : 'none';
+        }
+
+        body.innerHTML = '';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+
+        const groups = Array.isArray(log.groups) ? log.groups : [];
+        if (!groups.length) {
+            body.innerHTML = '<div class="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-400">Tidak ada detail frame untuk transaksi ini.</div>';
+            return;
+        }
+
+        groups.forEach((group, index) => {
+            const card = document.createElement('article');
+            card.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-sm'
+                + (groups.length === 1 ? ' lg:col-span-2' : '');
+            card.dataset.logGroup = String(index);
+            const photos = Array.isArray(group.photos) ? group.photos.filter(Boolean) : [];
+            const hasPhotos = photos.length > 0;
+
+            card.innerHTML = `
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <h3 class="font-heading text-sm font-bold text-slate-800 truncate">${esc(group.name || 'Frame')}</h3>
+                        <p class="text-[11px] text-slate-400 mt-0.5">${esc(group.photo_total || 0)} foto${Number(group.qty || 1) > 1 ? ' · ' + esc(group.qty) + ' lembar' : ''}</p>
+                    </div>
+                    <span class="inline-flex shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600">×${esc(group.qty || 1)}</span>
+                </div>
+                <div class="mt-3 flex min-h-[190px] items-center justify-center rounded-xl bg-slate-50 p-3">
+                    ${hasPhotos
+                        ? '<canvas class="max-h-[340px] w-auto max-w-full rounded-lg bg-white shadow-sm" data-log-canvas></canvas>'
+                        : '<div class="text-center text-slate-400"><svg class="w-9 h-9 mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m21 15-4.5-4.5L6 21"/></svg><p class="text-xs font-medium">Foto sudah tidak tersimpan</p></div>'}
+                </div>
+                <div class="mt-3 flex items-center justify-between gap-2">
+                    <span class="text-[11px] font-medium text-slate-400">${hasPhotos ? 'Hasil foto + frame' : 'Arsip tidak tersedia'}</span>
+                    ${hasPhotos
+                        ? '<button type="button" data-log-download-item class="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-1.5 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition" disabled><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg> Unduh hasil</button>'
+                        : ''}
+                </div>
+            `;
+
+            body.appendChild(card);
+
+            if (!hasPhotos) return;
+
+            const canvas = card.querySelector('[data-log-canvas]');
+            const button = card.querySelector('[data-log-download-item]');
+
+            buildStripFrame(canvas, photos, group.filters || [], group.frame_url || null, group.slots || [])
+                .then(() => {
+                    if (button) button.disabled = false;
+                })
+                .catch(() => {
+                    if (button) {
+                        button.disabled = true;
+                        button.textContent = 'Gagal menyiapkan';
+                    }
+                });
+        });
+    };
+
+    document.querySelectorAll('[data-log-open]').forEach((button) => {
+        button.addEventListener('click', () => openModal(button.dataset.logOpen));
+    });
+
+    document.querySelectorAll('[data-log-close]').forEach((button) => {
+        button.addEventListener('click', closeModal);
+    });
+
+    modal?.addEventListener('click', (event) => {
+        if (event.target === modal) closeModal();
+    });
+
+    body?.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-log-download-item]');
+        if (!button) return;
+
+        const card = button.closest('[data-log-group]');
+        const canvas = card?.querySelector('[data-log-canvas]');
+        if (!canvas || !canvas.width) {
+            showToast('Hasil foto masih disiapkan. Coba lagi sebentar.', 'warning');
+            return;
+        }
+
+        const logId = document.querySelector('[data-log-modal-queue]')?.textContent || '';
+        const index = Number(card?.dataset.logGroup || 0) + 1;
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/jpeg', 0.92);
+        link.download = 'photobooth-' + logId.replace(/[^0-9a-z]+/gi, '-').replace(/^-|-$/g, '') + '-' + index + '.jpg';
+        link.click();
+        showToast('Hasil foto berhasil diunduh.', 'success');
+    });
+
+    // Hapus log dengan konfirmasi modal (bukan confirm bawaan browser).
+    const closeDelete = () => {
+        if (!deleteModal) return;
+        deleteModal.classList.add('hidden');
+        deleteModal.classList.remove('flex');
+        document.body.style.overflow = '';
+    };
+
+    document.querySelectorAll('[data-log-delete]').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!deleteModal || !deleteForm) return;
+            deleteForm.action = button.dataset.deleteUrl || '#';
+            if (deleteLabel) deleteLabel.textContent = button.dataset.deleteLabel || 'Transaksi ini';
+            deleteModal.classList.remove('hidden');
+            deleteModal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        });
+    });
+
+    document.querySelector('[data-delete-cancel]')?.addEventListener('click', closeDelete);
+    deleteModal?.addEventListener('click', (event) => {
+        if (event.target === deleteModal) closeDelete();
+    });
+
+    const closeBulkDelete = () => {
+        if (!bulkModal) return;
+        bulkModal.classList.add('hidden');
+        bulkModal.classList.remove('flex');
+        document.body.style.overflow = '';
+    };
+
+    document.querySelector('[data-bulk-delete-open]')?.addEventListener('click', () => {
+        if (!bulkModal) return;
+        bulkModal.classList.remove('hidden');
+        bulkModal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    });
+
+    document.querySelector('[data-bulk-delete-cancel]')?.addEventListener('click', closeBulkDelete);
+    bulkModal?.addEventListener('click', (event) => {
+        if (event.target === bulkModal) closeBulkDelete();
+    });
+
+    bulkForm?.addEventListener('submit', () => {
+        const button = bulkForm.querySelector('[data-bulk-delete-confirm]');
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Menghapus...';
+        }
+    });
+
+    deleteForm?.addEventListener('submit', () => {
+        const button = deleteForm.querySelector('button[type="submit"]');
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Menghapus…';
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        if (bulkModal && !bulkModal.classList.contains('hidden')) {
+            closeBulkDelete();
+        } else if (deleteModal && !deleteModal.classList.contains('hidden')) {
+            closeDelete();
+        } else if (modal && !modal.classList.contains('hidden')) {
+            closeModal();
+        }
+    });
+}
+
 /* ---------------- Boot ---------------- */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1307,4 +1743,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initPrint();
     initPayForm();
     initFinishForm();
+    initDateRangeFilter();
+    initAdminLogs();
 });

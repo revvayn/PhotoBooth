@@ -1,4 +1,4 @@
-﻿<div class="flex-1 flex flex-col items-center justify-center text-center py-10">
+<div class="flex-1 flex flex-col items-center justify-center text-center py-10">
     <div class="animate-bounce-slow w-28 h-28 rounded-[2rem] bg-gradient-to-br from-rose-400 via-fuchsia-500 to-violet-500 flex items-center justify-center shadow-xl shadow-rose-300 mb-6">
         <span class="text-white"><x-icon name="camera" class="w-16 h-16 text-white" /></span>
     </div>

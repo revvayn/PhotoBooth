@@ -180,4 +180,66 @@ class VoucherFlowTest extends TestCase
         $this->assertTrue($voucher->isUsable());
         $this->assertSame('cash', $voucher->type);
     }
+
+    public function test_admin_voucher_create_uses_step_form_and_filters(): void
+    {
+        $admin = User::factory()->create();
+        $cash = $this->voucher(['code' => 'PB-CASH', 'name' => 'Cash Filter']);
+        $cash->forceFill(['created_at' => now()->subDays(2)])->save();
+        $this->voucher(['code' => 'PB-EVENT', 'name' => 'Event Filter', 'type' => 'event', 'event_name' => 'Acara Filter']);
+
+        $this->actingAs($admin, 'auth');
+
+        $this->get('/admin/vouchers/create?type=cash')
+            ->assertOk()
+            ->assertSee('data-voucher-form', false)
+            ->assertSee('Alur pembuatan')
+            ->assertDontSee('Pengaturan event')
+            ->assertDontSee('name="event_name"', false);
+
+        $this->get('/admin/vouchers/create?type=event')
+            ->assertOk()
+            ->assertSee('data-step-panel="2"', false)
+            ->assertSee('Pengaturan event')
+            ->assertSee('Kode event dibuat otomatis');
+
+        $this->get('/admin/vouchers?q=Event+Filter&type=event&status=active')
+            ->assertOk()
+            ->assertSee('PB-EVENT')
+            ->assertDontSee('PB-CASH')
+            ->assertSee('data-date-picker', false)
+            ->assertSee('Tanggal dibuat');
+
+        $this->get('/admin/vouchers?from='.now()->toDateString().'&to='.now()->toDateString())
+            ->assertOk()
+            ->assertSee('PB-EVENT')
+            ->assertDontSee('PB-CASH');
+    }
+
+    public function test_admin_can_create_event_vouchers_with_generated_codes(): void
+    {
+        $admin = User::factory()->create();
+
+        $this->actingAs($admin, 'auth')
+            ->post('/admin/vouchers', [
+                'type' => 'event',
+                'name' => 'Voucher Event',
+                'event_code' => 'wedding',
+                'event_name' => 'Pernikahan Budi',
+                'event_date' => now()->addWeek()->toDateString(),
+                'number_of_people' => 2,
+                'frames' => ['kpop' => 2],
+                'discount' => 10,
+                'is_active' => 1,
+            ])
+            ->assertRedirect('/admin/vouchers');
+
+        $voucher = Voucher::firstOrFail();
+        $this->assertSame('WEDDING', $voucher->code);
+        $this->assertSame(2, $voucher->max_uses);
+        $this->assertTrue($voucher->event_date instanceof \Carbon\CarbonInterface);
+        $this->assertSame(6, $voucher->photos_per_voucher);
+        $this->assertSame(120000, $voucher->total_cost);
+        $this->assertSame(10, $voucher->discount);
+    }
 }

@@ -9,31 +9,33 @@
 @section('content')
 @php
     $steps = [
-        [$brand['method_title'], 'Pilih QRIS atau masukkan kode voucher di awal, sebelum memilih frame.'],
-        [$brand['frame_title'], 'Khusus QRIS: ketuk frame favorit dan atur jumlah cetak. Pemakai voucher langsung ke sesi foto.'],
-        [$brand['photo_title'], 'Berdiri di depan kamera dan ambil semua foto. Bisa diulang bila kurang pas.'],
-        ['Cetak & Kirim', 'Cetak hasilnya, unduh softfile, atau kirim ke email.'],
+        ['card', $brand['method_title'], 'Pilih QRIS atau masukkan kode voucher di awal, sebelum memilih frame.'],
+        ['photo', $brand['frame_title'], 'Khusus QRIS: ketuk frame favorit dan atur jumlah cetak. Pemakai voucher langsung ke sesi foto.'],
+        ['camera', $brand['photo_title'], 'Berdiri di depan kamera dan ambil semua foto. Bisa diulang bila kurang pas.'],
+        ['printer', 'Cetak & Kirim', 'Cetak hasilnya, unduh softfile, atau kirim ke email.'],
     ];
 @endphp
 <div class="flex-1 min-h-0 flex flex-col items-center justify-center py-2">
-    <div class="w-full max-w-2xl bg-white/90 backdrop-blur rounded-[2rem] shadow-xl shadow-rose-100 ring-1 ring-rose-100 p-4 sm:p-6">
-        <div class="text-center mb-4">
-            <div class="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-600 ring-1 ring-rose-100 mb-2">
-                Antrian {{ $queue }}
+    <div class="w-full max-w-3xl">
+        <div class="text-center mb-5">
+            <div class="inline-flex items-center gap-2 rounded-full bg-white/70 backdrop-blur px-3 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-rose-100 mb-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Antrian {{ $queue ?? '-' }}
             </div>
-            <h2 class="font-display font-bold text-2xl text-slate-800 mb-1">Cara Pakai {{ $brand['name'] }}</h2>
-            <p class="text-sm text-slate-500">
-                4 langkah mudah &middot; perkiraan {{ $durationMinutes ?? 10 }} menit
-            </p>
+            <h2 class="k-title">Cara Pakai {{ $brand['name'] }}</h2>
+            <p class="text-sm text-slate-500 mt-1">4 langkah mudah &middot; perkiraan {{ $durationMinutes ?? 10 }} menit</p>
         </div>
 
-        <div class="grid sm:grid-cols-2 gap-2.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             @foreach ($steps as $i => $step)
-                <div class="flex items-start gap-3 rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 h-full">
-                    <span class="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-rose-500 to-violet-600 text-white text-sm font-bold flex items-center justify-center shadow-md">{{ $i + 1 }}</span>
-                    <div class="pt-0.5 min-w-0">
-                        <h3 class="font-semibold text-slate-800 text-sm sm:text-base">{{ $step[0] }}</h3>
-                        <p class="text-xs sm:text-sm text-slate-500 leading-snug">{{ $step[1] }}</p>
+                <div class="k-card p-4 sm:p-5 flex items-start gap-4 shadow-xl shadow-rose-100/50">
+                    <span class="k-icon shrink-0 w-12 h-12 rounded-2xl">
+                        <x-icon :name="$step[0]" class="w-6 h-6 text-white" />
+                    </span>
+                    <div class="min-w-0">
+                        <p class="text-xs font-bold text-rose-500 tabular-nums">0{{ $i + 1 }}</p>
+                        <h3 class="font-display font-bold text-slate-900 text-base sm:text-lg leading-tight">{{ $step[1] }}</h3>
+                        <p class="text-sm text-slate-500 leading-snug mt-0.5">{{ $step[2] }}</p>
                     </div>
                 </div>
             @endforeach
@@ -44,10 +46,10 @@
             <span>Waktu sesi berjalan otomatis. Selesaikan sebelum waktu habis ya.</span>
         </div>
 
-        <div class="mt-4 flex justify-center">
-            <a href="{{ route('spa') }}" class="inline-flex items-center justify-center w-full max-w-xs px-8 py-3.5 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-lg shadow-lg shadow-rose-200 hover:shadow-xl hover:scale-105 active:scale-95 transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-300">
+        <div class="mt-5 flex justify-center">
+            <a href="{{ route('spa') }}" class="k-btn !px-12">
                 {{ $brand['start_label'] }} &amp; {{ $brand['method_title'] }}
-                <x-icon name="arrow-right" class="w-5 h-5 text-white ml-1.5" />
+                <x-icon name="arrow-right" class="w-5 h-5 text-white" />
             </a>
         </div>
     </div>

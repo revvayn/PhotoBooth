@@ -113,8 +113,8 @@
             <div class="lg:sticky lg:top-24">
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
                     <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Pratinjau</p>
-                    <div id="appearance-preview" class="rounded-2xl p-4 min-h-[300px] flex flex-col justify-between text-white overflow-hidden relative"
-                         style="background: linear-gradient(135deg, {{ $settings['brand_bg_from'] }}, {{ $settings['brand_bg_via'] }}, {{ $settings['brand_bg_to'] }});">
+                    <div id="appearance-preview" class="rounded-2xl p-4 min-h-[320px] flex flex-col justify-between overflow-hidden relative border border-slate-200"
+                         style="background: linear-gradient(180deg, {{ $settings['brand_bg_from'] }}, {{ $settings['brand_bg_via'] }} 50%, {{ $settings['brand_bg_to'] }});">
                         <div class="flex items-center gap-2.5 relative z-10">
                             <div id="preview-logo" class="w-11 h-11 flex items-center justify-center shadow-lg shrink-0" style="background: linear-gradient(135deg, {{ $settings['brand_primary'] }}, {{ $settings['brand_secondary'] }}); border-radius: 0.75rem;">
                                 @if (! empty($settings['brand_logo']))
@@ -124,25 +124,25 @@
                                 @endif
                             </div>
                             <div class="min-w-0">
-                                <p id="preview-name" class="font-bold leading-none truncate">{{ $settings['brand_name'] }}</p>
-                                <p id="preview-tagline" class="text-[10px] text-white/75 leading-tight truncate">{{ $settings['brand_tagline'] }}</p>
+                                <p id="preview-name" class="font-bold leading-none truncate text-slate-900">{{ $settings['brand_name'] }}</p>
+                                <p id="preview-tagline" class="text-[10px] text-slate-500 leading-tight truncate">{{ $settings['brand_tagline'] }}</p>
                             </div>
                         </div>
 
                         <div class="relative z-10 mt-5">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-white/70 mb-1" id="preview-badge">Siap dipakai</p>
-                            <p class="text-sm font-semibold mb-2" id="preview-method-title">Pilih Pembayaran</p>
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1" id="preview-badge">Siap dipakai</p>
+                            <p class="text-sm font-semibold text-slate-800 mb-2" id="preview-method-title">Pilih Pembayaran</p>
                             <div class="grid grid-cols-2 gap-2">
-                                <div class="bg-white/20 ring-1 ring-white/30 p-2 text-center text-[11px] font-semibold backdrop-blur" style="border-radius: 0.75rem;">QRIS</div>
-                                <div class="bg-white/20 ring-1 ring-white/30 p-2 text-center text-[11px] font-semibold backdrop-blur" style="border-radius: 0.75rem;">Voucher</div>
+                                <div class="bg-white ring-1 ring-slate-200 p-2 text-center text-[11px] font-semibold text-slate-700 shadow-sm" style="border-radius: 0.75rem;">QRIS</div>
+                                <div class="bg-white ring-1 ring-slate-200 p-2 text-center text-[11px] font-semibold text-slate-700 shadow-sm" style="border-radius: 0.75rem;">Voucher</div>
                             </div>
-                            <div id="preview-button" class="mt-3 rounded-full py-2 text-center text-xs font-bold shadow-lg" style="background: linear-gradient(90deg, {{ $settings['brand_primary'] }}, {{ $settings['brand_secondary'] }});">
+                            <div id="preview-button" class="mt-3 rounded-full py-2 text-center text-xs font-bold text-white shadow-lg" style="background: linear-gradient(120deg, {{ $settings['brand_primary'] }}, {{ $settings['brand_secondary'] }});">
                                 Mulai
                             </div>
                         </div>
-                        <div class="absolute -right-8 -bottom-10 w-32 h-32 rounded-full opacity-30 blur-2xl" id="preview-orb" style="background: {{ $settings['brand_accent'] }};"></div>
+                        <div class="absolute -right-8 -bottom-10 w-32 h-32 rounded-full opacity-20 blur-2xl" id="preview-orb" style="background: {{ $settings['brand_accent'] }};"></div>
                     </div>
-                    <p class="mt-3 text-[11px] leading-relaxed text-slate-400">Pratinjau sederhana. Warna dan logo di layar kiosk mengikuti pengaturan ini.</p>
+                    <p class="mt-3 text-[11px] leading-relaxed text-slate-400">Pratinjau mengikuti identitas brand. Perubahan langsung terlihat di layar kiosk setelah disimpan.</p>
                 </div>
             </div>
         </div>

@@ -12,25 +12,30 @@
     @include('partials.fonts', ['brand' => $brand])
     @include('partials.branding', ['brand' => $brand])
 </head>
-<body class="admin-theme bg-gray-100 min-h-screen">
+<body class="admin-theme bg-slate-50 min-h-screen">
+    @php
+        $navBase = 'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200';
+        $navActive = 'bg-white/10 text-white font-semibold shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]';
+        $navIdle = 'text-slate-400 hover:bg-white/5 hover:text-white';
+    @endphp
 
     {{-- Mobile Overlay --}}
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden" onclick="toggleSidebar()"></div>
 
     {{-- Sidebar --}}
-    <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-slate-900 text-white z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col">
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900 text-white z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col border-r border-white/5">
         {{-- Logo --}}
-        <div class="px-6 py-5 border-b border-slate-700/50">
+        <div class="px-6 py-5 border-b border-white/5">
             <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
                 <x-brand-mark size="w-9 h-9" rounded="rounded-xl" icon="w-5 h-5" />
-                <span class="font-heading text-xl font-bold bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent">{{ $brand['name'] }} Admin</span>
+                <span class="font-heading text-xl font-bold bg-gradient-to-r from-rose-400 to-violet-500 bg-clip-text text-transparent">{{ $brand['name'] }} Admin</span>
             </a>
         </div>
 
         {{-- Navigation --}}
         <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
             <a href="{{ route('admin.dashboard') }}"
-               class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('admin.dashboard') ? 'bg-rose-500/20 text-rose-400 font-medium' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+               class="{{ $navBase }} {{ request()->routeIs('admin.dashboard') ? $navActive : $navIdle }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                 </svg>
@@ -38,7 +43,7 @@
             </a>
 
             <a href="{{ route('admin.frames.index') }}"
-               class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('admin.frames.*') ? 'bg-rose-500/20 text-rose-400 font-medium' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+               class="{{ $navBase }} {{ request()->routeIs('admin.frames.*') ? $navActive : $navIdle }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
@@ -46,7 +51,7 @@
             </a>
 
             <a href="{{ route('admin.vouchers.index') }}"
-               class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('admin.vouchers.*') ? 'bg-rose-500/20 text-rose-400 font-medium' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+               class="{{ $navBase }} {{ request()->routeIs('admin.vouchers.*') ? $navActive : $navIdle }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
                 </svg>
@@ -54,36 +59,36 @@
             </a>
 
             @if (request()->routeIs('admin.vouchers.index', 'admin.vouchers.create', 'admin.vouchers.edit'))
-                <div class="ml-4 pl-4 border-l border-slate-700/50 space-y-0.5">
+                <div class="ml-4 pl-4 border-l border-white/10 space-y-0.5">
                     <a href="{{ route('admin.vouchers.index', ['type' => 'cash']) }}"
-                       class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 {{ request('type') === 'cash' ? 'bg-rose-500/15 text-rose-400 font-medium' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ request('type') === 'cash' ? 'bg-rose-400' : 'bg-slate-600' }}"></span>
+                       class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 {{ request('type') === 'cash' ? 'bg-white/5 text-white font-medium' : 'text-slate-400 hover:bg-white/5 hover:text-white' }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ request('type') === 'cash' ? 'bg-[var(--brand-primary)]' : 'bg-slate-600' }}"></span>
                         <span>Cash</span>
                     </a>
                     <a href="{{ route('admin.vouchers.index', ['type' => 'event']) }}"
-                       class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 {{ request('type') === 'event' ? 'bg-rose-500/15 text-rose-400 font-medium' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ request('type') === 'event' ? 'bg-rose-400' : 'bg-slate-600' }}"></span>
+                       class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 {{ request('type') === 'event' ? 'bg-white/5 text-white font-medium' : 'text-slate-400 hover:bg-white/5 hover:text-white' }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ request('type') === 'event' ? 'bg-[var(--brand-primary)]' : 'bg-slate-600' }}"></span>
                         <span>Event</span>
                     </a>
                 </div>
             @endif
 
             <a href="{{ route('admin.logs.index') }}"
-               class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('admin.logs.*') ? 'bg-rose-500/20 text-rose-400 font-medium' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+               class="{{ $navBase }} {{ request()->routeIs('admin.logs.*') ? $navActive : $navIdle }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
                 </svg>
                 <span>Log Pembayaran</span>
             </a>
             <a href="{{ route('admin.appearance.index') }}"
-               class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('admin.appearance.*') ? 'bg-rose-500/20 text-rose-400 font-medium' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+               class="{{ $navBase }} {{ request()->routeIs('admin.appearance.*') ? $navActive : $navIdle }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
                 </svg>
                 <span>Tampilan</span>
             </a>
             <a href="{{ route('admin.settings.index') }}"
-               class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('admin.settings.*') ? 'bg-rose-500/20 text-rose-400 font-medium' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+               class="{{ $navBase }} {{ request()->routeIs('admin.settings.*') ? $navActive : $navIdle }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.438.11l.773.773a1.125 1.125 0 01.11 1.438l-.527.737c-.25.35-.272.806-.107 1.205.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.45.269 1.036-.11 1.438l-.774.773a1.125 1.125 0 01-1.437.11l-.738-.528c-.35-.25-.806-.272-1.204-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.45.32-1.036.269-1.438-.11l-.773-.773a1.125 1.125 0 01-.11-1.438l.527-.737c.25-.35.273-.806.108-1.204-.165-.398-.506-.71-.93-.781l-.894-.149c-.542-.09-.94-.56-.94-1.11v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.764-.384.929-.781.165-.398.143-.854-.107-1.204l-.528-.738a1.125 1.125 0 01.11-1.438l.774-.773a1.125 1.125 0 011.437-.11l.738.528c.35.25.806.272 1.204.107.397-.165.71-.505.78-.929l.149-.894z"/>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -93,9 +98,9 @@
         </nav>
 
         {{-- Kiosk + Logout --}}
-        <div class="px-4 py-4 border-t border-slate-700/50 space-y-1">
+        <div class="px-4 py-4 border-t border-white/5 space-y-1">
             <a href="{{ route('home') }}" target="_blank" rel="noopener"
-               class="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-all duration-200">
+               class="{{ $navBase }} {{ $navIdle }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                 </svg>
@@ -116,7 +121,7 @@
     {{-- Main Content --}}
     <div class="lg:ml-64 min-h-screen transition-all duration-300">
         {{-- Top Bar --}}
-        <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+        <header class="bg-white/85 backdrop-blur border-b border-slate-200/80 sticky top-0 z-30">
             <div class="flex items-center justify-between px-6 py-4">
                 <div class="flex items-center gap-4">
                     <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-gray-100 transition-colors">

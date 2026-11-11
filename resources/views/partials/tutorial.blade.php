@@ -1,4 +1,4 @@
-﻿<div class="flex-1 flex flex-col items-center justify-center py-4">
+<div class="flex-1 flex flex-col items-center justify-center py-4">
     <div class="w-full max-w-lg bg-white/90 backdrop-blur rounded-[2rem] shadow-xl shadow-rose-100 ring-1 ring-rose-100 p-8">
         <div class="text-center mb-6">
             <h2 class="font-display font-bold text-2xl text-slate-800 mb-1">Cara Pakai Photobooth</h2>

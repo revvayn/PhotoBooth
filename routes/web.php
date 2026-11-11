@@ -50,10 +50,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::resource('frames', FrameController::class)->except(['show']);
         Route::resource('vouchers', VoucherController::class)->except(['show']);
+        Route::get('/vouchers/{voucher}', [VoucherController::class, 'show'])->name('vouchers.show');
         Route::get('/vouchers/{voucher}/print-invoice', [VoucherController::class, 'printInvoice'])->name('vouchers.print-invoice');
         Route::get('/vouchers/{voucher}/print-voucher', [VoucherController::class, 'printVoucher'])->name('vouchers.print-voucher');
         Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
         Route::get('/logs/export', [LogController::class, 'export'])->name('logs.export');
+        Route::delete('/logs/filter', [LogController::class, 'destroyFiltered'])->name('logs.destroy-filtered');
+        Route::get('/logs/{log}/download', [LogController::class, 'download'])->name('logs.download');
+        Route::delete('/logs/{log}', [LogController::class, 'destroy'])->name('logs.destroy');
         Route::get('/appearance', [AppearanceController::class, 'index'])->name('appearance.index');
         Route::put('/appearance', [AppearanceController::class, 'update'])->name('appearance.update');
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
