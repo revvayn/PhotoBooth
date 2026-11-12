@@ -1,59 +1,87 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Photobooth
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi photobooth berbasis Laravel + Vite. Pelanggan memilih frame, membayar (QRIS/voucher), mengambil foto, lalu mencetak/mengunduh/mengirim hasil. Admin mengelola frame, voucher, log pembayaran, tampilan, dan pengaturan kiosk.
 
-## About Laravel
+## Fitur Utama
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Sesi photobooth: metode pembayaran, pilih frame, pembayaran, foto, review/cetak/unduh/email.
+- Frame gallery dengan kategori ukuran `2R`, `4R`, `A4`.
+- Voucher cash dan event dengan wizard pembuatan.
+- Voucher event: satu kode, pemakaian berdasarkan jumlah orang atau durasi jam, dengan rentang jam berlaku.
+- Log pembayaran: arsip foto, preview komposit, unduh ZIP, filter tanggal/metode, hapus per filter.
+- Nomor antrian harian format `#DDMMYY-XXX`.
+- Admin: frame, voucher, log pembayaran, tampilan brand, pengaturan kiosk (QRIS, kamera, durasi sesi, email, PIN kasir).
+- Notifikasi toast untuk aksi admin.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Kebutuhan
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.2+
+- Composer
+- Node.js + npm
+- Database (SQLite/MySQL, sesuai `.env`)
 
-## Learning Laravel
+## Instalasi
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+npm install
+npm run build
+php artisan storage:link
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Menjalankan Aplikasi
 
-## Laravel Sponsors
+Development:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+php artisan serve
+npm run dev
+```
 
-### Premium Partners
+Production build:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```bash
+npm run build
+php artisan view:cache
+```
 
-## Contributing
+## Login Admin
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- URL: `/admin/login`
+- Email default: `admin@photobooth.com`
+- Password default: `password`
 
-## Code of Conduct
+> Ganti kredensial default setelah instalasi.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Alur Pelanggan
 
-## Security Vulnerabilities
+1. Buka halaman utama, tekan **Mulai**.
+2. Pilih metode: QRIS atau Voucher.
+3. Jika QRIS: pilih frame, konfirmasi pembayaran.
+4. Jika Voucher: masukkan kode, langsung sesi foto.
+5. Ambil foto sesuai frame.
+6. Review, cetak, unduh, atau kirim email.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Testing
 
-## License
+```bash
+php artisan test
+npm run build
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Struktur Penting
+
+- `app/Http/Controllers/PhotoboothController.php` - alur kiosk.
+- `app/Http/Controllers/Admin/` - admin frame, voucher, log, pengaturan, tampilan.
+- `resources/views/partials/` - panel kiosk (metode, frame, pembayaran, foto, review).
+- `resources/views/admin/` - halaman admin.
+- `database/migrations/` - skema database, termasuk `queue_counters`.
+
+## Catatan
+
+- Folder arsip foto disimpan di `storage/app/public/arsip`.
+- Voucher event dibuat sebagai satu kode; pemakaian mengikuti jumlah orang atau durasi.
+- Penghapusan log/voucher berdasarkan filter memerlukan minimal satu filter aktif.
