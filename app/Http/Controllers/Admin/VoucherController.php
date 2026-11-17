@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Frame;
+use App\Models\Size;
 use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -149,9 +150,10 @@ class VoucherController extends Controller
     public function create(Request $request)
     {
         $frames = Frame::orderBy('sort_order')->orderBy('name')->get();
+        $sizes = Size::active()->orderBy('sort_order')->orderBy('name')->get();
         $type = $request->input('type') === Voucher::TYPE_EVENT ? Voucher::TYPE_EVENT : Voucher::TYPE_CASH;
 
-        return view('admin.vouchers.create', compact('frames', 'type'));
+        return view('admin.vouchers.create', compact('frames', 'sizes', 'type'));
     }
 
     public function store(Request $request)
@@ -227,8 +229,9 @@ class VoucherController extends Controller
     public function edit(Voucher $voucher)
     {
         $frames = Frame::orderBy('sort_order')->orderBy('name')->get();
+        $sizes = Size::orderBy('sort_order')->orderBy('name')->get();
 
-        return view('admin.vouchers.edit', compact('voucher', 'frames'));
+        return view('admin.vouchers.edit', compact('voucher', 'frames', 'sizes'));
     }
 
     public function update(Request $request, Voucher $voucher)
@@ -337,8 +340,9 @@ class VoucherController extends Controller
         }
 
         $frames = Frame::whereIn('slug', array_keys($voucher->items ?? []))->get()->keyBy('slug');
+        $sizes = Size::whereIn('id', array_keys($voucher->sizeItems()))->get()->keyBy('id');
 
-        return view('admin.vouchers.show', compact('voucher', 'vouchers', 'frames'));
+        return view('admin.vouchers.show', compact('voucher', 'vouchers', 'frames', 'sizes'));
     }
 
     public function destroy(Voucher $voucher)
@@ -367,24 +371,8 @@ class VoucherController extends Controller
     {
         $voucher->loadMissing([]);
 
-        $frames = Frame::whereIn('slug', array_keys($voucher->items ?? []))->get()->keyBy('slug');
-
-        $items = [];
-        foreach ((array) ($voucher->items ?? []) as $slug => $qty) {
-            $frame = $frames->get($slug);
-            if (! $frame) {
-                continue;
-            }
-            $items[] = [
-                'name' => $frame->name,
-                'slug' => $slug,
-                'qty' => (int) $qty,
-                'price' => (int) $frame->price,
-                'subtotal' => (int) $frame->price * (int) $qty,
-            ];
-        }
-
-        $costPerPerson = array_sum(array_column($items, 'subtotal'));
+        $items = $voucher->itemsDetailed();
+        $costPerPerson = (int) array_sum(array_column($items, 'subtotal'));
         $totalCost = $voucher->isEvent()
             ? $costPerPerson * (int) $voucher->number_of_people + (int) $voucher->duration_hours * (int) $voucher->cost_per_hour
             : $costPerPerson;
@@ -397,28 +385,14 @@ class VoucherController extends Controller
      */
     public function printVoucher(Request $request, Voucher $voucher)
     {
-        $frames = Frame::whereIn('slug', array_keys($voucher->items ?? []))->get()->keyBy('slug');
-
-        $items = [];
-        foreach ((array) ($voucher->items ?? []) as $slug => $qty) {
-            $frame = $frames->get($slug);
-            if (! $frame) {
-                continue;
-            }
-            $items[] = [
-                'name' => $frame->name,
-                'slug' => $slug,
-                'qty' => (int) $qty,
-                'photos_per_voucher' => (int) ($voucher->photos_per_voucher ?? 0),
-            ];
-        }
+        $items = $voucher->itemsDetailed();
 
         return view('admin.vouchers.print-voucher', compact('voucher', 'items'));
     }
 
     /**
      * Normalisasi input admin menjadi satu baris voucher:
-     * frames[slug] = qty  ->  items { slug: qty }.
+     * sizes[size_id] = qty  ->  items { size_id: qty }.
      */
     private function validated(Request $request, ?Voucher $voucher = null): array
     {
@@ -427,8 +401,10 @@ class VoucherController extends Controller
             'code' => ['nullable', 'string', 'max:30', 'regex:/^[A-Za-z0-9-]+$/'],
             'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:255'],
-            'frames' => ['required', 'array'],
+            'frames' => ['nullable', 'array'],
             'frames.*' => ['nullable', 'integer', 'min:0', 'max:50'],
+            'sizes' => ['nullable', 'array'],
+            'sizes.*' => ['nullable', 'integer', 'min:0', 'max:100'],
             'max_uses' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'expires_at' => ['nullable', 'date'],
             'is_active' => ['nullable', 'boolean'],
@@ -490,19 +466,64 @@ class VoucherController extends Controller
             ]);
         }
 
-        $validSlugs = Frame::where('is_active', true)->pluck('slug')->all();
-        $items = [];
+        $validSizeIds = Size::pluck('id')->map(fn ($id) => (int) $id)->all();
+        $validFrameSlugs = Frame::where('is_active', true)->pluck('slug')->all();
+
+        $frameItems = [];
         foreach ((array) ($data['frames'] ?? []) as $slug => $qty) {
             $qty = (int) $qty;
-            if ($qty > 0 && in_array((string) $slug, $validSlugs, true)) {
-                $items[(string) $slug] = $qty;
+            if ($qty > 0 && in_array((string) $slug, $validFrameSlugs, true)) {
+                $frameItems[(string) $slug] = $qty;
             }
         }
 
-        if (! $items) {
+        $sizeItems = [];
+        foreach ((array) ($data['sizes'] ?? []) as $sizeId => $qty) {
+            $qty = (int) $qty;
+            if ($qty > 0 && ctype_digit((string) $sizeId) && in_array((int) $sizeId, $validSizeIds, true)) {
+                $sizeItems[(int) $sizeId] = $qty;
+            }
+        }
+
+        if (! $frameItems && ! $sizeItems) {
             throw ValidationException::withMessages([
-                'frames' => 'Pilih minimal satu frame dan tentukan jumlah cetaknya.',
+                'frames' => 'Pilih minimal satu frame atau satu ukuran dan tentukan jumlah cetaknya.',
+                'sizes' => 'Pilih minimal satu frame atau satu ukuran dan tentukan jumlah cetaknya.',
             ]);
+        }
+
+        // Frame diprioritaskan bila keduanya terisi.
+        $items = $frameItems ?: $sizeItems;
+
+        $sizes = Size::whereIn('id', array_keys(array_filter($items, fn ($k) => ctype_digit((string) $k), ARRAY_FILTER_USE_KEY)))->get()->keyBy('id');
+        // hitung harga
+        $costPerPerson = 0;
+        $printCount = (int) array_sum($items);
+
+        if ($frameItems) {
+            $frames = Frame::whereIn('slug', array_keys($frameItems))->get()->keyBy('slug');
+            foreach ($frameItems as $slug => $qty) {
+                $frame = $frames->get($slug);
+                if ($frame) {
+                    $costPerPerson += (int) $frame->effectivePrice() * (int) $qty;
+                }
+            }
+            $photoCount = 0;
+            foreach ($frameItems as $slug => $qty) {
+                $frame = $frames->get($slug);
+                if ($frame) {
+                    $photoCount += max(1, (int) $frame->photo_count) * (int) $qty;
+                }
+            }
+        } else {
+            $sizes = Size::whereIn('id', array_keys($sizeItems))->get()->keyBy('id');
+            foreach ($sizeItems as $sizeId => $qty) {
+                $size = $sizes->get($sizeId);
+                if ($size) {
+                    $costPerPerson += (int) $size->price * (int) $qty;
+                }
+            }
+            $photoCount = max(1, $printCount);
         }
 
         $result = [
@@ -511,6 +532,7 @@ class VoucherController extends Controller
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
             'items' => $items,
+            'photos_per_voucher' => $photoCount > 0 ? $photoCount : 1,
             'max_uses' => (int) ($data['max_uses'] ?? 1),
             'expires_at' => ! empty($data['expires_at'])
                 ? Carbon::parse($data['expires_at'])->endOfDay()
@@ -532,24 +554,8 @@ class VoucherController extends Controller
             $result['duration_hours'] = (int) ($data['duration_hours'] ?? 0);
             $result['cost_per_hour'] = (int) ($data['cost_per_hour'] ?? 0);
 
-            // Jumlah foto per voucher dihitung dari frame yang dipilih
-            $photoCount = 0;
-            foreach ($items as $slug => $qty) {
-                $frame = Frame::where('slug', $slug)->where('is_active', true)->first();
-                if ($frame) {
-                    $photoCount += max(1, (int) $frame->photo_count) * (int) $qty;
-                }
-            }
-            $result['photos_per_voucher'] = $photoCount > 0 ? $photoCount : 1;
-
-            // Hitung total biaya event
-            $costPerPerson = 0;
-            foreach ($items as $slug => $qty) {
-                $frame = Frame::where('slug', $slug)->where('is_active', true)->first();
-                if ($frame) {
-                    $costPerPerson += (int) $frame->price * (int) $qty;
-                }
-            }
+            // Hitung total biaya event: ukuran x jumlah cetak x jumlah orang
+            // ditambah biaya durasi (bila ada).
             $result['total_cost'] = $costPerPerson * (int) $data['number_of_people']
                 + ((int) ($data['duration_hours'] ?? 0) * (int) ($data['cost_per_hour'] ?? 0));
         }

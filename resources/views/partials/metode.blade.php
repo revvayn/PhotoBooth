@@ -1,57 +1,73 @@
 @php($brand = $brand ?? \App\Support\Brand::get())
 @php($sel = in_array($metode ?? null, ['qris', 'voucher'], true) ? $metode : 'qris')
 @php($cur = old('metode', $sel))
-<div class="flex-1 min-h-0 flex flex-col items-center justify-center py-2">
-    <div class="w-full max-w-xl text-center mb-4 sm:mb-5">
+<div class="flex-1 min-h-0 flex flex-col items-center justify-center py-2 overflow-y-auto">
+    <div class="w-full max-w-2xl">
 
-        <h2 class="k-title">{{ $brand['method_title'] }}</h2>
-        <p class="text-slate-500 text-sm sm:text-base mt-1">{{ $brand['method_subtitle'] }}</p>
-    </div>
-
-    <form method="POST" action="{{ route('metode') }}" class="w-full max-w-xl" data-metode-form>
-        @csrf
-        <input type="hidden" name="from_spa" value="{{ ($fromSpa ?? true) ? '1' : '0' }}">
-        <input type="hidden" name="metode" id="metode-input" value="{{ $cur }}">
-
-        @if ($errors->any())
-            <div class="mb-3 rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                {{ $errors->first() }}
+        <div class="k-step-head mb-5 shrink-0">
+            <span aria-hidden="true"></span>
+            <div class="k-step-head-title">
+                <h2 class="k-title">
+                    <span class="k-icon-soft w-9 h-9 rounded-xl">
+                        <x-icon name="card" class="w-4 h-4" />
+                    </span>
+                    {{ $brand['method_title'] }}
+                </h2>
+                <p class="text-slate-500 text-xs sm:text-sm">{{ $brand['method_subtitle'] }}</p>
             </div>
-        @endif
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
-            <button type="button" data-metode-option="qris" aria-pressed="{{ $cur === 'qris' ? 'true' : 'false' }}"
-                    class="k-card k-option flex h-full flex-col items-center gap-2.5 p-5 sm:p-6 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 {{ $cur === 'qris' ? 'ring-2 ring-rose-500' : '' }}">
-                <span class="k-icon w-14 h-14 sm:w-16 sm:h-16 rounded-2xl"><x-icon name="qr" class="w-7 h-7 sm:w-8 sm:h-8 text-white" /></span>
-                <span class="font-display font-extrabold text-xl text-slate-900 leading-none">QRIS</span>
-                <span class="text-xs text-slate-500 leading-relaxed">Scan QRIS.</span>
-            </button>
-
-            <button type="button" data-metode-option="voucher" aria-pressed="{{ $cur === 'voucher' ? 'true' : 'false' }}"
-                    class="k-card k-option flex h-full flex-col items-center gap-2.5 p-5 sm:p-6 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 {{ $cur === 'voucher' ? 'ring-2 ring-rose-500' : '' }}">
-                <span class="k-icon w-14 h-14 sm:w-16 sm:h-16 rounded-2xl">
-                    <svg class="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
-                </span>
-                <span class="font-display font-extrabold text-xl text-slate-900 leading-none">Voucher</span>
-                <span class="text-xs text-slate-500 leading-relaxed">Langsung foto.</span>
-            </button>
+            <span class="k-pill justify-self-end !text-xs hidden sm:inline-flex">
+                <x-icon name="sparkles" class="w-4 h-4 text-rose-500" />
+                Pilih satu
+            </span>
         </div>
 
-        <div data-voucher-box class="{{ $cur === 'voucher' ? '' : 'hidden' }} mb-4">
-            <label for="voucher-code" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 text-center">Kode Voucher</label>
-            <input type="text" id="voucher-code" name="voucher_code" value="{{ old('voucher_code') }}"
-                   autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="50"
-                   placeholder="Contoh: PB-OPENING"
-                   class="k-field text-center font-mono text-xl font-bold tracking-[0.2em] uppercase placeholder:text-slate-300 placeholder:text-base placeholder:tracking-widest @error('voucher_code') !border-red-300 @enderror">
-            <p class="mt-2 text-[11px] text-slate-400 text-center">Kode dari kasir.</p>
-            @error('voucher_code')<p class="mt-2 text-sm text-red-500 text-center">{{ $message }}</p>@enderror
-        </div>
+        <form method="POST" action="{{ route('metode') }}" class="w-full" data-metode-form>
+            @csrf
+            <input type="hidden" name="from_spa" value="{{ ($fromSpa ?? true) ? '1' : '0' }}">
+            <input type="hidden" name="metode" id="metode-input" value="{{ $cur }}">
 
-        <button type="submit" id="metode-submit" class="k-btn w-full">
-            {{ $cur === 'voucher' ? 'Gunakan Voucher & Mulai Foto' : 'Lanjut Pilih Frame' }}
-            <x-icon name="arrow-right" class="w-5 h-5 text-white" />
-        </button>
+            @if ($errors->any())
+                <div class="mb-3 rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                    {{ $errors->first() }}
+                </div>
+            @endif
 
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
+                @foreach ([
+                    ['qris', 'qr', 'QRIS', 'Scan dan bayar di kasir', 'Bayar dengan aplikasi e-wallet atau m-banking.'],
+                    ['voucher', 'ticket', 'Voucher', 'Langsung mulai sesi foto', 'Masukkan kode voucher dari kasir tanpa antre bayar.'],
+                ] as $opt)
+                    <button type="button" data-metode-option="{{ $opt[0] }}" aria-pressed="{{ $cur === $opt[0] ? 'true' : 'false' }}"
+                            class="k-card k-option group relative flex h-full flex-col items-center gap-2.5 p-5 sm:p-6 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400">
+                        <span class="k-check absolute right-3 top-3" aria-hidden="true">
+                            <x-icon name="check" class="w-3.5 h-3.5" />
+                        </span>
+                        <span class="k-icon-soft w-14 h-14 sm:w-16 sm:h-16 rounded-2xl">
+                            <x-icon :name="$opt[1]" class="w-7 h-7 sm:w-8 sm:h-8" />
+                        </span>
+                        <span class="font-display font-extrabold text-lg sm:text-xl text-slate-900 leading-none">{{ $opt[2] }}</span>
+                        <span class="text-xs font-semibold text-rose-500 leading-none">{{ $opt[3] }}</span>
+                        <span class="text-xs text-slate-500 leading-relaxed max-w-[220px]">{{ $opt[4] }}</span>
+                    </button>
+                @endforeach
+            </div>
 
-    </form>
+            <div data-voucher-box class="k-inset mb-3 p-4" @if ($cur !== 'voucher') hidden @endif>
+                <label for="voucher-code" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 text-center">Kode Voucher</label>
+                <input type="text" id="voucher-code" name="voucher_code" value="{{ old('voucher_code') }}"
+                       autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="50"
+                       placeholder="Contoh: PB-OPENING"
+                       class="k-field text-center font-mono text-xl font-bold tracking-[0.2em] uppercase placeholder:text-slate-300 placeholder:text-base placeholder:tracking-widest @error('voucher_code') !border-red-300 @enderror">
+                <p class="mt-2 text-[11px] text-slate-400 text-center">Minta kode voucher ke kasir bila belum punya.</p>
+                @error('voucher_code')<p class="mt-2 text-sm text-red-500 text-center">{{ $message }}</p>@enderror
+            </div>
+
+            <div class="mx-auto w-full max-w-sm">
+                <button type="submit" id="metode-submit" class="k-btn w-full">
+                    {{ $cur === 'voucher' ? 'Gunakan Voucher & Mulai Foto' : 'Lanjut Pilih Frame' }}
+                    <x-icon name="arrow-right" class="w-5 h-5 text-white" />
+                </button>
+            </div>
+        </form>
+    </div>
 </div>

@@ -12,7 +12,8 @@
                         data-filter="{{ $filter }}"
                         data-frame="{{ $item['slug'] }}"
                         data-frame-image="{{ $item['image_url'] }}"
-                        data-frame-slots='@json($item['slots'] ?? [])'></canvas>
+                        data-frame-slots='@json($item['slots'] ?? [])'
+                        data-stickers='@json($item['sticker_map'] ?? [])'></canvas>
                 <div class="px-5 py-3 text-center text-xs font-semibold text-slate-500 border-t border-rose-100">
                     {{ $item['name'] }}@if ($item['qty'] > 1) x{{ $item['qty'] }}@endif
                 </div>

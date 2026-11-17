@@ -16,23 +16,30 @@
         <p class="text-slate-500 text-sm mt-1">Sesi fotomu sudah selesai. Sampai jumpa lagi!</p>
     </div>
 
-    <div class="flex gap-4 overflow-x-auto max-w-full px-2 pt-1 pb-3 mb-3">
-        @forelse ($items as $item)
-            <div class="shrink-0 w-[150px] sm:w-[180px] overflow-hidden rounded-2xl shadow-xl shadow-rose-100/60 ring-1 ring-black/5 bg-white" data-strip-container>
-                <canvas class="w-full h-auto block" data-strip-canvas
-                        data-photos='@json($item['photos'] ?? [])'
-                        data-filters='@json($item['filter_map'] ?? [])'
-                        data-filter="{{ $filter }}"
-                        data-frame="{{ $item['slug'] }}"
-                        data-frame-image="{{ $item['image_url'] }}"
-                        data-frame-slots='@json($item['slots'] ?? [])'></canvas>
-                <div class="px-3 py-2 text-center text-[11px] font-semibold text-slate-500 border-t border-rose-100">
-                    {{ $item['name'] }}@if ($item['qty'] > 1) &times;{{ $item['qty'] }}@endif
+    <div class="k-card w-full max-w-3xl p-4 mb-3">
+        <div class="k-inset flex gap-4 overflow-x-auto max-w-full p-3">
+            @forelse ($items as $item)
+                <div class="shrink-0 w-[150px] sm:w-[180px] overflow-hidden rounded-2xl shadow-xl shadow-slate-900/10 ring-1 ring-black/5 bg-white" data-strip-container>
+                    <canvas class="w-full h-auto block" data-strip-canvas
+                            data-photos='@json($item['photos'] ?? [])'
+                            data-filters='@json($item['filter_map'] ?? [])'
+                            data-filter="{{ $filter }}"
+                            data-frame="{{ $item['slug'] }}"
+                            data-frame-image="{{ $item['image_url'] }}"
+                            data-frame-slots='@json($item['slots'] ?? [])'
+                            data-print-width="{{ $item['size_width_cm'] ?? '' }}"
+                            data-stickers='@json($item['sticker_map'] ?? [])'></canvas>
+                    <div class="px-3 py-2 text-center text-[11px] font-semibold text-slate-500 border-t border-slate-100">
+                        {{ $item['name'] }}@if ($item['qty'] > 1) &times;{{ $item['qty'] }}@endif
+                        @if (!empty($item['size_name']))
+                            <span class="block text-[10px] font-normal text-slate-400">{{ $item['size_name'] }}@if (!empty($item['size_label'])) &middot; {{ $item['size_label'] }}@endif</span>
+                        @endif
+                    </div>
                 </div>
-            </div>
-        @empty
-            <p class="text-center text-slate-400">Belum ada frame yang dipilih.</p>
-        @endforelse
+            @empty
+                <p class="text-center text-slate-400 self-center mx-auto">Belum ada frame yang dipilih.</p>
+            @endforelse
+        </div>
     </div>
 
     @if ($email)

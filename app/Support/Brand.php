@@ -44,6 +44,7 @@ class Brand
         'step_frame' => 'Frame',
         'step_payment' => 'Konfirmasi',
         'step_photo' => 'Foto',
+        'step_edit' => 'Edit',
         'step_review' => 'Selesai',
         'heading_font' => 'Plus Jakarta Sans',
         'body_font' => 'Inter',
@@ -117,6 +118,7 @@ class Brand
             'step_frame' => $text('brand_step_frame', self::DEFAULTS['step_frame']) ?: self::DEFAULTS['step_frame'],
             'step_payment' => $text('brand_step_payment', self::DEFAULTS['step_payment']) ?: self::DEFAULTS['step_payment'],
             'step_photo' => $text('brand_step_photo', self::DEFAULTS['step_photo']) ?: self::DEFAULTS['step_photo'],
+            'step_edit' => $text('brand_step_edit', self::DEFAULTS['step_edit']) ?: self::DEFAULTS['step_edit'],
             'step_review' => $text('brand_step_review', self::DEFAULTS['step_review']) ?: self::DEFAULTS['step_review'],
 
             'heading_font' => $headingFont,

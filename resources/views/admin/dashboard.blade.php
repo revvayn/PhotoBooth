@@ -9,56 +9,56 @@
 @endphp
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-4">
     {{-- Kartu statistik utama --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-        <div class="group bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        <div class="group bg-white rounded-2xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Pendapatan Hari Ini</p>
-                    <p class="text-2xl xl:text-3xl font-bold text-slate-800 mt-2 tabular-nums">{{ $rp($stats['revenue_today']) }}</p>
+                    <p class="text-xl xl:text-2xl font-bold text-slate-800 mt-2 tabular-nums">{{ $rp($stats['revenue_today']) }}</p>
                     <p class="text-xs text-slate-400 mt-1">{{ $stats['count_today'] }} transaksi &middot; {{ number_format($stats['revenue_today'] > 0 ? $stats['revenue_today'] / max(1,$stats['count_today']) : 0, 0, ',', '.') }} rata-rata</p>
                 </div>
-                <span class="w-11 h-11 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center">
+                <span class="w-9 h-9 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center">
                     <x-icon name="card" class="w-5 h-5" />
                 </span>
             </div>
         </div>
 
-        <div class="group bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+        <div class="group bg-white rounded-2xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Pendapatan</p>
-                    <p class="text-2xl xl:text-3xl font-bold text-slate-800 mt-2 tabular-nums">{{ $rp($stats['revenue_total']) }}</p>
+                    <p class="text-xl xl:text-2xl font-bold text-slate-800 mt-2 tabular-nums">{{ $rp($stats['revenue_total']) }}</p>
                     <p class="text-xs text-slate-400 mt-1">{{ $stats['count_total'] }} transaksi &middot; {{ $stats['photos_total'] }} foto</p>
                 </div>
-                <span class="w-11 h-11 rounded-xl bg-violet-50 text-violet-500 flex items-center justify-center">
+                <span class="w-9 h-9 rounded-xl bg-violet-50 text-violet-500 flex items-center justify-center">
                     <x-icon name="bag" class="w-5 h-5" />
                 </span>
             </div>
         </div>
 
-        <div class="group bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+        <div class="group bg-white rounded-2xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Rata-rata Transaksi</p>
-                    <p class="text-2xl xl:text-3xl font-bold text-slate-800 mt-2 tabular-nums">{{ $rp($stats['avg_ticket']) }}</p>
+                    <p class="text-xl xl:text-2xl font-bold text-slate-800 mt-2 tabular-nums">{{ $rp($stats['avg_ticket']) }}</p>
                     <p class="text-xs text-slate-400 mt-1">{{ $stats['avg_photos'] }} foto/transaksi &middot; puncak {{ $stats['peak_day'] }}</p>
                 </div>
-                <span class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                <span class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center">
                     <x-icon name="photo" class="w-5 h-5" />
                 </span>
             </div>
         </div>
 
-        <div class="group bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+        <div class="group bg-white rounded-2xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Frame Aktif</p>
-                    <p class="text-2xl xl:text-3xl font-bold text-slate-800 mt-2">{{ $framesActive }}<span class="text-lg font-semibold text-slate-400"> / {{ $framesTotal }}</span></p>
+                    <p class="text-xl xl:text-2xl font-bold text-slate-800 mt-2">{{ $framesActive }}<span class="text-lg font-semibold text-slate-400"> / {{ $framesTotal }}</span></p>
                     <a href="{{ route('admin.frames.index') }}" class="text-xs text-rose-500 hover:text-rose-600 font-medium">Kelola frame &rarr;</a>
                 </div>
-                <span class="w-11 h-11 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                <span class="w-9 h-9 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
                     <x-icon name="photo" class="w-5 h-5" />
                 </span>
             </div>
@@ -66,9 +66,9 @@
     </div>
 
     {{-- Baris kedua: metode + voucher + chart --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {{-- Metode pembayaran --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
             <h3 class="font-heading text-sm font-bold text-slate-800 mb-4">Per Metode Pembayaran</h3>
             @php
                 $methods = [
@@ -101,7 +101,7 @@
         </div>
 
         {{-- Voucher summary --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="font-heading text-sm font-bold text-slate-800">Voucher</h3>
                 <a href="{{ route('admin.vouchers.index') }}" class="text-xs text-rose-500 hover:text-rose-600 font-medium">Kelola &rarr;</a>
@@ -131,12 +131,12 @@
         </div>
 
         {{-- Grafik 7 hari --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="font-heading text-sm font-bold text-slate-800">7 Hari Terakhir</h3>
                 <span class="text-xs font-semibold text-slate-500 tabular-nums">{{ $rp($week->sum('revenue')) }}</span>
             </div>
-            <div class="flex items-end gap-2 h-32">
+            <div class="flex items-end gap-2 h-24">
                 @foreach ($week as $d)
                     <div class="flex-1 flex flex-col items-center justify-end h-full gap-1 min-w-0 group" title="{{ $d['date'] }}: {{ $rp($d['revenue']) }} ({{ $d['count'] }} trx)">
                         <div class="w-full rounded-t-lg {{ $d['is_today'] ? 'bg-rose-500' : 'bg-rose-200' }} group-hover:bg-rose-400 transition-colors"
@@ -156,7 +156,7 @@
 
     {{-- Pembayaran terbaru --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-200">
-        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div class="px-4 py-2.5 border-b border-gray-200 flex items-center justify-between">
             <h2 class="font-heading text-lg font-bold text-slate-800">Pembayaran Terbaru</h2>
             <a href="{{ route('admin.logs.index') }}" class="text-sm text-rose-500 hover:text-rose-600 font-medium">Lihat semua &rarr;</a>
         </div>
@@ -164,23 +164,23 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-gray-50/80">
-                        <th class="text-left px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Waktu</th>
-                        <th class="text-left px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Antrian</th>
-                        <th class="text-left px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Metode</th>
-                        <th class="text-left px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Frame</th>
-                        <th class="text-right px-6 py-3 font-semibold text-slate-600 text-xs uppercase tracking-wider">Total</th>
+                        <th class="text-left px-4 py-2 font-semibold text-slate-600 text-xs uppercase tracking-wider">Waktu</th>
+                        <th class="text-left px-4 py-2 font-semibold text-slate-600 text-xs uppercase tracking-wider">Antrian</th>
+                        <th class="text-left px-4 py-2 font-semibold text-slate-600 text-xs uppercase tracking-wider">Metode</th>
+                        <th class="text-left px-4 py-2 font-semibold text-slate-600 text-xs uppercase tracking-wider">Frame</th>
+                        <th class="text-right px-4 py-2 font-semibold text-slate-600 text-xs uppercase tracking-wider">Total</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($recent as $p)
                         <tr class="hover:bg-gray-50/60 transition-colors">
-                            <td class="px-6 py-3 text-slate-600 whitespace-nowrap text-xs">{{ $p->created_at->format('d M Y H:i') }}</td>
-                            <td class="px-6 py-3 font-semibold text-slate-700">{{ $p->queue_number ?? '-' }}</td>
-                            <td class="px-6 py-3">
+                            <td class="px-4 py-2 text-slate-600 whitespace-nowrap text-xs">{{ $p->created_at->format('d M Y H:i') }}</td>
+                            <td class="px-4 py-2 font-semibold text-slate-700">{{ $p->queue_number ?? '-' }}</td>
+                            <td class="px-4 py-2">
                                 <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $p->payment_method === 'qris' ? 'bg-violet-100 text-violet-700' : ($p->payment_method === 'voucher' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700') }}">{{ strtoupper($p->payment_method) }}</span>
                             </td>
-                            <td class="px-6 py-3 text-slate-500 text-xs max-w-xs truncate">{{ $p->payment_items_label }}</td>
-                            <td class="px-6 py-3 text-right font-semibold text-slate-800 tabular-nums whitespace-nowrap">{{ $rp($p->payment_total) }}</td>
+                            <td class="px-4 py-2 text-slate-500 text-xs max-w-xs truncate">{{ $p->payment_items_label }}</td>
+                            <td class="px-4 py-2 text-right font-semibold text-slate-800 tabular-nums whitespace-nowrap">{{ $rp($p->payment_total) }}</td>
                         </tr>
                     @empty
                         <tr>

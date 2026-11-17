@@ -28,7 +28,7 @@
                     <tr class="bg-gray-50">
                         <th class="text-left px-6 py-3 font-semibold text-slate-600 w-16">No</th>
                         <th class="text-left px-6 py-3 font-semibold text-slate-600">Nama</th>
-                        <th class="text-left px-6 py-3 font-semibold text-slate-600">Kategori</th>
+                        <th class="text-left px-6 py-3 font-semibold text-slate-600">Ukuran</th>
                         <th class="text-right px-6 py-3 font-semibold text-slate-600">Harga</th>
                         <th class="text-center px-6 py-3 font-semibold text-slate-600">Urutan</th>
                         <th class="text-center px-6 py-3 font-semibold text-slate-600">Status</th>
@@ -56,8 +56,24 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-3 text-slate-600">{{ $frame->category ?? 'Tanpa kategori' }}</td>
-                            <td class="px-6 py-3 text-right text-slate-700 tabular-nums whitespace-nowrap">Rp. {{ number_format($frame->price, 0, ',', '.') }}</td>
+                            <td class="px-6 py-3 text-slate-600">
+                                <span class="block font-medium text-slate-700">{{ $frame->size_label ?: 'Tanpa ukuran' }}</span>
+                                @if ($frame->size)
+                                    <span class="block text-xs text-slate-400">{{ $frame->size->dimension_label }}</span>
+                                @endif
+                                @if ($frame->imageMatchesSize() === false)
+                                    <span class="mt-1 inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-600 ring-1 ring-red-100"
+                                          title="Rasio PNG tidak sama dengan ukuran. Unggah ulang memakai template ukuran.">
+                                        Rasio tidak sesuai
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-3 text-right text-slate-700 tabular-nums whitespace-nowrap">
+                                <span class="block font-semibold">Rp. {{ number_format($frame->effectivePrice(), 0, ',', '.') }}</span>
+                                <span class="block text-[11px] {{ $frame->price !== null ? 'text-amber-600' : 'text-slate-400' }}">
+                                    {{ $frame->price !== null ? 'Harga khusus frame' : 'Ikut harga ukuran' }}
+                                </span>
+                            </td>
                             <td class="px-6 py-3 text-center text-slate-500">{{ $frame->sort_order }}</td>
                             <td class="px-6 py-3 text-center">
                                 @if($frame->is_active)

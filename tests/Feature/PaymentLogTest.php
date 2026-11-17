@@ -96,6 +96,12 @@ class PaymentLogTest extends TestCase
         $photos = array_map(fn () => $this->photo(), range(1, 3));
         $this->post('/foto', ['photos' => $photos, 'from_spa' => 1]);
 
+        // Setelah foto, tahap edit filter aktif lebih dulu.
+        $html = $this->get('/spa?step=frame')->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/data-spa-step-dot="filter" data-state="active"/', $html);
+
+        $this->post('/filter', ['from_spa' => 1]);
+
         $html = $this->get('/spa?step=frame')->assertOk()->getContent();
         $this->assertMatchesRegularExpression('/data-spa-step-dot="review" data-state="active"/', $html);
     }

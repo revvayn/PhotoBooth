@@ -56,10 +56,9 @@ class FrameAnalyzer
         $totalCells = $cols * $rows;
         $minArea = max(64, (int) ($totalCells * 0.001));
 
-        // inset kecil agar foto tidak menempel/keluar tepi lubang (dalam piksel grid)
-        $insetX = max(1, (int) floor($cols * 0.012));
-        $insetY = max(1, (int) floor($rows * 0.012));
-
+        // Slot memakai bounding box persis dari area transparan. Bentuk detail
+        // (melengkung/tidak beraturan) dipotong di klien memakai alpha frame PNG,
+        // sehingga foto mengikuti bentuk lubang tanpa celah putih di tepinya.
         $slots = [];
         foreach ($components as $comp) {
             // Abaikan komponen yang menyentuh tepi gambar: itu latar transparan,
@@ -75,15 +74,11 @@ class FrameAnalyzer
             if ($comp['area'] < $minArea) {
                 continue;
             }
-            $x = max(0, $comp['x'] + $insetX);
-            $y = max(0, $comp['y'] + $insetY);
-            $w = max(2, $comp['w'] - 2 * $insetX);
-            $h = max(2, $comp['h'] - 2 * $insetY);
             $slots[] = [
-                'x' => round($x / $cols, 4),
-                'y' => round($y / $rows, 4),
-                'w' => round($w / $cols, 4),
-                'h' => round($h / $rows, 4),
+                'x' => round($comp['x'] / $cols, 4),
+                'y' => round($comp['y'] / $rows, 4),
+                'w' => round($comp['w'] / $cols, 4),
+                'h' => round($comp['h'] / $rows, 4),
             ];
         }
 

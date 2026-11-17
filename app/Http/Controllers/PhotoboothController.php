@@ -6,6 +6,8 @@ use App\Mail\PhotoboothMail;
 use App\Models\ActivityLog;
 use App\Models\Frame;
 use App\Models\Setting;
+use App\Models\Size;
+use App\Models\Sticker;
 use App\Models\Voucher;
 use App\Support\Brand;
 use App\Support\QueueNumber;
@@ -15,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class PhotoboothController extends Controller
 {
@@ -45,11 +48,11 @@ class PhotoboothController extends Controller
             $this->cleanupSession($request);
         }
 
-        $activeFrames = Frame::active()->get();
+        $activeFrames = Frame::active()->with('size')->get();
 
         return view('welcome', [
             'frameCount' => $activeFrames->count(),
-            'minPrice' => (int) $activeFrames->min('price'),
+            'minPrice' => (int) ($activeFrames->map(fn (Frame $frame) => $frame->effectivePrice())->min() ?? 0),
             'durationMinutes' => (int) round($this->sessionSelectionSeconds() / 60),
         ]);
     }
@@ -96,14 +99,16 @@ class PhotoboothController extends Controller
         $paid = $request->session()->has('paid');
         $hasCart = ! empty(session('cart', []));
         $hasPhotos = ! empty(session('photos', []));
+        $filterDone = $request->session()->has('filter_done');
 
-        $validSteps = ['metode', 'frame', 'pembayaran', 'foto', 'review'];
+        $validSteps = ['metode', 'frame', 'pembayaran', 'foto', 'filter', 'review'];
         $available = [
             'metode' => ! $paid,
-            'frame' => $metode === 'qris' && ! $paid,
+            'frame' => ($metode === 'qris' && ! $paid) || ($metode === 'voucher' && $this->voucherMode() === 'size' && $paid && ! $hasCart),
             'pembayaran' => $metode === 'qris' && ! $paid && $hasCart,
-            'foto' => $hasCart && ($paid || $metode === 'voucher'),
-            'review' => $paid && $hasPhotos,
+            'foto' => $hasCart && $paid,
+            'filter' => $paid && $hasPhotos,
+            'review' => $paid && $hasPhotos && $filterDone,
         ];
 
         $requested = (string) $request->query('step', $request->session()->get('spa_step', 'metode'));
@@ -113,24 +118,32 @@ class PhotoboothController extends Controller
 
         $step = ($available[$requested] ?? false)
             ? $requested
-            : $this->defaultSpaStep($metode, $paid, $hasCart, $hasPhotos);
+            : $this->defaultSpaStep($metode, $paid, $hasCart, $hasPhotos, $filterDone);
 
         // Jangan biarkan permintaan melompat ke tahap yang datanya belum ada.
         if (! ($available[$step] ?? false)) {
-            $step = $this->defaultSpaStep($metode, $paid, $hasCart, $hasPhotos);
+            $step = $this->defaultSpaStep($metode, $paid, $hasCart, $hasPhotos, $filterDone);
         }
 
         $request->session()->put('spa_step', $step);
 
-        $allFrames = Frame::active()->orderBy('sort_order')->get()->keyBy('slug');
-        $categories = Frame::active()->orderBy('sort_order')->get()
-            ->pluck('category')->unique()->filter()->values()->toArray();
+        $allFrames = Frame::active()->with('size')->orderBy('sort_order')->get()->keyBy('slug');
+        $categories = $allFrames->map(fn (Frame $frame) => $frame->size_label)->unique()->filter()->values()->toArray();
+
+        if ($metode === 'voucher' && $this->voucherMode() === 'size' && $paid && ! $hasCart) {
+            $quotaSizeIds = array_keys($this->voucherQuotas());
+            if ($quotaSizeIds) {
+                $allFrames = $allFrames->filter(fn (Frame $frame) => in_array((int) ($frame->size?->id ?? $frame->size_id ?? 0), $quotaSizeIds, true));
+                $categories = $allFrames->map(fn (Frame $frame) => $frame->size_label)->unique()->filter()->values()->toArray();
+            }
+        }
 
         $photos = collect(session('photos', []))->flatten()->values()->all();
 
         $items = collect($this->cartItems())->map(function ($item) use ($photos) {
             $item['photos'] = session('photos', [])[$item['slug']] ?? [];
             $item['filter_map'] = $this->itemFilterMap($item['slug'], $item['photos']);
+            $item['sticker_map'] = $this->itemStickerMap($item['slug']);
 
             return $item;
         })->values()->all();
@@ -146,11 +159,13 @@ class PhotoboothController extends Controller
             'photoCount' => $this->maxPhotoCount(),
             'photos' => $photos,
             'filters' => self::FILTERS,
+            'stickerPalette' => $this->stickerPalette(),
             'filter' => session('filter', 'asli'),
             'total' => $this->total(),
             'email' => session('email'),
             'metode' => $metode,
             'voucher' => session('voucher'),
+            'voucherQuotas' => $this->voucherQuotaDetails(),
             'nmid' => Setting::get('qris_nmid', '102020034073193'),
             'merchant' => Setting::get('qris_merchant', 'PERKAKASKU'),
             'qris_image' => Setting::get('qris_image'),
@@ -192,23 +207,39 @@ class PhotoboothController extends Controller
     {
         $this->requirePrereq($request, ['metode']);
 
-        if (session('metode') === 'voucher') {
+        $metode = (string) session('metode');
+        if ($metode === 'voucher') {
+            if ($this->voucherMode() === 'frame') {
+                if (! $request->session()->has('paid')) {
+                    return redirect()->route('metode');
+                }
+                return redirect()->route('foto');
+            }
+            if (! $request->session()->has('paid')) {
+                return redirect()->route('metode');
+            }
+            if (! empty(session('cart', []))) {
+                return redirect()->route('foto');
+            }
+        } elseif ($request->session()->has('paid')) {
             return redirect()->route('foto');
         }
 
-        if ($request->session()->has('paid')) {
-            return redirect()->route('foto');
+        $quotas = $metode === 'voucher' ? $this->voucherQuotas() : [];
+        $framesQuery = Frame::active()->with('size')->orderBy('sort_order');
+        if ($quotas) {
+            $framesQuery->whereIn('size_id', array_keys($quotas));
         }
-
-        $allFrames = Frame::active()->orderBy('sort_order')->get()->keyBy('slug');
-        $categories = Frame::active()->orderBy('sort_order')->get()->pluck('category')->unique()->filter()->values()->toArray();
+        $allFrames = $framesQuery->get()->keyBy('slug');
+        $categories = $allFrames->map(fn (Frame $frame) => $frame->size_label)->unique()->filter()->values()->toArray();
 
         return view('frame', [
             'categories' => $categories,
             'allFrames' => $allFrames,
             'cart' => session('cart', []),
-            'metode' => session('metode'),
+            'metode' => $metode,
             'voucher' => session('voucher'),
+            'voucherQuotas' => $this->voucherQuotaDetails(),
             'step' => 2,
         ]);
     }
@@ -217,7 +248,22 @@ class PhotoboothController extends Controller
     {
         $this->requirePrereq($request, ['metode']);
 
-        if (session('metode') !== 'qris' || $request->session()->has('paid')) {
+        $metode = (string) session('metode');
+
+        if ($metode === 'voucher') {
+            if ($this->voucherMode() === 'frame') {
+                if (! $request->session()->has('paid')) {
+                    return redirect()->route('metode');
+                }
+                return redirect()->route('foto');
+            }
+            if (! $request->session()->has('paid')) {
+                return redirect()->route('metode');
+            }
+            if (! empty(session('photos', []))) {
+                return redirect()->route('spa', ['step' => 'filter']);
+            }
+        } elseif ($request->session()->has('paid')) {
             return redirect()->route('foto');
         }
 
@@ -237,6 +283,46 @@ class PhotoboothController extends Controller
 
         if (! $cart) {
             return back()->withErrors(['cart' => 'Pilih minimal satu frame.']);
+        }
+
+        if ($metode === 'voucher') {
+            $quotas = $this->voucherQuotas();
+            if (! $quotas) {
+                return back()->withErrors(['cart' => 'Voucher ini tidak memiliki ukuran cetak yang valid.']);
+            }
+
+            $frames = Frame::active()->whereIn('slug', array_keys($cart))->with('size')->get()->keyBy('slug');
+            $totals = [];
+            foreach ($cart as $slug => $qty) {
+                $frame = $frames->get($slug);
+                if (! $frame || ! in_array((int) ($frame->size?->id ?? $frame->size_id ?? 0), array_keys($quotas), true)) {
+                    return back()->withErrors(['cart' => 'Frame yang dipilih tidak sesuai ukuran voucher.']);
+                }
+                $sizeId = (int) ($frame->size?->id ?? $frame->size_id);
+                $totals[$sizeId] = ($totals[$sizeId] ?? 0) + $qty;
+            }
+
+            foreach ($quotas as $sizeId => $quota) {
+                $selected = $totals[$sizeId] ?? 0;
+                if ($selected !== (int) $quota) {
+                    $sizeName = Size::find($sizeId)?->name ?? ('Ukuran #'.$sizeId);
+                    return back()->withErrors([
+                        'cart' => 'Jumlah cetak per ukuran harus sesuai voucher: '.$sizeName.' '.$selected.'/'.(int) $quota.'.',
+                    ]);
+                }
+            }
+
+            $request->session()->put('cart', $cart);
+            $request->session()->forget(['photos', 'filter', 'filters', 'stickers', 'filter_done']);
+            $request->session()->put('spa_step', 'foto');
+            $request->session()->put('started_at', now()->timestamp);
+            $request->session()->put('total_seconds', max($this->remainingSeconds(), $this->sessionPhotoSeconds() + $this->sessionReviewSeconds()));
+
+            if ($request->boolean('from_spa')) {
+                return redirect()->route('spa', ['step' => 'foto']);
+            }
+
+            return redirect()->route('foto');
         }
 
         $request->session()->put('cart', $cart);
@@ -335,6 +421,8 @@ class PhotoboothController extends Controller
         }
 
         $request->session()->put('photos', $saved);
+        // Foto baru membatalkan hasil edit filter/stiker sebelumnya.
+        $request->session()->forget(['filters', 'stickers', 'filter_done']);
 
         // Arsip admin tidak boleh menghalangi pelanggan menyelesaikan sesi.
         try {
@@ -342,23 +430,21 @@ class PhotoboothController extends Controller
         } catch (\Throwable $error) {
             report($error);
         }
-        // Pastikan masih ada waktu untuk review, cetak, unduh, dan kirim email.
+        // Pastikan masih ada waktu untuk edit, review, cetak, unduh, dan email.
         $remaining = $this->remainingSeconds();
         $request->session()->put('started_at', now()->timestamp);
         $request->session()->put('total_seconds', max($remaining, $this->sessionReviewSeconds()));
-        $request->session()->put('spa_step', 'review');
+        $request->session()->put('spa_step', 'filter');
 
         $redirect = $request->boolean('from_spa')
-            ? route('spa', ['step' => 'review'])
-            : route('review');
+            ? route('spa', ['step' => 'filter'])
+            : route('filter');
 
         return response()->json(['redirect' => $redirect]);
     }
 
     /**
-     * Rute lama /filter tetap ada agar tautan/tes lama tidak error, tetapi
-     * tahap filter sudah dihapus dari alur kiosk. Permintaan diarahkan ke
-     * tahap berikutnya sesuai data sesi.
+     * Tahap edit foto: pilih filter per foto dan tempel stiker.
      */
     public function filter(Request $request)
     {
@@ -374,7 +460,87 @@ class PhotoboothController extends Controller
 
     public function filterStore(Request $request)
     {
-        return $this->filter($request);
+        $this->requirePrereq($request, ['paid', 'photos']);
+
+        $validated = $request->validate([
+            'filters' => ['nullable', 'array'],
+            'filters.*' => ['nullable', 'string', Rule::in(array_keys(self::FILTERS))],
+            'stickers' => ['nullable', 'string', 'max:20000'],
+        ]);
+
+        $items = collect($this->cartItems())->keyBy('slug');
+        $filters = [];
+        foreach ($validated['filters'] ?? [] as $key => $value) {
+            if (! preg_match('/^([A-Za-z0-9_-]+):(\d+)$/', (string) $key, $match)) {
+                continue;
+            }
+
+            $slug = $match[1];
+            $index = (int) $match[2];
+            $item = $items->get($slug);
+            if (! $item || $index >= $item['photo_count']) {
+                continue;
+            }
+
+            $filters[$slug.':'.$index] = $value;
+        }
+
+        // Stiker dikirim sebagai JSON berisi id dari palet admin. Nilai yang
+        // digambar diambil ulang dari database agar klien tidak bisa menyisipkan
+        // teks/URL sembarangan ke kanvas.
+        $raw = json_decode((string) ($validated['stickers'] ?? '[]'), true);
+        $raw = is_array($raw) ? $raw : [];
+        $palette = Sticker::active()->get()->keyBy('id');
+        $stickers = [];
+
+        foreach ($raw as $slug => $placements) {
+            if (! $items->has($slug) || ! is_array($placements)) {
+                continue;
+            }
+
+            $list = [];
+            foreach (array_slice($placements, 0, 30) as $placement) {
+                if (! is_array($placement)) {
+                    continue;
+                }
+
+                $sticker = $palette->get((int) ($placement['id'] ?? 0));
+                $value = $sticker?->display;
+                if (! $sticker || ! is_string($value) || $value === '') {
+                    continue;
+                }
+
+                $list[] = [
+                    'id' => $sticker->id,
+                    'type' => $sticker->type,
+                    'value' => $value,
+                    'x' => $this->clamp((float) ($placement['x'] ?? 0.5), 0.02, 0.98, 0.5),
+                    'y' => $this->clamp((float) ($placement['y'] ?? 0.5), 0.02, 0.98, 0.5),
+                    'size' => $this->clamp((float) ($placement['size'] ?? 0.16), 0.05, 0.5, 0.16),
+                    'rotation' => $this->clamp((float) ($placement['rotation'] ?? 0), -180, 180, 0),
+                ];
+            }
+
+            if ($list) {
+                $stickers[$slug] = $list;
+            }
+        }
+
+        $request->session()->put('filters', $filters);
+        $request->session()->put('stickers', $stickers);
+        $request->session()->put('filter_done', true);
+        $request->session()->put('spa_step', 'review');
+        $request->session()->put('started_at', now()->timestamp);
+        $request->session()->put('total_seconds', $this->sessionReviewSeconds());
+
+        // Arsip admin ikut menyimpan hasil edit terbaru.
+        $this->syncArchiveEdits();
+
+        if ($request->boolean('from_spa')) {
+            return redirect()->route('spa', ['step' => 'review']);
+        }
+
+        return redirect()->route('review');
     }
 
     public function metode(Request $request)
@@ -382,6 +548,10 @@ class PhotoboothController extends Controller
         $this->requirePrereq($request, ['queue']);
 
         if ($request->session()->has('paid')) {
+            if (session('metode') === 'voucher' && empty(session('cart', []))) {
+                return redirect()->route('frame');
+            }
+
             return redirect()->route('foto');
         }
 
@@ -421,9 +591,10 @@ class PhotoboothController extends Controller
 
         // Klik ganda dengan kode yang sama tidak boleh memotong kuota dua kali.
         if (session('voucher.code') === $code && $request->session()->has('paid')) {
+            $target = ! empty(session('cart', [])) ? 'foto' : 'frame';
             return $request->boolean('from_spa')
-                ? redirect()->route('spa', ['step' => 'foto'])
-                : redirect()->route('foto');
+                ? redirect()->route('spa', ['step' => $target])
+                : redirect()->route($target);
         }
 
         $result = DB::transaction(function () use ($code) {
@@ -439,23 +610,48 @@ class PhotoboothController extends Controller
                 return ['error' => 'Kuota voucher ini sudah habis.'];
             }
 
-            $requested = is_array($voucher->items) ? $voucher->items : [];
-            $frames = Frame::active()->whereIn('slug', array_keys($requested))->get()->keyBy('slug');
+            $quotas = $voucher->isSizeMode() ? $voucher->sizeItems() : [];
 
-            $cart = [];
-            foreach ($requested as $slug => $qty) {
-                if ($frames->has($slug) && (int) $qty > 0) {
-                    $cart[$slug] = (int) $qty;
+            if ($voucher->isSizeMode()) {
+                if (! $quotas) {
+                    return ['error' => 'Voucher ini tidak memiliki ukuran cetak yang valid. Hubungi admin.'];
                 }
-            }
 
-            if (! $cart) {
-                return ['error' => 'Frame pada voucher ini sudah tidak tersedia. Hubungi admin.'];
+                $quotaSizeIds = array_keys($quotas);
+                $availableSizes = Size::active()->whereIn('id', $quotaSizeIds)->pluck('id')->map(fn ($id) => (int) $id)->all();
+                if (array_diff($quotaSizeIds, $availableSizes)) {
+                    return ['error' => 'Ukuran pada voucher ini sudah tidak tersedia. Hubungi admin.'];
+                }
+
+                $availableFrameSizes = Frame::active()->whereIn('size_id', $quotaSizeIds)->distinct()->pluck('size_id')->map(fn ($id) => (int) $id)->all();
+                if (array_diff($quotaSizeIds, $availableFrameSizes)) {
+                    return ['error' => 'Frame pada voucher ini sudah tidak tersedia. Hubungi admin.'];
+                }
+            } else {
+                // Mode frame: pastikan frame masih tersedia.
+                $requested = is_array($voucher->items) ? $voucher->items : [];
+                $frames = Frame::active()->whereIn('slug', array_keys($requested))->get()->keyBy('slug');
+
+                $cart = [];
+                foreach ($requested as $slug => $qty) {
+                    if ($frames->has($slug) && (int) $qty > 0) {
+                        $cart[$slug] = (int) $qty;
+                    }
+                }
+
+                if (! $cart) {
+                    return ['error' => 'Frame pada voucher ini sudah tidak tersedia. Hubungi admin.'];
+                }
             }
 
             $voucher->increment('used_count');
 
-            return ['voucher' => $voucher, 'cart' => $cart];
+            return [
+                'voucher' => $voucher,
+                'mode' => $voucher->isFrameMode() ? 'frame' : 'size',
+                'quotas' => $quotas,
+                'cart' => $voucher->isFrameMode() ? $cart : [],
+            ];
         });
 
         if (isset($result['error'])) {
@@ -464,38 +660,54 @@ class PhotoboothController extends Controller
 
         /** @var Voucher $voucher */
         $voucher = $result['voucher'];
+        $mode = $result['mode'] ?? ($voucher->isFrameMode() ? 'frame' : 'size');
+        $quotas = $result['quotas'] ?? [];
+        $cart = $result['cart'] ?? [];
 
         $oldRemaining = $this->remainingSeconds();
         $this->resetCartSession($request);
         $request->session()->put('metode', 'voucher');
-        $request->session()->put('cart', $result['cart']);
         $request->session()->put('paid', true);
         $request->session()->put('voucher', [
             'id' => $voucher->id,
             'code' => $voucher->code,
             'name' => $voucher->name,
+            'mode' => $mode,
+            'quotas' => $quotas,
         ]);
-        $request->session()->put('voucher_value', $this->total());
-        $request->session()->put('spa_step', 'foto');
+
+        if ($mode === 'frame' && $cart) {
+            $request->session()->put('cart', $cart);
+        }
+
+        $request->session()->put('voucher_value', (int) $voucher->cost_per_person);
+        $request->session()->put('spa_step', $mode === 'frame' ? 'foto' : 'frame');
 
         // Voucher sudah dibayar di awal; beri sisa waktu yang cukup untuk
-        // sesi foto + review tanpa memperpanjang tanpa batas.
+        // pemilihan frame, sesi foto, dan review tanpa memperpanjang tanpa batas.
         $request->session()->put('started_at', now()->timestamp);
-        $request->session()->put('total_seconds', max($oldRemaining, $this->sessionPhotoSeconds() + $this->sessionReviewSeconds()));
+        $request->session()->put('total_seconds', max($oldRemaining, $this->sessionSelectionSeconds() + $this->sessionPhotoSeconds() + $this->sessionReviewSeconds()));
 
         $this->logPayment(0, [
             'voucher_id' => $voucher->id,
             'voucher_code' => $voucher->code,
             'voucher_name' => $voucher->name,
             'voucher_type' => $voucher->type,
-            'voucher_value' => $this->total(),
+            'voucher_value' => (int) $voucher->cost_per_person,
+            'items' => collect($voucher->itemsDetailed())->map(fn (array $item) => [
+                'name' => ! empty($item['dimension_label']) ? $item['name'].' ('.$item['dimension_label'].')' : $item['name'],
+                'qty' => $item['qty'],
+                'price' => $item['price'],
+            ])->values()->all(),
+            'photo_count' => (int) $voucher->photo_count,
         ]);
 
+        $targetStep = $mode === 'frame' ? 'foto' : 'frame';
         if ($request->boolean('from_spa')) {
-            return redirect()->route('spa', ['step' => 'foto']);
+            return redirect()->route('spa', ['step' => $targetStep]);
         }
 
-        return redirect()->route('foto');
+        return redirect()->route($targetStep);
     }
 
     public function pembayaran(Request $request)
@@ -513,6 +725,7 @@ class PhotoboothController extends Controller
         return view('pembayaran', [
             'metode' => session('metode'),
             'total' => $this->total(),
+            'items' => $this->cartItems(),
             'nmid' => Setting::get('qris_nmid', '102020034073193'),
             'merchant' => Setting::get('qris_merchant', 'PERKAKASKU'),
             'qris_image' => Setting::get('qris_image'),
@@ -574,6 +787,7 @@ class PhotoboothController extends Controller
         $items = collect($this->cartItems())->map(function ($item) use ($photos) {
             $item['photos'] = $photos[$item['slug']] ?? [];
             $item['filter_map'] = $this->itemFilterMap($item['slug'], $item['photos']);
+            $item['sticker_map'] = $this->itemStickerMap($item['slug']);
 
             return $item;
         });
@@ -658,6 +872,7 @@ class PhotoboothController extends Controller
         $items = collect($this->cartItems())->map(function ($item) use ($photos) {
             $item['photos'] = $photos[$item['slug']] ?? [];
             $item['filter_map'] = $this->itemFilterMap($item['slug'], $item['photos']);
+            $item['sticker_map'] = $this->itemStickerMap($item['slug']);
 
             return $item;
         });
@@ -710,7 +925,7 @@ class PhotoboothController extends Controller
             return [];
         }
 
-        $frames = Frame::whereIn('slug', array_keys($cart))->get()->keyBy('slug');
+        $frames = Frame::whereIn('slug', array_keys($cart))->with('size')->get()->keyBy('slug');
 
         $items = [];
         foreach ($cart as $slug => $qty) {
@@ -722,11 +937,17 @@ class PhotoboothController extends Controller
                 'slug' => $slug,
                 'name' => $frame->name,
                 'qty' => (int) $qty,
-                'price' => (int) $frame->price,
+                'price' => $frame->effectivePrice(),
+                'price_source' => $frame->price !== null ? 'frame' : 'size',
                 'photo_count' => max(1, (int) $frame->photo_count),
                 'image_url' => $frame->image_url,
                 'slots' => $frame->slots ?? [],
                 'caption' => $frame->caption,
+                'size_id' => $frame->size?->id,
+                'size_name' => $frame->size?->name ?? (string) $frame->category,
+                'size_width_cm' => $frame->size?->width_cm,
+                'size_height_cm' => $frame->size?->height_cm,
+                'size_label' => $frame->size?->dimension_label,
             ];
         }
 
@@ -739,6 +960,62 @@ class PhotoboothController extends Controller
             fn ($item) => $item['price'] * $item['qty'],
             $this->cartItems()
         ));
+    }
+
+    private function voucherQuotas(): array
+    {
+        if ($this->voucherMode() === 'frame') {
+            return [];
+        }
+
+        $voucher = session('voucher', []);
+        $quotas = is_array($voucher['quotas'] ?? null) ? $voucher['quotas'] : [];
+
+        $result = [];
+        foreach ($quotas as $sizeId => $qty) {
+            $qty = (int) $qty;
+            if (ctype_digit((string) $sizeId) && $qty > 0) {
+                $result[(int) $sizeId] = $qty;
+            }
+        }
+
+        return $result;
+    }
+
+    private function voucherQuotaDetails(): array
+    {
+        $quotas = $this->voucherQuotas();
+        if (! $quotas) {
+            return [];
+        }
+
+        $sizes = Size::whereIn('id', array_keys($quotas))->get()->keyBy('id');
+
+        return collect($quotas)->map(fn ($qty, $sizeId) => [
+            'size_id' => (int) $sizeId,
+            'name' => $sizes->get($sizeId)?->name ?? ('Ukuran #'.$sizeId),
+            'dimension_label' => $sizes->get($sizeId)?->dimension_label,
+            'qty' => (int) $qty,
+        ])->values()->all();
+    }
+
+    private function voucherMode(): string
+    {
+        $voucher = session('voucher', []);
+        $mode = $voucher['mode'] ?? null;
+        if (in_array($mode, ['frame', 'size'], true)) {
+            return $mode;
+        }
+
+        $id = (int) ($voucher['id'] ?? 0);
+        if ($id > 0) {
+            $model = Voucher::find($id);
+            if ($model) {
+                return $model->isFrameMode() ? 'frame' : 'size';
+            }
+        }
+
+        return 'size';
     }
 
     /**
@@ -768,6 +1045,46 @@ class PhotoboothController extends Controller
         return $map;
     }
 
+    /**
+     * Stiker yang ditempel pada sebuah item: [{id,type,value,x,y,size}].
+     */
+    private function itemStickerMap(string $slug): array
+    {
+        $map = session('stickers', []);
+        $items = is_array($map) ? ($map[$slug] ?? []) : [];
+
+        return is_array($items) ? array_values($items) : [];
+    }
+
+    /**
+     * Palet stiker aktif untuk editor kiosk.
+     */
+    private function stickerPalette(): array
+    {
+        return Sticker::active()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Sticker $sticker) => [
+                'id' => $sticker->id,
+                'name' => $sticker->name,
+                'type' => $sticker->type,
+                'value' => $sticker->display,
+            ])
+            ->filter(fn (array $sticker) => is_string($sticker['value']) && $sticker['value'] !== '')
+            ->values()
+            ->all();
+    }
+
+    private function clamp(float $value, float $min, float $max, float $fallback): float
+    {
+        if (! is_finite($value)) {
+            return $fallback;
+        }
+
+        return max($min, min($max, $value));
+    }
+
     private function maxPhotoCount(): int
     {
         return array_sum(array_map(
@@ -781,7 +1098,7 @@ class PhotoboothController extends Controller
      */
     private function resetCartSession(Request $request, array $keep = []): void
     {
-        $forget = ['cart', 'photos', 'filter', 'filters', 'metode', 'paid', 'email', 'voucher', 'voucher_value', 'payment_log_id'];
+        $forget = ['cart', 'photos', 'filter', 'filters', 'stickers', 'filter_done', 'metode', 'paid', 'email', 'voucher', 'voucher_value', 'payment_log_id'];
         $request->session()->forget(array_diff($forget, $keep));
     }
 
@@ -789,10 +1106,12 @@ class PhotoboothController extends Controller
      * Tentukan tahap SPA yang paling masuk akal dari data sesi saat ini.
      * Dipakai untuk menjepit permintaan step yang belum memenuhi prasyarat.
      */
-    private function defaultSpaStep(string $metode, bool $paid, bool $hasCart, bool $hasPhotos): string
+    private function defaultSpaStep(string $metode, bool $paid, bool $hasCart, bool $hasPhotos, ?bool $filterDone = null): string
     {
+        $filterDone ??= session()->has('filter_done');
+
         if ($paid && $hasPhotos) {
-            return 'review';
+            return $filterDone ? 'review' : 'filter';
         }
 
         if ($paid && $hasCart) {
@@ -804,7 +1123,25 @@ class PhotoboothController extends Controller
         }
 
         if ($metode === 'voucher') {
-            return $hasCart ? 'foto' : 'metode';
+            if ($this->voucherMode() === 'frame') {
+                if ($hasPhotos) {
+                    return $filterDone ? 'review' : 'filter';
+                }
+                if ($hasCart) {
+                    return 'foto';
+                }
+                return $paid ? 'foto' : 'metode';
+            }
+            if ($hasPhotos) {
+                return $filterDone ? 'review' : 'filter';
+            }
+            if ($hasCart) {
+                return 'foto';
+            }
+            if ($paid) {
+                return 'frame';
+            }
+            return 'metode';
         }
 
         return 'metode';
@@ -817,11 +1154,23 @@ class PhotoboothController extends Controller
     private function flowSteps(string $metode): array
     {
         $brand = Brand::get();
+        $edit = ['key' => 'filter', 'label' => $brand['step_edit']];
 
         if ($metode === 'voucher') {
+            if ($this->voucherMode() === 'frame') {
+                return [
+                    ['key' => 'metode', 'label' => $brand['step_voucher']],
+                    ['key' => 'foto', 'label' => $brand['step_photo']],
+                    $edit,
+                    ['key' => 'review', 'label' => $brand['step_review']],
+                ];
+            }
+
             return [
                 ['key' => 'metode', 'label' => $brand['step_voucher']],
+                ['key' => 'frame', 'label' => $brand['step_frame']],
                 ['key' => 'foto', 'label' => $brand['step_photo']],
+                $edit,
                 ['key' => 'review', 'label' => $brand['step_review']],
             ];
         }
@@ -832,6 +1181,7 @@ class PhotoboothController extends Controller
                 ['key' => 'frame', 'label' => $brand['step_frame']],
                 ['key' => 'pembayaran', 'label' => $brand['step_payment']],
                 ['key' => 'foto', 'label' => $brand['step_photo']],
+                $edit,
                 ['key' => 'review', 'label' => $brand['step_review']],
             ];
         }
@@ -843,6 +1193,7 @@ class PhotoboothController extends Controller
             ['key' => 'frame', 'label' => $brand['step_frame']],
             ['key' => 'pembayaran', 'label' => $brand['step_payment']],
             ['key' => 'foto', 'label' => $brand['step_photo']],
+            $edit,
             ['key' => 'review', 'label' => $brand['step_review']],
         ];
     }
@@ -880,6 +1231,7 @@ class PhotoboothController extends Controller
             'name' => $item['name'],
             'qty' => $item['qty'],
             'price' => $item['price'],
+            'size' => $item['size_name'] ?? null,
         ], $this->cartItems());
 
         $log = ActivityLog::create([
@@ -1025,12 +1377,18 @@ class PhotoboothController extends Controller
                 'name' => $item['name'],
                 'qty' => $item['qty'],
                 'price' => $item['price'],
+                'price_source' => $item['price_source'] ?? null,
                 'photo_count' => $item['photo_count'],
                 'image_url' => $frameUrl,
                 'slots' => $item['slots'],
                 'caption' => $item['caption'],
+                'size_name' => $item['size_name'] ?? null,
+                'size_width_cm' => $item['size_width_cm'] ?? null,
+                'size_height_cm' => $item['size_height_cm'] ?? null,
+                'size_label' => $item['size_label'] ?? null,
                 'photos' => $photos,
                 'filters' => array_values($this->itemFilterMap($item['slug'], $photos)),
+                'stickers' => $this->itemStickerMap($item['slug']),
             ];
         })->all();
 
@@ -1039,7 +1397,40 @@ class PhotoboothController extends Controller
         $metadata['photos'] = $archived;
         $metadata['archive_dir'] = $directory;
         $metadata['filters'] = session('filters', []);
+        $metadata['stickers'] = session('stickers', []);
         $metadata['archived_at'] = now()->toIso8601String();
+
+        $log->metadata = $metadata;
+        $log->save();
+    }
+
+    /**
+     * Perbarui metadata arsip setelah pelanggan menyimpan filter/stiker,
+     * supaya admin melihat hasil edit yang sama dengan yang diterima pelanggan.
+     */
+    private function syncArchiveEdits(): void
+    {
+        $logId = (int) session('payment_log_id', 0);
+        if ($logId <= 0) {
+            return;
+        }
+
+        $log = ActivityLog::payments()->whereKey($logId)->first();
+        if (! $log) {
+            return;
+        }
+
+        $metadata = $log->metadata ?? [];
+        $metadata['filters'] = session('filters', []);
+        $metadata['stickers'] = session('stickers', []);
+
+        foreach ($metadata['items'] ?? [] as &$item) {
+            $slug = (string) ($item['slug'] ?? '');
+            $photos = array_values($item['photos'] ?? []);
+            $item['filters'] = array_values($this->itemFilterMap($slug, $photos));
+            $item['stickers'] = $this->itemStickerMap($slug);
+        }
+        unset($item);
 
         $log->metadata = $metadata;
         $log->save();

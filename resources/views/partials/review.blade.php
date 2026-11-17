@@ -1,7 +1,7 @@
 <div class="flex-1 min-h-0 flex flex-col items-center">
     @php($brand = $brand ?? \App\Support\Brand::get())
-    <div class="text-center mb-3 shrink-0">
-        <div class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-100 mb-2">
+    <div class="text-center mb-2 shrink-0">
+        <div class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-100 mb-1.5">
             <x-icon name="check" class="w-3.5 h-3.5" />
             {{ ($metode ?? '') === 'voucher' ? 'Voucher terverifikasi' : 'Pembayaran diterima' }}
         </div>
@@ -9,53 +9,80 @@
         <p class="text-slate-500 text-xs sm:text-sm mt-1">{{ $brand['review_subtitle'] }}</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_360px] gap-5 sm:gap-6 w-full max-w-6xl items-start">
-        <div class="k-card flex flex-wrap justify-center gap-4 w-full p-4 sm:p-5 min-h-[220px]">
-            @forelse ($items as $item)
-                <div class="w-[170px] sm:w-[210px] overflow-hidden rounded-2xl shadow-2xl shadow-rose-200/50 ring-1 ring-black/5 bg-white" data-strip-container data-qty="{{ $item['qty'] }}">
-                    <canvas class="w-full h-auto block" data-strip-canvas
-                            data-photos='@json($item['photos'] ?? [])'
-                            data-filters='@json($item['filter_map'] ?? [])'
-                            data-filter="{{ $filter }}"
-                            data-frame="{{ $item['slug'] }}"
-                            data-frame-image="{{ $item['image_url'] }}"
-                            data-frame-slots='@json($item['slots'] ?? [])'></canvas>
-                    <div class="px-3 py-2 flex items-center justify-between gap-2 text-xs border-t border-black/5">
-                        <span class="font-semibold text-slate-600 truncate">{{ $item['name'] }}</span>
-                        @if ($item['qty'] > 1)
-                            <span class="font-bold text-rose-600 shrink-0">{{ $item['qty'] }} lembar</span>
-                        @endif
+    <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_340px] gap-3 sm:gap-4 w-full max-w-6xl items-start">
+        <div class="k-card w-full p-3.5 sm:p-4">
+            <div class="k-inset flex min-h-[200px] flex-wrap justify-center gap-4 p-3">
+                @forelse ($items as $item)
+                    <div class="w-[168px] sm:w-[204px] overflow-hidden rounded-2xl bg-white shadow-xl shadow-slate-900/10 ring-1 ring-black/5" data-strip-container data-qty="{{ $item['qty'] }}"
+                         data-print-width="{{ $item['size_width_cm'] ?? '' }}" data-print-height="{{ $item['size_height_cm'] ?? '' }}">
+                        <canvas class="w-full h-auto block" data-strip-canvas
+                                data-photos='@json($item['photos'] ?? [])'
+                                data-filters='@json($item['filter_map'] ?? [])'
+                                data-filter="{{ $filter }}"
+                                data-frame="{{ $item['slug'] }}"
+                                data-frame-image="{{ $item['image_url'] }}"
+                                data-frame-slots='@json($item['slots'] ?? [])'
+                                data-print-width="{{ $item['size_width_cm'] ?? '' }}"
+                                data-stickers='@json($item['sticker_map'] ?? [])'></canvas>
+                        <div class="px-3 py-2 flex items-center justify-between gap-2 text-xs border-t border-black/5">
+                            <div class="min-w-0">
+                                <span class="block font-semibold text-slate-600 truncate">{{ $item['name'] }}</span>
+                                @if (!empty($item['size_name']))
+                                    <span class="block text-[10px] text-slate-400 truncate">
+                                        {{ $item['size_name'] }}@if (!empty($item['size_label'])) &middot; {{ $item['size_label'] }}@endif
+                                    </span>
+                                @endif
+                            </div>
+                            @if ($item['qty'] > 1)
+                                <span class="font-bold text-rose-600 shrink-0">{{ $item['qty'] }} lembar</span>
+                            @endif
+                        </div>
                     </div>
-                </div>
-            @empty
-                <p class="text-center text-slate-400">Belum ada frame yang dipilih.</p>
-            @endforelse
+                @empty
+                    <p class="text-center text-slate-400 self-center">Belum ada frame yang dipilih.</p>
+                @endforelse
+            </div>
         </div>
 
-        <div class="flex flex-col gap-3 w-full md:sticky md:top-2">
-            <div class="k-card p-5 shadow-xl shadow-rose-100/50">
-                <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Ringkasan</p>
-                <div class="text-sm text-slate-600 space-y-1">
-                    <p>Antrian: <span class="font-bold text-rose-500">{{ $queue }}</span></p>
+        <div class="flex flex-col gap-2 w-full md:sticky md:top-2">
+            <div class="k-card p-3.5">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Ringkasan</p>
+                    <span class="k-pill !py-1 !px-2.5 !text-[11px]">
+                        <x-icon name="receipt" class="w-3.5 h-3.5 text-rose-500" />
+                        {{ $queue }}
+                    </span>
+                </div>
+
+                <div class="text-sm text-slate-600 space-y-1.5">
                     <p class="flex justify-between gap-2">
                         <span>Metode</span>
-                        <span class="font-semibold">{{ ($metode ?? '') === 'voucher' ? 'Voucher' : 'QRIS' }}</span>
+                        <span class="font-semibold text-slate-800">{{ ($metode ?? '') === 'voucher' ? 'Voucher' : 'QRIS' }}</span>
                     </p>
                     @if (($metode ?? '') === 'voucher')
                         <p class="flex justify-between gap-2">
                             <span>Kode voucher</span>
-                            <span class="font-mono font-semibold">{{ $voucher['code'] ?? '-' }}</span>
+                            <span class="font-mono font-semibold text-slate-800">{{ $voucher['code'] ?? '-' }}</span>
                         </p>
                     @endif
-                    @foreach ($items as $item)
-                        <p class="flex justify-between gap-2">
-                            <span class="truncate">{{ $item['name'] }}@if ($item['qty'] > 1) x{{ $item['qty'] }}@endif</span>
-                            <span class="tabular-nums shrink-0">Rp. {{ number_format($item['price'] * $item['qty'], 0, ',', '.') }}</span>
-                        </p>
-                    @endforeach
-                    <p class="flex justify-between pt-1.5 mt-1.5 border-t border-rose-100">
+                    @if ($items)
+                        {{-- Daftar item dibatasi agar tombol aksi tetap terlihat. --}}
+                        <div class="max-h-24 overflow-y-auto pr-1 space-y-1.5">
+                            @foreach ($items as $item)
+                                <p class="flex justify-between gap-2">
+                                    <span class="truncate">{{ $item['name'] }}@if ($item['qty'] > 1) x{{ $item['qty'] }}@endif
+                                        @if (!empty($item['size_name']))
+                                            <span class="text-slate-400">· {{ $item['size_name'] }}</span>
+                                        @endif
+                                    </span>
+                                    <span class="tabular-nums shrink-0">Rp {{ number_format($item['price'] * $item['qty'], 0, ',', '.') }}</span>
+                                </p>
+                            @endforeach
+                        </div>
+                    @endif
+                    <p class="flex justify-between pt-2 mt-1 border-t border-dashed border-slate-200">
                         <span class="font-bold text-slate-800">Total</span>
-                        <span class="font-bold text-rose-600 tabular-nums">Rp. {{ number_format($total, 0, ',', '.') }}</span>
+                        <span class="font-display font-extrabold text-rose-600 tabular-nums">Rp {{ number_format($total, 0, ',', '.') }}</span>
                     </p>
                     @if (($metode ?? '') === 'voucher')
                         <p class="text-right text-[11px] font-semibold text-emerald-600">Sudah dibayar dengan voucher</p>
@@ -72,20 +99,22 @@
                 </button>
             </div>
 
-            <form method="POST" action="{{ route('email.send') }}" data-email-form class="space-y-2.5">
+            <form method="POST" action="{{ route('email.send') }}" data-email-form class="k-card space-y-1.5 p-3.5">
                 @csrf
-                <label for="email-input" class="block text-sm font-semibold text-slate-700">Email</label>
-                <input type="email" name="email" id="email-input" placeholder="email@contoh.com" required autocomplete="email" class="k-field">
-                <p class="hidden text-sm text-red-600" data-email-error aria-live="assertive"></p>
-                <p class="hidden text-sm text-emerald-600" data-email-success aria-live="polite"></p>
-                <button type="submit" data-email-submit class="k-btn k-btn-dark w-full !py-3.5">
-                    <x-icon name="envelope" class="w-5 h-5 text-white" /> Kirim
-                </button>
+                <label for="email-input" class="block text-xs font-semibold text-slate-700">Kirim ke email</label>
+                <div class="flex items-stretch gap-2">
+                    <input type="email" name="email" id="email-input" placeholder="email@contoh.com" required autocomplete="email" class="k-field min-w-0 flex-1">
+                    <button type="submit" data-email-submit class="k-btn k-btn-dark shrink-0 !px-4 !py-2.5" aria-label="Kirim ke email">
+                        <x-icon name="envelope" class="w-5 h-5 text-white" />
+                    </button>
+                </div>
+                <p hidden class="text-sm text-red-600" data-email-error aria-live="assertive"></p>
+                <p hidden class="text-sm text-emerald-600" data-email-success aria-live="polite"></p>
             </form>
 
             <form method="POST" action="{{ route('selesai.store') }}" data-finish-form>
                 @csrf
-                <button type="submit" class="w-full text-center text-sm font-semibold text-slate-500 hover:text-rose-600 py-1 transition focus:outline-none focus-visible:underline">
+                <button type="submit" class="w-full text-center text-sm font-semibold text-slate-500 hover:text-rose-600 py-0.5 transition focus:outline-none focus-visible:underline">
                     {{ $brand['finish_label'] }}
                 </button>
             </form>

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Frame;
+use App\Models\Sticker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -64,11 +65,17 @@ class FrameCartFlowTest extends TestCase
         // 7 foto: 3 kpop + 4 neon
         $photos = array_map(fn () => $this->photo(), range(1, 7));
         $this->post('/foto', ['photos' => $photos])
-            ->assertJsonFragment(['redirect' => 'http://localhost/review']);
+            ->assertJsonFragment(['redirect' => url('/filter')]);
 
         $saved = session('photos');
         $this->assertCount(3, $saved['kpop']);
         $this->assertCount(4, $saved['neon']);
+
+        // Tahap edit wajib dilalui sebelum review.
+        $this->get('/filter')->assertRedirect('/spa?step=filter');
+        $this->post('/filter', [
+            'filters' => ['kpop:0' => 'bw', 'neon:0' => 'vintage'],
+        ])->assertRedirect('/review');
 
         $this->get('/review')->assertOk()->assertSee('data-strip-canvas');
         $this->assertStringContainsString('K-pop', $this->get('/review')->getContent());
@@ -88,8 +95,9 @@ class FrameCartFlowTest extends TestCase
         $this->post('/pembayaran')->assertRedirect('/foto');
 
         $photos = array_map(fn () => $this->photo(), range(1, 7));
-        $this->post('/foto', ['photos' => $photos])->assertJsonPath('redirect', 'http://localhost/review');
+        $this->post('/foto', ['photos' => $photos])->assertJsonPath('redirect', url('/filter'));
 
+        $this->post('/filter')->assertRedirect('/review');
         $this->get('/review')->assertSee('150.000');
     }
 
@@ -110,7 +118,7 @@ class FrameCartFlowTest extends TestCase
         );
     }
 
-    public function test_spa_foto_store_redirects_to_review_panel(): void
+    public function test_spa_foto_store_redirects_to_filter_panel(): void
     {
         $this->post('/mulai');
         $this->post('/metode', ['metode' => 'qris', 'from_spa' => 1]);
@@ -119,9 +127,68 @@ class FrameCartFlowTest extends TestCase
 
         $photos = array_map(fn () => $this->photo(), range(1, 3));
         $this->post('/foto', ['photos' => $photos, 'from_spa' => 1])
-            ->assertJsonPath('redirect', 'http://localhost/spa?step=review');
+            ->assertJsonPath('redirect', url('/spa?step=filter'));
 
+        $this->assertSame('filter', session('spa_step'));
+    }
+
+    public function test_filter_and_stickers_are_saved_and_rendered_on_review(): void
+    {
+        $this->post('/mulai');
+        $this->post('/metode', ['metode' => 'qris', 'from_spa' => 1]);
+        $this->post('/frame', ['cart' => ['kpop' => 1], 'from_spa' => 1]);
+        $this->post('/pembayaran', ['from_spa' => 1]);
+
+        $photos = array_map(fn () => $this->photo(), range(1, 3));
+        $this->post('/foto', ['photos' => $photos, 'from_spa' => 1]);
+
+        $sticker = Sticker::active()->orderBy('id')->firstOrFail();
+
+        $this->post('/filter', [
+            'from_spa' => 1,
+            'filters' => [
+                'kpop:0' => 'bw',
+                'kpop:1' => 'warm',
+                'kpop:2' => 'neon',
+                'kpop:9' => 'bw',
+            ],
+            'stickers' => json_encode([
+                'kpop' => [
+                    ['id' => $sticker->id, 'x' => 0.25, 'y' => 0.3, 'size' => 0.12, 'rotation' => 45],
+                    ['id' => 999999, 'x' => 0.5, 'y' => 0.5, 'size' => 0.2],
+                ],
+            ]),
+        ])->assertRedirect('/spa?step=review');
+
+        $this->assertSame('bw', session('filters')['kpop:0']);
+        $this->assertArrayNotHasKey('kpop:9', session('filters'));
+        $this->assertCount(1, session('stickers')['kpop']);
+        $this->assertSame($sticker->emoji, session('stickers')['kpop'][0]['value']);
+        $this->assertSame(45.0, session('stickers')['kpop'][0]['rotation']);
+        $this->assertTrue(session()->has('filter_done'));
         $this->assertSame('review', session('spa_step'));
+
+        $html = $this->get('/spa?step=review')->assertOk()->getContent();
+        $this->assertStringContainsString('data-stickers=', $html);
+        $this->assertStringContainsString($sticker->emoji, $html);
+    }
+
+    public function test_review_panel_is_gated_until_filter_is_saved(): void
+    {
+        $this->post('/mulai');
+        $this->post('/metode', ['metode' => 'qris', 'from_spa' => 1]);
+        $this->post('/frame', ['cart' => ['kpop' => 1], 'from_spa' => 1]);
+        $this->post('/pembayaran', ['from_spa' => 1]);
+
+        $photos = array_map(fn () => $this->photo(), range(1, 3));
+        $this->post('/foto', ['photos' => $photos, 'from_spa' => 1]);
+
+        $html = $this->get('/spa?step=review')->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/data-spa-step-dot="filter" data-state="active"/', $html);
+
+        $this->post('/filter', ['from_spa' => 1])->assertRedirect('/spa?step=review');
+        $html = $this->get('/spa?step=review')->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/data-spa-step-dot="review" data-state="active"/', $html);
     }
 
     public function test_empty_cart_is_rejected(): void
@@ -132,13 +199,13 @@ class FrameCartFlowTest extends TestCase
         $this->post('/frame', ['cart' => []])->assertSessionHasErrors('cart');
     }
 
-    public function test_spa_starts_at_payment_method_and_has_no_filter_step(): void
+    public function test_spa_starts_at_payment_method_and_has_filter_step(): void
     {
         $html = $this->get('/spa')->assertOk()->getContent();
 
         $this->assertMatchesRegularExpression('/data-spa-step-dot="metode" data-state="active"/', $html);
-        $this->assertStringNotContainsString('data-spa-step-dot="filter"', $html);
-        $this->assertStringNotContainsString('data-spa-panel="filter"', $html);
+        $this->assertStringContainsString('data-spa-step-dot="filter"', $html);
+        $this->assertStringContainsString('data-spa-panel="filter"', $html);
         $this->assertStringContainsString('data-metode-option="qris"', $html);
         $this->assertStringContainsString('data-metode-option="voucher"', $html);
     }

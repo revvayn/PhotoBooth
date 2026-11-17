@@ -4,8 +4,11 @@ use App\Http\Controllers\Admin\AppearanceController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FrameController;
+use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\LogController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\SizeController;
+use App\Http\Controllers\Admin\StickerController;
 use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\PhotoboothController;
 use App\Http\Middleware\AdminAuth;
@@ -49,6 +52,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(AdminAuth::class)->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::resource('frames', FrameController::class)->except(['show']);
+        Route::get('/sizes/{size}/template', [SizeController::class, 'template'])->name('sizes.template');
+        Route::resource('sizes', SizeController::class)->except(['show']);
+        Route::resource('stickers', StickerController::class)->except(['show']);
         Route::resource('vouchers', VoucherController::class)->except(['show']);
         Route::delete('/vouchers/filter', [VoucherController::class, 'destroyFiltered'])->name('vouchers.destroy-filtered');
         Route::get('/vouchers/{voucher}', [VoucherController::class, 'show'])->name('vouchers.show');
@@ -63,5 +69,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/appearance', [AppearanceController::class, 'update'])->name('appearance.update');
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
+        Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     });
 });

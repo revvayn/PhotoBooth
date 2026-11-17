@@ -41,8 +41,8 @@
             <p class="text-sm font-semibold text-slate-800">{{ $voucher->number_of_people }} orang</p>
         </div>
         <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
-            <p class="text-xs font-bold uppercase text-slate-400 mb-2">Foto per Voucher</p>
-            <p class="text-sm font-semibold text-slate-800">{{ $voucher->photos_per_voucher }} foto</p>
+            <p class="text-xs font-bold uppercase text-slate-400 mb-2">Jumlah Cetak</p>
+            <p class="text-sm font-semibold text-slate-800">{{ $voucher->photos_per_voucher }} lembar</p>
         </div>
     @endif
 </div>
@@ -52,7 +52,7 @@
     <table class="w-full text-left border-collapse">
         <thead>
             <tr class="border-b border-slate-200">
-                <th class="px-4 py-3 text-xs font-bold uppercase text-slate-400">Frame</th>
+                <th class="px-4 py-3 text-xs font-bold uppercase text-slate-400">Ukuran</th>
                 <th class="px-4 py-3 text-xs font-bold uppercase text-slate-400 text-right">Qty</th>
                 <th class="px-4 py-3 text-xs font-bold uppercase text-slate-400 text-right">Harga</th>
                 <th class="px-4 py-3 text-xs font-bold uppercase text-slate-400 text-right">Subtotal</th>
@@ -61,7 +61,12 @@
         <tbody>
             @foreach ($items as $item)
                 <tr class="border-b border-slate-100">
-                    <td class="px-4 py-3 text-sm text-slate-700">{{ $item['name'] }}</td>
+                    <td class="px-4 py-3 text-sm text-slate-700">
+                        <div>{{ $item['name'] }}</div>
+                        @if (! empty($item['dimension_label']))
+                            <div class="text-xs text-slate-400">{{ $item['dimension_label'] }}</div>
+                        @endif
+                    </td>
                     <td class="px-4 py-3 text-sm text-slate-700 text-right">{{ $item['qty'] }}</td>
                     <td class="px-4 py-3 text-sm text-slate-700 text-right">Rp. {{ number_format($item['price'], 0, ',', '.') }}</td>
                     <td class="px-4 py-3 text-sm font-semibold text-slate-800 text-right">Rp. {{ number_format($item['subtotal'], 0, ',', '.') }}</td>

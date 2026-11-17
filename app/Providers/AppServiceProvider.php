@@ -20,7 +20,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (request()->header('x-forwarded-proto') === 'https' || str_contains(config('app.url'), 'ngrok')) {
+        // Paksa HTTPS hanya untuk permintaan yang memang datang lewat HTTPS
+        // (proxy/ngrok). Memakai config('app.url') membuat server lokal tetap
+        // menghasilkan URL aset https saat APP_URL menunjuk ke ngrok.
+        if (
+            request()->header('x-forwarded-proto') === 'https'
+            || str_contains(request()->getHost(), 'ngrok')
+        ) {
             URL::forceScheme('https');
         }
     }

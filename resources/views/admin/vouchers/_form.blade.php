@@ -1,6 +1,8 @@
 @php
     $isEdit = isset($voucher);
-    $selectedFrames = old('frames', $isEdit ? ($voucher->items ?? []) : []);
+    $selectedFrames = old('frames', $isEdit && $voucher->isFrameMode() ? ($voucher->items ?? []) : []);
+    $selectedSizes = old('sizes', $isEdit && $voucher->isSizeMode() ? $voucher->sizeItems() : []);
+    $itemMode = old('item_mode', $isEdit ? ($voucher->isFrameMode() ? 'frame' : 'size') : 'size');
     $voucherType = old('type', $isEdit ? $voucher->type : ($type ?? 'cash'));
     $isEvent = $voucherType === 'event';
 
@@ -17,18 +19,18 @@
     $totalCostValue = old('total_cost', $isEdit ? $voucher->total_cost : '');
     $maxUsesValue = old('max_uses', $isEdit ? $voucher->max_uses : 1);
 
-    $frameStep = $isEvent ? 3 : 2;
+    $sizeStep = $isEvent ? 3 : 2;
     $summaryStep = $isEvent ? 4 : 3;
     $steps = $isEvent
-        ? [1 => 'Informasi', 2 => 'Event', 3 => 'Frame', 4 => 'Ringkasan']
-        : [1 => 'Informasi', 2 => 'Frame', 3 => 'Ringkasan'];
+        ? [1 => 'Informasi', 2 => 'Event', 3 => 'Ukuran', 4 => 'Ringkasan']
+        : [1 => 'Informasi', 2 => 'Ukuran', 3 => 'Ringkasan'];
 
     $initialStep = 1;
     if ($isEvent && ($errors->has('event_code') || $errors->has('event_name') || $errors->has('event_date') || $errors->has('number_of_people') || $errors->has('total_cost'))) {
         $initialStep = 2;
     }
-    if ($errors->has('frames')) {
-        $initialStep = $frameStep;
+    if ($errors->has('sizes')) {
+        $initialStep = $sizeStep;
     }
 @endphp
 
@@ -53,7 +55,7 @@
                                 <span class="min-w-0">
                                     <span class="block text-sm font-semibold">{{ $label }}</span>
                                     <span class="block text-[11px] text-slate-400">
-                                        {{ $label === 'Informasi' ? 'Nama & masa berlaku' : ($label === 'Event' ? 'Peserta & kode' : ($label === 'Frame' ? 'Isi voucher' : 'Cek & simpan')) }}
+                                        {{ $label === 'Informasi' ? 'Nama & masa berlaku' : ($label === 'Event' ? 'Peserta & kode' : ($label === 'Ukuran' ? 'Isi voucher' : 'Cek & simpan')) }}
                                     </span>
                                 </span>
                             </button>
@@ -71,7 +73,7 @@
                     <span class="text-xs text-slate-400">{{ $isEvent ? 'Kode otomatis per orang' : 'Satu kode tunggal' }}</span>
                 </div>
                 <p class="mt-3 text-[11px] leading-relaxed text-slate-400">
-                    {{ $isEvent ? 'Isi frame dan jumlah orang, sistem membuat kode untuk setiap peserta.' : 'Satu kode untuk satu pelanggan dengan frame yang sudah ditentukan.' }}
+                    {{ $isEvent ? 'Isi ukuran dan jumlah orang, sistem membuat kode untuk setiap peserta.' : 'Satu kode untuk satu pelanggan dengan ukuran cetak yang sudah ditentukan. Pelanggan memilih frame sendiri di photobooth.' }}
                 </p>
             </div>
         </aside>
@@ -269,54 +271,102 @@
                 </section>
             @endif
 
-            {{-- Langkah frame --}}
-            <section data-step-panel="{{ $frameStep }}" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            {{-- Langkah isi voucher --}}
+            <section data-step-panel="{{ $sizeStep }}" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 px-6 py-5">
                     <div class="flex items-start gap-3">
-                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-sm font-bold text-rose-600">{{ $frameStep }}</span>
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-sm font-bold text-rose-600">{{ $sizeStep }}</span>
                         <div>
-                            <h2 class="font-heading text-lg font-bold text-slate-800">Frame yang didapat</h2>
-                            <p class="mt-0.5 text-xs text-slate-400">Tentukan frame dan jumlah cetak. Pelanggan tidak perlu memilih frame lagi.</p>
+                            <h2 class="font-heading text-lg font-bold text-slate-800">Isi voucher</h2>
+                            <p class="mt-0.5 text-xs text-slate-400">Pilih frame (pelanggan langsung cetak) atau ukuran saja (pelanggan memilih frame sendiri di photobooth).</p>
                         </div>
                     </div>
                 </div>
-                <div class="space-y-3 p-6">
+                <div class="space-y-5 p-6">
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-slate-700">Mode isi voucher</label>
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <label class="flex cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                                <input type="radio" name="item_mode" value="frame" @checked($itemMode === 'frame') class="text-rose-500 focus:ring-rose-400">
+                                Pilih Frame (langsung cetak)
+                            </label>
+                            <label class="flex cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                                <input type="radio" name="item_mode" value="size" @checked($itemMode === 'size') class="text-rose-500 focus:ring-rose-400">
+                                Pilih Ukuran (pelanggan pilih frame)
+                            </label>
+                        </div>
+                    </div>
+
                     @error('frames')
                         <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $message }}</div>
                     @enderror
+                    @error('sizes')
+                        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $message }}</div>
+                    @enderror
 
-                    @forelse ($frames as $frame)
-                        <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-                            <div class="flex h-14 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-slate-200">
-                                @if ($frame->image_url)
-                                    <img src="{{ $frame->image_url }}" alt="{{ $frame->name }}" class="h-full w-full object-contain p-1">
-                                @else
-                                    <x-icon name="photo" class="h-5 w-5 text-slate-300" />
-                                @endif
+                    <div data-item-mode-section="frame" class="@if ($itemMode !== 'frame') hidden @endif space-y-3">
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Frame yang didapat</p>
+                        @forelse ($frames as $frame)
+                            <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                                <div class="flex h-14 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-slate-200">
+                                    @if ($frame->image_url)
+                                        <img src="{{ $frame->image_url }}" alt="{{ $frame->name }}" class="h-full w-full object-contain p-1">
+                                    @else
+                                        <x-icon name="photo" class="h-5 w-5 text-slate-300" />
+                                    @endif
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-semibold text-slate-800">{{ $frame->name }}</p>
+                                    <p class="text-xs text-slate-400">
+                                        {{ $frame->photo_count }} foto/frame
+                                        &middot; Rp. {{ number_format($frame->effectivePrice(), 0, ',', '.') }}
+                                        @if (! $frame->is_active) &middot; <span class="text-amber-600">nonaktif</span>@endif
+                                    </p>
+                                </div>
+                                <div class="w-24 shrink-0">
+                                    <label for="frame-{{ $frame->id }}" class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">Jumlah</label>
+                                    <input type="number" id="frame-{{ $frame->id }}" name="frames[{{ $frame->slug }}]" min="0" max="50"
+                                           value="{{ (int) ($selectedFrames[$frame->slug] ?? 0) }}"
+                                           data-price="{{ $frame->effectivePrice() }}" data-frame-name="{{ $frame->name }}"
+                                           class="frame-qty w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400">
+                                </div>
                             </div>
-                            <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-semibold text-slate-800">{{ $frame->name }}</p>
-                                <p class="text-xs text-slate-400">
-                                    {{ $frame->photo_count }} foto/frame
-                                    &middot; Rp. {{ number_format($frame->price, 0, ',', '.') }}
-                                    @if (! $frame->is_active) &middot; <span class="text-amber-600">nonaktif</span>@endif
-                                </p>
+                        @empty
+                            <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                Belum ada frame. Tambahkan frame terlebih dahulu di menu Frames.
                             </div>
-                            <div class="w-24 shrink-0">
-                                <label for="frame-{{ $frame->id }}" class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">Jumlah</label>
-                                <input type="number" id="frame-{{ $frame->id }}" name="frames[{{ $frame->slug }}]" min="0" max="50"
-                                       value="{{ (int) ($selectedFrames[$frame->slug] ?? 0) }}"
-                                       data-price="{{ $frame->price }}" data-frame-name="{{ $frame->name }}"
-                                       class="frame-qty w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400">
-                            </div>
-                        </div>
-                    @empty
-                        <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                            Belum ada frame. Tambahkan frame terlebih dahulu di menu Frames.
-                        </div>
-                    @endforelse
+                        @endforelse
+                    </div>
 
-                    <p class="text-xs text-slate-400">Isi 0 untuk frame yang tidak termasuk dalam voucher.</p>
+                    <div data-item-mode-section="size" class="@if ($itemMode !== 'size') hidden @endif space-y-3">
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Ukuran &amp; jumlah cetak (pelanggan pilih frame)</p>
+                        @forelse ($sizes as $size)
+                            <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                                <div class="flex h-14 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-slate-200">
+                                    <x-icon name="printer" class="h-5 w-5 text-slate-300" />
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-semibold text-slate-800">{{ $size->name }}</p>
+                                    <p class="text-xs text-slate-400">
+                                        {{ $size->dimension_label }}
+                                        &middot; Rp. {{ number_format($size->price, 0, ',', '.') }}
+                                        @if (! $size->is_active) &middot; <span class="text-amber-600">nonaktif</span>@endif
+                                    </p>
+                                </div>
+                                <div class="w-24 shrink-0">
+                                    <label for="size-{{ $size->id }}" class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">Jumlah cetak</label>
+                                    <input type="number" id="size-{{ $size->id }}" name="sizes[{{ $size->id }}]" min="0" max="100"
+                                           value="{{ (int) ($selectedSizes[$size->id] ?? 0) }}"
+                                           data-price="{{ $size->price }}" data-size-name="{{ $size->name }}"
+                                           class="size-qty w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400">
+                                </div>
+                            </div>
+                        @empty
+                            <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                Belum ada ukuran. Tambahkan ukuran terlebih dahulu di menu Ukuran.
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
             </section>
 
@@ -370,7 +420,7 @@
                         <p class="mt-1 text-[11px] text-slate-400" id="price-note"></p>
                     </div>
 
-                    <p class="text-xs text-slate-400">Harga akhir sudah dibulatkan ke bawah ke ribuan. Pastikan frame dan jumlah sudah sesuai.</p>
+                    <p class="text-xs text-slate-400">Harga akhir sudah dibulatkan ke bawah ke ribuan. Pastikan ukuran dan jumlah sudah sesuai.</p>
                 </div>
             </section>
 
@@ -399,7 +449,7 @@
         if (!form) return;
 
         const isEvent = @json($isEvent);
-        const frameStep = Number(@json($frameStep));
+        const frameStep = Number(@json($sizeStep));
         const panels = Array.from(form.querySelectorAll('[data-step-panel]'));
         const stepOrder = panels.map((panel) => Number(panel.dataset.stepPanel));
         const buttons = Array.from(form.querySelectorAll('[data-step-target]'));
@@ -427,7 +477,12 @@
             if (peopleEl) peopleEl.required = mode === 'people';
         }
 
-        const panelFor = (step) => panels.find((panel) => Number(panel.dataset.stepPanel) === step);
+        function toggleItemMode() {
+            const mode = document.querySelector('input[name=\"item_mode\"]:checked')?.value || 'size';
+            document.querySelectorAll('[data-item-mode-section]').forEach((section) => {
+                section.classList.toggle('hidden', section.dataset.itemModeSection !== mode);
+            });
+        }
 
         function showStep(step, focus) {
             currentStep = step;
@@ -561,7 +616,9 @@
         }
 
         function hasSelectedFrame() {
-            return Array.from(document.querySelectorAll('.frame-qty')).some((input) => parseInt(input.value || '0', 10) > 0);
+            const mode = document.querySelector('input[name=\"item_mode\"]:checked')?.value || 'size';
+            const selector = mode === 'frame' ? '.frame-qty' : '.size-qty';
+            return Array.from(document.querySelectorAll(selector)).some((input) => parseInt(input.value || '0', 10) > 0);
         }
 
         function updateSummary() {
@@ -598,13 +655,13 @@
             let subtotal = 0;
             let html = '';
 
-            document.querySelectorAll('.frame-qty').forEach((input) => {
+            document.querySelectorAll('.frame-qty, .size-qty').forEach((input) => {
                 const qty = parseInt(input.value || '0', 10);
                 if (qty <= 0) return;
                 const price = parseInt(input.getAttribute('data-price') || '0', 10);
                 const line = price * qty;
                 subtotal += line;
-                const name = input.dataset.frameName || 'Frame';
+                const name = input.dataset.frameName || input.dataset.sizeName || 'Item';
                 html += '<div class="flex justify-between gap-3"><span>' + name + ' x' + qty + '</span><span>' + 'Rp. ' + line.toLocaleString('id-ID') + '</span></div>';
             });
 
@@ -615,12 +672,12 @@
                 finalTotal = floor1000(Math.floor(originalTotal * (1 - discount / 100)));
             }
 
-            if (breakdown) breakdown.innerHTML = html || '<span class="text-slate-400">Belum ada frame dipilih.</span>';
+            if (breakdown) breakdown.innerHTML = html || '<span class="text-slate-400">Belum ada ukuran dipilih.</span>';
             if (totalEl) totalEl.textContent = 'Rp. ' + finalTotal.toLocaleString('id-ID');
             if (noteEl) {
                 if (isEvent) {
                     const parts = [];
-                    if (subtotal > 0) parts.push('Frame: Rp. ' + subtotal.toLocaleString('id-ID') + ' x ' + people + ' orang');
+                    if (subtotal > 0) parts.push('Ukuran: Rp. ' + subtotal.toLocaleString('id-ID') + ' x ' + people + ' orang');
                     if (hourlyTotal > 0) parts.push('Durasi: ' + hours + ' jam x Rp. ' + hourlyRate.toLocaleString('id-ID'));
                     noteEl.textContent = parts.join(' + ') + (discount > 0 ? ' - diskon ' + discount + '%' : '');
                 } else {
@@ -635,18 +692,36 @@
             updateSummary();
         }
 
-        document.querySelectorAll('.frame-qty, #discount, #number_of_people, #duration_hours, #cost_per_hour, #start_time, #end_time, #name, #code, #event_code, #event_name').forEach((input) => {
+        document.querySelectorAll('.frame-qty, .size-qty, #discount, #number_of_people, #duration_hours, #cost_per_hour, #start_time, #end_time, #name, #code, #event_code, #event_name').forEach((input) => {
             input.addEventListener('input', refresh);
         });
 
         document.querySelectorAll('input[name=\"pricing_mode\"]').forEach((input) => {
             input.addEventListener('change', () => {
                 togglePricingMode();
+
+        document.querySelectorAll('input[name=\"item_mode\"]').forEach((input) => {
+            input.addEventListener('change', () => {
+                toggleItemMode();
+                refresh();
+            });
+        });
+
+        toggleItemMode();
                 refresh();
             });
         });
 
         togglePricingMode();
+
+        document.querySelectorAll('input[name=\"item_mode\"]').forEach((input) => {
+            input.addEventListener('change', () => {
+                toggleItemMode();
+                refresh();
+            });
+        });
+
+        toggleItemMode();
 
         document.querySelectorAll('[data-rupiah]').forEach((input) => {
             input.addEventListener('input', () => {
@@ -668,7 +743,7 @@
                 event.preventDefault();
                 showStep(frameStep, true);
                 if (typeof window.showToast === 'function') {
-                    window.showToast('Pilih minimal satu frame dan tentukan jumlah cetaknya.', 'warning');
+                    window.showToast('Pilih minimal satu ukuran dan tentukan jumlah cetaknya.', 'warning');
                 }
                 return;
             }

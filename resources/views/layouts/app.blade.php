@@ -13,6 +13,8 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.branding', ['brand' => $brand])
+    {{-- Ukuran kertas cetak diisi JS sesuai ukuran item yang dicetak. --}}
+    <style id="print-page-style"></style>
 </head>
 <body data-home-url="{{ route('home') }}"
       class="kiosk-theme {{ $brand['bg_image_url'] ? 'has-brand-bg' : '' }} h-dvh overflow-hidden text-slate-800 font-sans antialiased"
@@ -27,22 +29,25 @@
 
         @if (isset($step))
             @php($remaining = max(0, (int) session('total_seconds', 600) - (now()->timestamp - (int) session('started_at', now()->timestamp))))
-            <header class="flex items-center justify-between gap-3 mb-3 shrink-0">
-                <div class="flex items-center gap-3 min-w-0">
-                    <x-brand-mark size="w-11 h-11" rounded="rounded-2xl" icon="w-6 h-6" />
+            <header class="k-topbar mb-4 shrink-0">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <x-brand-mark size="w-10 h-10" rounded="rounded-xl" icon="w-5 h-5" />
                     <div class="min-w-0">
-                        <h1 class="font-display font-extrabold text-xl tracking-tight text-slate-900 leading-none truncate">{{ $brand['name'] }}</h1>
-                        <p class="text-xs text-slate-500 truncate mt-0.5">{{ $brand['tagline'] }}</p>
+                        <h1 class="font-display font-extrabold text-lg tracking-tight text-slate-900 leading-none truncate">{{ $brand['name'] }}</h1>
+                        <p class="text-[11px] text-slate-500 truncate mt-0.5">{{ $brand['tagline'] }}</p>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
                     @if (!empty($queue))
-                        <span class="k-pill shadow-sm"><span class="text-rose-500">{{ $queue }}</span></span>
+                        <span class="k-pill !py-1.5 !px-3 !text-xs">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Antrian</span>
+                            <span class="font-display font-extrabold text-rose-500 tabular-nums">{{ $queue }}</span>
+                        </span>
                     @endif
-                    <div data-timer-pill class="k-pill shadow-sm transition-colors">
+                    <div data-timer-pill class="k-pill !py-1.5 !px-3 !text-xs shadow-sm transition-colors">
                         <x-icon name="clock" class="w-4 h-4 text-rose-500" />
-                        <span class="tabular-nums" data-session-timer data-total="{{ $remaining }}" aria-live="polite">
+                        <span class="tabular-nums font-semibold" data-session-timer data-total="{{ $remaining }}" aria-live="polite">
                             <span data-session-timer-min>00</span>:<span data-session-timer-sec>00</span>
                         </span>
                     </div>

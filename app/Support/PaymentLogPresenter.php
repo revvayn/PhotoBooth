@@ -74,6 +74,7 @@ class PaymentLogPresenter
                 'frame_url' => $this->normalizeUrl($item['image_url'] ?? $frame?->image_url ?? null),
                 'slots' => $this->normalizeSlots($item['slots'] ?? $frame?->slots ?? []),
                 'filters' => $filters,
+                'stickers' => $this->normalizeStickers($item['stickers'] ?? []),
                 'photos' => $photos,
             ];
         }
@@ -90,6 +91,7 @@ class PaymentLogPresenter
                 'frame_url' => null,
                 'slots' => [],
                 'filters' => array_fill(0, count($sessionPhotos), 'asli'),
+                'stickers' => [],
                 'photos' => $sessionPhotos,
             ];
         }
@@ -186,8 +188,7 @@ class PaymentLogPresenter
      * @param  mixed  $slots
      * @return array<int, array<string, float>>
      */
-    private function normalizeSlots($slots): array
-    {
+    private function normalizeSlots($slots): array    {
         if (! is_array($slots)) {
             return [];
         }
@@ -202,6 +203,39 @@ class PaymentLogPresenter
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  mixed  $stickers
+     * @return array<int, array<string, mixed>>
+     */
+    private function normalizeStickers($stickers): array
+    {
+        if (! is_array($stickers)) {
+            return [];
+        }
+
+        return collect($stickers)
+            ->filter(fn ($sticker) => is_array($sticker)
+                && is_string($sticker['value'] ?? null)
+                && $sticker['value'] !== '')
+            ->take(30)
+            ->map(fn ($sticker) => [
+                'id' => (int) ($sticker['id'] ?? 0),
+                'type' => ($sticker['type'] ?? 'emoji') === 'image' ? 'image' : 'emoji',
+                'value' => $sticker['value'],
+                'x' => $this->clamp((float) ($sticker['x'] ?? 0.5), 0.02, 0.98, 0.5),
+                'y' => $this->clamp((float) ($sticker['y'] ?? 0.5), 0.02, 0.98, 0.5),
+                'size' => $this->clamp((float) ($sticker['size'] ?? 0.16), 0.05, 0.5, 0.16),
+                'rotation' => $this->clamp((float) ($sticker['rotation'] ?? 0), -180, 180, 0),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function clamp(float $value, float $min, float $max, float $fallback): float
+    {
+        return is_finite($value) ? max($min, min($max, $value)) : $fallback;
     }
 
     private function normalizeUrl($url): ?string

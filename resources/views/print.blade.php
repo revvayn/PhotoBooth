@@ -19,7 +19,7 @@
                         class="rounded-2xl bg-white/90 backdrop-blur p-6 ring-1 ring-rose-100 transition-all hover:shadow-md {{ $qty === 1 ? 'ring-2 ring-rose-500 shadow-lg shadow-rose-100' : '' }}">
                     <div class="text-4xl mb-2">{{ $qty === 4 ? '🖼️' : '🖨️' }}</div>
                     <div class="font-display font-bold text-slate-800 text-lg">{{ $qty }}x</div>
-                    <div class="text-sm text-slate-500 mt-1" data-price-label data-base-price="{{ $price }}">Rp. {{ number_format($price, 0, ',', '.') }}</div>
+                    <div class="text-sm text-slate-500 mt-1" data-price-label data-base-price="{{ $price }}">Rp {{ number_format($price, 0, ',', '.') }}</div>
                 </button>
             @endforeach
         </div>
@@ -27,7 +27,7 @@
         <div class="mt-auto pt-8 flex items-center justify-between gap-4">
             <div>
                 <p class="text-xs text-slate-400">Total</p>
-                <p class="text-2xl font-display font-bold text-slate-800" data-total>Rp. {{ number_format($basePrice, 0, ',', '.') }}</p>
+                <p class="text-2xl font-display font-bold text-slate-800" data-total>Rp {{ number_format($basePrice, 0, ',', '.') }}</p>
             </div>
             <button type="submit" class="px-12 py-4 rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold text-lg shadow-lg shadow-rose-200 hover:scale-105 transition-transform">
                 Lanjut →

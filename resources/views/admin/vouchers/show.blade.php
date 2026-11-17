@@ -6,7 +6,7 @@
 @section('content')
 @php
     $isEvent = $voucher->isEvent();
-    $frames = $frames ?? collect();
+    $sizes = $sizes ?? collect();
 @endphp
 <div class="max-w-6xl mx-auto space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
@@ -102,16 +102,23 @@
         </div>
 
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 class="font-heading text-base font-bold text-slate-800">Frame</h3>
+            <h3 class="font-heading text-base font-bold text-slate-800">Isi voucher</h3>
             <div class="mt-4 space-y-2">
-                @foreach ($voucher->items ?? [] as $slug => $qty)
-                    @php $frame = $frames->get($slug); @endphp
+                @foreach ($voucher->itemsDetailed() as $item)
                     <div class="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm">
-                        <span class="font-semibold text-slate-700">{{ $frame?->name ?? $slug }}</span>
-                        <span class="text-slate-500">x{{ (int) $qty }} &middot; {{ $frame?->photo_count ?? 0 }} foto</span>
+                        <span class="font-semibold text-slate-700">
+                            {{ $item['name'] }}
+                            @if (! empty($item['dimension_label']))
+                                <span class="text-xs text-slate-400">({{ $item['dimension_label'] }})</span>
+                            @endif
+                        </span>
+                        <span class="text-slate-500">x{{ (int) $item['qty'] }}{{ $item['type'] === 'frame' ? ' &middot; '.$item['photo_count'].' foto' : ' lembar' }}</span>
                     </div>
                 @endforeach
             </div>
+            @if ($voucher->isSizeMode())
+                <p class="mt-4 text-xs text-slate-400">Pelanggan memilih sendiri frame dengan ukuran tersebut saat di photobooth.</p>
+            @endif
         </div>
     </div>
 

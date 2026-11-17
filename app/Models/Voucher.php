@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\ActivityLog;
 use App\Models\Frame;
+use App\Models\Size;
 use Illuminate\Database\Eloquent\Model;
 
 class Voucher extends Model
@@ -51,15 +52,13 @@ class Voucher extends Model
     protected static function booted(): void
     {
         static::created(function (Voucher $voucher): void {
-            $frames = Frame::whereIn('slug', array_keys(is_array($voucher->items) ? $voucher->items : []))
-                ->get()
-                ->keyBy('slug');
-
-            $items = collect(is_array($voucher->items) ? $voucher->items : [])
-                ->map(fn ($qty, $slug) => [
-                    'name' => $frames->get($slug)?->name ?? $slug,
-                    'qty' => (int) $qty,
-                    'price' => (int) ($frames->get($slug)?->price ?? 0),
+            $items = collect($voucher->itemsDetailed())
+                ->map(fn (array $item) => [
+                    'name' => ! empty($item['dimension_label'])
+                        ? $item['name'].' ('.$item['dimension_label'].')'
+                        : $item['name'],
+                    'qty' => $item['qty'],
+                    'price' => $item['price'],
                 ])
                 ->values()
                 ->all();
@@ -75,7 +74,7 @@ class Voucher extends Model
                 'metadata' => [
                     'metode' => 'voucher',
                     'total' => $total,
-                    'photo_count' => (int) $voucher->photo_count,
+                    'photo_count' => (int) $voucher->print_count,
                     'items' => $items,
                     'ip' => request()->ip(),
                     'voucher_code' => $voucher->code,
@@ -107,27 +106,134 @@ class Voucher extends Model
         return $this->type === self::TYPE_CASH;
     }
 
-    /**
-     * Hitung total biaya per orang berdasarkan items (frame slug => qty).
-     */
-    public function getCostPerPersonAttribute(): int
+    public function isSizeMode(): bool
     {
         $items = is_array($this->items) ? $this->items : [];
         if (! $items) {
-            return 0;
+            return false;
         }
 
-        $frames = Frame::whereIn('slug', array_keys($items))->get()->keyBy('slug');
-
-        $total = 0;
-        foreach ($items as $slug => $qty) {
-            $frame = $frames->get($slug);
-            if ($frame) {
-                $total += (int) $frame->price * (int) $qty;
+        foreach (array_keys($items) as $key) {
+            if (! ctype_digit((string) $key) || ! Size::where('id', (int) $key)->exists()) {
+                return false;
             }
         }
 
-        return $total;
+        return true;
+    }
+
+    public function isFrameMode(): bool
+    {
+        return ! $this->isSizeMode() && ! empty($this->items);
+    }
+
+    /**
+     * Normalisasi isi voucher menjadi [size_id => jumlah cetak].
+     * Format lama {frame_slug: qty} tetap dibaca agar data lama tidak hilang.
+     */
+    public function sizeItems(): array
+    {
+        $raw = is_array($this->items) ? $this->items : [];
+        if (! $raw) {
+            return [];
+        }
+
+        // Mode ukuran: items sudah berisi size_id.
+        if ($this->isSizeMode()) {
+            $items = [];
+            foreach ($raw as $key => $qty) {
+                $qty = (int) $qty;
+                if ($qty > 0 && ctype_digit((string) $key)) {
+                    $items[(int) $key] = ($items[(int) $key] ?? 0) + $qty;
+                }
+            }
+
+            return $items;
+        }
+
+        // Mode frame: konversi frame ke ukuran (untuk keperluan kuartal/label).
+        $sizes = Size::query()->get(['id', 'name'])->keyBy('id');
+        $items = [];
+
+        foreach ($raw as $key => $qty) {
+            $qty = (int) $qty;
+            if ($qty <= 0) {
+                continue;
+            }
+
+            $frame = Frame::where('slug', (string) $key)->first(['size_id', 'category']);
+            $sizeId = $frame?->size_id
+                ?? optional($sizes->firstWhere('name', $frame?->category))->id;
+
+            if ($sizeId) {
+                $items[(int) $sizeId] = ($items[(int) $sizeId] ?? 0) + $qty;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * Rincian ukuran voucher: nama, dimensi, harga, jumlah, dan subtotal.
+     */
+    public function sizeItemsDetailed(): array
+    {
+        $items = $this->sizeItems();
+        if (! $items) {
+            return [];
+        }
+
+        $sizes = Size::whereIn('id', array_keys($items))->get()->keyBy('id');
+
+        $rows = [];
+        foreach ($items as $sizeId => $qty) {
+            $size = $sizes->get($sizeId);
+            if (! $size) {
+                continue;
+            }
+
+            $rows[] = [
+                'size_id' => $size->id,
+                'name' => $size->name,
+                'dimension_label' => $size->dimension_label,
+                'price' => (int) $size->price,
+                'qty' => (int) $qty,
+                'subtotal' => (int) $size->price * (int) $qty,
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Total jumlah cetak seluruh ukuran.
+     */
+    public function getPrintCountAttribute(): int
+    {
+        return (int) array_sum($this->sizeItems());
+    }
+
+    /**
+     * Hitung total biaya per orang berdasarkan ukuran x jumlah cetak.
+     */
+    public function getCostPerPersonAttribute(): int
+    {
+        if ($this->isFrameMode()) {
+            $items = is_array($this->items) ? $this->items : [];
+            $frames = Frame::whereIn('slug', array_keys($items))->get()->keyBy('slug');
+
+            $total = 0;
+            foreach ($items as $slug => $qty) {
+                $frame = $frames->get($slug);
+                if ($frame) {
+                    $total += (int) $frame->effectivePrice() * (int) $qty;
+                }
+            }
+
+            return $total;
+        }
+
+        return (int) array_sum(array_column($this->sizeItemsDetailed(), 'subtotal'));
     }
 
     /**
@@ -274,32 +380,71 @@ class Voucher extends Model
     }
 
     /**
-     * Label ringkas untuk tabel admin: "K-pop Frame x2, Neon Frame x1".
+     * Label ringkas untuk tabel admin: "4R x2, A4 x1".
      */
     public function getItemsLabelAttribute(): string
     {
-        $items = is_array($this->items) ? $this->items : [];
+        if ($this->isFrameMode()) {
+            $items = is_array($this->items) ? $this->items : [];
+            $frames = Frame::whereIn('slug', array_keys($items))->pluck('name', 'slug');
+
+            return collect($items)
+                ->map(fn ($qty, $slug) => ($frames[$slug] ?? $slug).' x'.(int) $qty)
+                ->implode(', ');
+        }
+
+        $items = $this->sizeItemsDetailed();
 
         if (! $items) {
             return '-';
         }
 
-        $frames = Frame::whereIn('slug', array_keys($items))->pluck('name', 'slug');
-
         return collect($items)
-            ->map(fn ($qty, $slug) => ($frames[$slug] ?? $slug).' x'.(int) $qty)
+            ->map(fn (array $item) => $item['name'].' x'.$item['qty'])
             ->implode(', ');
     }
 
-    public function getPhotoCountAttribute(): int
+    /**
+     * Perkiraan jumlah foto: total lembar cetak yang dipesan.
+     * Frame baru dipilih pelanggan di kiosk, jadi angka ini bukan hitungan
+     * slot foto per frame.
+     */
+    public function itemsDetailed(): array
     {
-        $items = is_array($this->items) ? $this->items : [];
-        $frames = Frame::whereIn('slug', array_keys($items))->get()->keyBy('slug');
+        $raw = is_array($this->items) ? $this->items : [];
+        if (! $raw) {
+            return [];
+        }
 
-        return (int) collect($items)->map(function ($qty, $slug) use ($frames) {
-            $frame = $frames->get($slug);
+        if ($this->isFrameMode()) {
+            $frames = Frame::whereIn('slug', array_keys($raw))->with('size')->get()->keyBy('slug');
 
-            return $frame ? max(1, (int) $frame->photo_count) : 0;
-        })->sum();
+            $rows = [];
+            foreach ($raw as $slug => $qty) {
+                $frame = $frames->get($slug);
+                $rows[] = [
+                    'type' => 'frame',
+                    'slug' => $slug,
+                    'size_id' => $frame?->size?->id ?? $frame?->size_id,
+                    'name' => $frame?->name ?? $slug,
+                    'dimension_label' => $frame?->size?->dimension_label,
+                    'price' => (int) ($frame?->effectivePrice() ?? 0),
+                    'qty' => (int) $qty,
+                    'photo_count' => max(1, (int) ($frame?->photo_count ?? 0)),
+                    'subtotal' => (int) ($frame?->effectivePrice() ?? 0) * (int) $qty,
+                ];
+            }
+
+            return $rows;
+        }
+
+        return array_map(function (array $row) {
+            return array_merge($row, [
+                'type' => 'size',
+                'slug' => null,
+                'photo_count' => 1,
+                'subtotal' => $row['subtotal'] ?? ((int) $row['price'] * (int) $row['qty']),
+            ]);
+        }, $this->sizeItemsDetailed());
     }
 }

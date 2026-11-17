@@ -198,13 +198,13 @@ function initPhotoSession() {
             return;
         }
         photoError.textContent = msg || '';
-        photoError.classList.toggle('hidden', !msg);
+        photoError.hidden = !msg;
         if (msg) showToast(msg);
     };
 
     const activateTab = (fIdx) => {
         activeFrame = fIdx;
-        slotGroups.forEach((g, i) => g.classList.toggle('hidden', i !== fIdx));
+        slotGroups.forEach((g, i) => { g.hidden = i !== fIdx; });
         paintTabs();
         renderFotoPreview();
     };
@@ -213,21 +213,19 @@ function initPhotoSession() {
         tabs.forEach((t, i) => {
             const done = frameDone(frames[i]);
             const isActive = i === activeFrame;
-            const clazz = done && !isActive
-                ? 'bg-emerald-500 text-white ring-emerald-500 shadow-md shadow-emerald-200'
-                : isActive
-                    ? 'bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200'
-                    : 'bg-white/80 text-rose-600 ring-rose-200';
-            t.className = 'px-3 py-1.5 rounded-full text-xs font-semibold ring-1 transition-all ' + clazz;
             t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            t.dataset.done = done ? 'true' : 'false';
             const badge = t.querySelector('[data-tab-status]');
             if (badge) badge.textContent = done ? '✓ Selesai' : (frames[i].count + ' foto');
         });
 
-        if (progressEl) {
-            const doneCount = photos.filter(Boolean).length;
-            progressEl.textContent = doneCount + '/' + photoCount;
-        }
+        const doneCount = photos.filter(Boolean).length;
+        if (progressEl) progressEl.textContent = doneCount + '/' + photoCount;
+
+        const bar = document.querySelector('[data-photo-progress-bar]');
+        if (bar) bar.style.width = Math.round((doneCount / Math.max(photoCount, 1)) * 100) + '%';
+        const track = document.querySelector('[data-photo-progress-track]');
+        if (track) track.setAttribute('aria-valuenow', String(doneCount));
     };
 
     // Pengaturan kamera dari admin (via panel foto SPA); default aman bila absen.
@@ -300,7 +298,8 @@ function initPhotoSession() {
             const btn = document.createElement('button');
             btn.type = 'button';
             const active = (d.deviceId || null) === (currentDeviceId || null);
-            btn.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ring-1 transition min-w-0 max-w-[240px] ' + (active ? 'bg-rose-500 text-white ring-rose-500 shadow-md shadow-rose-200' : 'bg-white/80 text-rose-600 ring-rose-200 hover:bg-white');
+            btn.className = 'k-segment-item ring-1 ring-slate-200 min-w-0 max-w-[240px] bg-white';
+            btn.setAttribute('aria-pressed', active ? 'true' : 'false');
             btn.innerHTML = CAM_SVG;
             const lb = document.createElement('span');
             lb.className = 'truncate';
@@ -388,8 +387,9 @@ function initPhotoSession() {
         const status = item.querySelector('[data-shot-status]');
         const icon = item.querySelector('[data-shot-icon]');
         const retake = item.querySelector('[data-retake]');
-        if (icon) icon.classList.add('hidden');
+        if (icon) icon.hidden = true;
         if (status) status.textContent = 'Selesai ✓';
+        item.dataset.done = 'true';
         if (img) {
             img.src = dataUrl;
             img.classList.remove('hidden');
@@ -399,11 +399,14 @@ function initPhotoSession() {
 
     const updateNext = () => {
         const done = photos.every(Boolean);
+        // Gunakan atribut `hidden`, bukan class: class display (inline-flex)
+        // menang atas .hidden pada urutan CSS Tailwind.
         if (nextBtn) {
-            nextBtn.classList.toggle('hidden', !done);
+            nextBtn.hidden = !done;
+            nextBtn.setAttribute('aria-disabled', done ? 'false' : 'true');
         }
         if (shootBtn) {
-            shootBtn.classList.toggle('hidden', done);
+            shootBtn.hidden = done || shooting;
         }
     };
 
@@ -415,9 +418,10 @@ function initPhotoSession() {
     const renderFotoPreview = async () => {
         const canvas = document.querySelector('[data-foto-preview]');
         if (!canvas) return;
+        const placeholder = document.querySelector('[data-preview-placeholder]');
         const idx = activeFrame;
         const container = document.querySelector(`[data-frame-slots="${idx}"]`);
-        if (!container) { canvas.classList.add('hidden'); return; }
+        if (!container) { canvas.classList.add('hidden'); if (placeholder) placeholder.hidden = false; return; }
         const frameImage = container.dataset.frameImage || null;
         let slots = [];
         try { slots = JSON.parse(container.dataset.frameSlotsJson || '[]'); } catch (e) { slots = []; }
@@ -432,13 +436,20 @@ function initPhotoSession() {
         });
         const hasAny = framePhotos.some(Boolean);
         const hint = document.querySelector('[data-foto-preview-hint]');
-        if (!hasAny) { canvas.classList.add('hidden'); if (hint) hint.classList.remove('hidden'); return; }
+        if (!hasAny) {
+            canvas.classList.add('hidden');
+            if (placeholder) placeholder.hidden = false;
+            if (hint) hint.classList.remove('hidden');
+            return;
+        }
         canvas.classList.remove('hidden');
+        if (placeholder) placeholder.hidden = true;
         if (hint) hint.classList.add('hidden');
         try {
             await buildStripFrame(canvas, framePhotos, 'asli', frameImage, slots && slots.length ? slots : null);
         } catch (e) {
             canvas.classList.add('hidden');
+            if (placeholder) placeholder.hidden = false;
         }
     };
 
@@ -449,8 +460,8 @@ function initPhotoSession() {
     };
 
     const takePhoto = async (i) => {
-        if (shootBtn) shootBtn.classList.add('hidden');
-        if (nextBtn) nextBtn.classList.add('hidden');
+        if (shootBtn) shootBtn.hidden = true;
+        if (nextBtn) nextBtn.hidden = true;
 
         if (countdownNum) countdownNum.textContent = String(countFrom);
         setCountdownVisible(true);
@@ -513,6 +524,7 @@ function initPhotoSession() {
         } finally {
             shooting = false;
             if (shootBtn) shootBtn.disabled = false;
+            updateNext();
         }
     };
 
@@ -544,7 +556,7 @@ function initPhotoSession() {
             if (res.ok) {
                 stopStream();
                 const data = await res.json();
-                window.location.href = data.redirect || '/spa?step=review';
+                window.location.href = data.redirect || '/spa?step=filter';
                 return;
             }
 
@@ -611,74 +623,474 @@ function initFilterEditor() {
     const form = panel.querySelector('[data-filter-form]');
     if (!form) return;
 
-    panel.querySelectorAll('[data-filter-item]').forEach((block) => {
-        const canvas = block.querySelector('[data-strip-canvas]');
-        if (!canvas) return;
+    const blocks = [...panel.querySelectorAll('[data-filter-item]')];
+    if (!blocks.length) return;
 
-        let photos = [];
-        let slots = [];
-        try {
-            photos = JSON.parse(canvas.dataset.photos || '[]');
-        } catch (e) {
-            photos = [];
-        }
-        try {
-            slots = JSON.parse(canvas.dataset.frameSlots || '[]');
-        } catch (e) {
-            slots = [];
-        }
-        const frameImage = canvas.dataset.frameImage;
+    const stickersInput = form.querySelector('[data-stickers-input]');
+    const items = [];
 
-        const paint = () => {
-            const map = {};
-            block.querySelectorAll('[data-filter-photo]').forEach((row) => {
-                const parts = (row.dataset.filterPhoto || '').split(':');
-                const local = parseInt(parts.pop(), 10);
-                const input = row.querySelector('[data-filter-value]');
-                const val = input ? input.value : 'asli';
-                if (!Number.isNaN(local)) map[local] = val;
-                row.querySelectorAll('[data-filter-chip]').forEach((chip) => {
-                    const on = chip.dataset.filterChip === val;
-                    chip.setAttribute('aria-pressed', on ? 'true' : 'false');
-                    chip.classList.toggle('bg-rose-500', on);
-                    chip.classList.toggle('text-white', on);
-                    chip.classList.toggle('ring-rose-500', on);
-                    chip.classList.toggle('bg-white', !on);
-                    chip.classList.toggle('text-slate-500', !on);
-                    chip.classList.toggle('ring-rose-100', !on);
-                });
-            });
-            const arr = photos.map((_, i) => map[i] ?? 'asli');
-            buildStripFrame(canvas, photos, arr, frameImage, slots);
+    const clampSticker = (value, min, max, fallback) => {
+        const n = Number(value);
+        return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
+    };
+
+    const readJson = (raw, fallback) => {
+        try {
+            const value = JSON.parse(raw || 'null');
+            return value ?? fallback;
+        } catch (e) {
+            return fallback;
+        }
+    };
+
+    // Hanya kirim id + koordinat; server mengisi ulang nilai emoji/gambar dari
+    // database agar klien tidak bisa menyisipkan konten sembarangan.
+    const syncStickers = () => {
+        if (!stickersInput) return;
+        const payload = {};
+        items.forEach((item) => {
+            if (!item.placements.length) return;
+            payload[item.slug] = item.placements.map((p) => ({
+                id: p.id,
+                x: Number(p.x.toFixed(4)),
+                y: Number(p.y.toFixed(4)),
+                size: Number(p.size.toFixed(4)),
+                rotation: Number((p.rotation || 0).toFixed(2)),
+            }));
+        });
+        stickersInput.value = JSON.stringify(payload);
+    };
+
+    const setRowState = (row, value) => {
+        const input = row.querySelector('[data-filter-value]');
+        if (input) input.value = value;
+
+        const active = [...row.querySelectorAll('[data-filter-chip]')]
+            .find((chip) => chip.dataset.filterChip === value);
+        const label = row.querySelector('[data-filter-label]');
+        if (label && active) label.textContent = active.textContent.trim();
+
+        row.querySelectorAll('[data-filter-chip]').forEach((chip) => {
+            const on = chip.dataset.filterChip === value;
+            chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+            chip.classList.toggle('bg-rose-500', on);
+            chip.classList.toggle('text-white', on);
+            chip.classList.toggle('ring-rose-500', on);
+            chip.classList.toggle('bg-white', !on);
+            chip.classList.toggle('text-slate-500', !on);
+            chip.classList.toggle('ring-rose-100', !on);
+        });
+    };
+
+    const rowIndex = (row) => {
+        const parts = (row.dataset.filterPhoto || '').split(':');
+        return parseInt(parts.pop(), 10);
+    };
+
+    const activeRow = (item) => item.block.querySelector(
+        `[data-filter-photo="${item.slug}:${item.activePhoto}"]`
+    ) || item.block.querySelector('[data-filter-photo]');
+
+    const layoutItem = (item) => {
+        const width = item.stage.clientWidth;
+        const height = item.stage.clientHeight;
+        if (!width || !height) return;
+
+        item.placements.forEach((placement, index) => {
+            const node = item.nodes[index];
+            if (!node) return;
+
+            const side = Math.max(1, placement.size * width);
+            node.style.width = `${side}px`;
+            node.style.height = `${side}px`;
+            node.style.left = `${placement.x * width}px`;
+            node.style.top = `${placement.y * height}px`;
+
+            const emoji = node.querySelector('[data-sticker-body]');
+            if (emoji) emoji.style.fontSize = `${side * 0.92}px`;
+            node.style.transform = `translate(-50%, -50%) rotate(${Number(placement.rotation) || 0}deg)`;
+        });
+    };
+
+    const bindDrag = (item, node) => {
+        let dragging = false;
+
+        const move = (event) => {
+            if (!dragging) return;
+            const rect = item.stage.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+
+            const index = Number(node.dataset.stickerIndex);
+            const placement = item.placements[index];
+            if (!placement) return;
+
+            placement.x = clampSticker((event.clientX - rect.left) / rect.width, 0.02, 0.98, placement.x);
+            placement.y = clampSticker((event.clientY - rect.top) / rect.height, 0.02, 0.98, placement.y);
+            node.style.left = `${placement.x * rect.width}px`;
+            node.style.top = `${placement.y * rect.height}px`;
         };
 
+        const stop = () => {
+            if (!dragging) return;
+            dragging = false;
+            node.classList.remove('is-dragging');
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', stop);
+            window.removeEventListener('pointercancel', stop);
+            syncStickers();
+        };
+
+        node.addEventListener('pointerdown', (event) => {
+            if (event.target.closest('[data-sticker-remove], [data-sticker-resize], [data-sticker-rotate]')) return;
+            event.preventDefault();
+            dragging = true;
+            node.classList.add('is-dragging');
+            try {
+                node.setPointerCapture(event.pointerId);
+            } catch (e) {
+                // abaikan; pointer capture tidak wajib
+            }
+            window.addEventListener('pointermove', move);
+            window.addEventListener('pointerup', stop);
+            window.addEventListener('pointercancel', stop);
+        });
+    };
+
+    // Geser pojok kanan-bawah untuk mengubah ukuran stiker.
+    const bindResize = (item, node) => {
+        const handle = node.querySelector('[data-sticker-resize]');
+        if (!handle) return;
+
+        let resizing = false;
+
+        const move = (event) => {
+            if (!resizing) return;
+            const rect = item.stage.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+
+            const index = Number(node.dataset.stickerIndex);
+            const placement = item.placements[index];
+            if (!placement) return;
+
+            const cx = placement.x * rect.width;
+            const cy = placement.y * rect.height;
+            const dx = event.clientX - rect.left - cx;
+            const dy = event.clientY - rect.top - cy;
+            const dist = Math.hypot(dx, dy);
+            // Ukuran adalah sisi kotak; pegangan berada di sudut (~sisi/√2).
+            const side = (dist * Math.SQRT2);
+            placement.size = clampSticker(side / rect.width, 0.05, 0.5, placement.size);
+            layoutItem(item);
+        };
+
+        const stop = () => {
+            if (!resizing) return;
+            resizing = false;
+            node.classList.remove('is-resizing');
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', stop);
+            window.removeEventListener('pointercancel', stop);
+            syncStickers();
+        };
+
+        handle.addEventListener('pointerdown', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            resizing = true;
+            node.classList.add('is-resizing');
+            try {
+                handle.setPointerCapture(event.pointerId);
+            } catch (e) { /* abaikan */ }
+            window.addEventListener('pointermove', move);
+            window.addEventListener('pointerup', stop);
+            window.addEventListener('pointercancel', stop);
+        });
+    };
+
+    // Pegangan di atas untuk memutar stiker.
+    const bindRotate = (item, node) => {
+        const handle = node.querySelector('[data-sticker-rotate]');
+        if (!handle) return;
+
+        let rotating = false;
+
+        const move = (event) => {
+            if (!rotating) return;
+            const rect = item.stage.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+
+            const index = Number(node.dataset.stickerIndex);
+            const placement = item.placements[index];
+            if (!placement) return;
+
+            const cx = placement.x * rect.width;
+            const cy = placement.y * rect.height;
+            const dx = event.clientX - rect.left - cx;
+            const dy = event.clientY - rect.top - cy;
+            // Pegangan awal berada di atas (sudut -90°), jadi tambahkan 90.
+            let deg = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+            if (deg > 180) deg -= 360;
+            placement.rotation = Math.max(-180, Math.min(180, deg));
+            layoutItem(item);
+        };
+
+        const stop = () => {
+            if (!rotating) return;
+            rotating = false;
+            node.classList.remove('is-rotating');
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', stop);
+            window.removeEventListener('pointercancel', stop);
+            syncStickers();
+        };
+
+        handle.addEventListener('pointerdown', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            rotating = true;
+            node.classList.add('is-rotating');
+            try {
+                handle.setPointerCapture(event.pointerId);
+            } catch (e) { /* abaikan */ }
+            window.addEventListener('pointermove', move);
+            window.addEventListener('pointerup', stop);
+            window.addEventListener('pointercancel', stop);
+        });
+    };
+
+    const createNode = (item, placement, index) => {
+        const node = document.createElement('div');
+        node.className = 'k-sticker';
+        node.dataset.stickerIndex = String(index);
+        node.dataset.type = placement.type;
+
+        if (placement.type === 'image') {
+            const img = document.createElement('img');
+            img.src = placement.value;
+            img.alt = '';
+            img.draggable = false;
+            img.className = 'k-sticker-img';
+            node.appendChild(img);
+        } else {
+            const emoji = document.createElement('span');
+            emoji.className = 'k-sticker-emoji';
+            emoji.dataset.stickerBody = '';
+            emoji.textContent = placement.value;
+            node.appendChild(emoji);
+        }
+
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'k-sticker-remove';
+        remove.dataset.stickerRemove = '';
+        remove.setAttribute('aria-label', 'Hapus stiker');
+        remove.textContent = '×';
+        node.appendChild(remove);
+
+        const resize = document.createElement('div');
+        resize.className = 'k-sticker-resize';
+        resize.dataset.stickerResize = '';
+        resize.setAttribute('aria-label', 'Ubah ukuran');
+        node.appendChild(resize);
+
+        const rotate = document.createElement('div');
+        rotate.className = 'k-sticker-rotate';
+        rotate.dataset.stickerRotate = '';
+        rotate.setAttribute('aria-label', 'Putar stiker');
+        node.appendChild(rotate);
+
+        bindDrag(item, node);
+        bindResize(item, node);
+        bindRotate(item, node);
+        item.layer.appendChild(node);
+        return node;
+    };
+
+    const rebuildNodes = (item) => {
+        item.layer.innerHTML = '';
+        item.nodes = item.placements.map((placement, index) => createNode(item, placement, index));
+        layoutItem(item);
+    };
+
+    const paint = async (item) => {
+        const token = ++item.paintToken;
+        const filters = item.photos.map((_, index) => item.filters[index] ?? 'asli');
+        try {
+            // Stiker digambar sebagai lapisan HTML di atas kanvas agar bisa
+            // digeser halus; kanvas pratinjau cukup menampilkan foto + filter.
+            await buildStripFrame(item.canvas, item.photos, filters, item.frameImage, item.slots);
+        } catch (e) {
+            // biarkan pratinjau kosong bila gambar gagal dimuat
+        }
+        if (token !== item.paintToken) return;
+        requestAnimationFrame(() => layoutItem(item));
+    };
+
+    blocks.forEach((block) => {
+        const canvas = block.querySelector('[data-strip-canvas]');
+        const stage = block.querySelector('[data-sticker-stage]');
+        const layer = block.querySelector('[data-sticker-layer]');
+        if (!canvas || !stage || !layer) return;
+
+        const item = {
+            block,
+            canvas,
+            stage,
+            layer,
+            slug: canvas.dataset.item || block.dataset.filterItem || '',
+            photos: readJson(canvas.dataset.photos, []),
+            slots: readJson(canvas.dataset.frameSlots, []),
+            frameImage: canvas.dataset.frameImage || null,
+            filters: {},
+            placements: [],
+            nodes: [],
+            activePhoto: 0,
+            paintToken: 0,
+        };
+        if (!item.slug) return;
+
+        block.querySelectorAll('[data-filter-photo]').forEach((row) => {
+            const local = rowIndex(row);
+            const value = row.querySelector('[data-filter-value]')?.value || 'asli';
+            if (!Number.isNaN(local)) item.filters[local] = value;
+            setRowState(row, value);
+        });
+
+        const stored = readJson(canvas.dataset.stickers, []);
+        item.placements = (Array.isArray(stored) ? stored : [])
+            .map((placement) => ({
+                id: Number(placement?.id),
+                type: placement?.type === 'image' ? 'image' : 'emoji',
+                value: typeof placement?.value === 'string' ? placement.value : '',
+                x: clampSticker(placement?.x, 0.02, 0.98, 0.5),
+                y: clampSticker(placement?.y, 0.02, 0.98, 0.5),
+                size: clampSticker(placement?.size, 0.05, 0.5, 0.16),
+                rotation: clampSticker(placement?.rotation, -180, 180, 0),
+            }))
+            .filter((placement) => placement.value !== '' && Number.isFinite(placement.id));
+
+        items.push(item);
+
+        // Filter per foto: klik chip langsung memperbarui pratinjau.
         block.querySelectorAll('[data-filter-chip]').forEach((chip) => {
             chip.addEventListener('click', () => {
                 const row = chip.closest('[data-filter-photo]');
-                const input = row ? row.querySelector('[data-filter-value]') : null;
-                if (input) input.value = chip.dataset.filterChip;
-                paint();
+                if (!row) return;
+                const local = rowIndex(row);
+                const value = chip.dataset.filterChip || 'asli';
+                setRowState(row, value);
+                if (!Number.isNaN(local)) item.filters[local] = value;
+                paint(item);
             });
         });
 
-        // Terapkan filter Foto 1 ke seluruh foto dalam frame ini.
+        // Tab foto memilih baris filter yang ditampilkan.
+        block.querySelectorAll('[data-photo-tab]').forEach((tab) => {
+            tab.addEventListener('click', () => {
+                const local = Number(tab.dataset.photoTab);
+                if (!Number.isFinite(local)) return;
+                item.activePhoto = local;
+                block.querySelectorAll('[data-photo-tab]').forEach((other) => {
+                    other.setAttribute('aria-selected', other === tab ? 'true' : 'false');
+                });
+                block.querySelectorAll('[data-filter-photo]').forEach((row) => {
+                    row.hidden = rowIndex(row) !== local;
+                });
+            });
+        });
+
+        // Terapkan filter foto yang sedang dipilih ke semua foto frame ini.
         const sameBtn = block.querySelector('[data-filter-same]');
         if (sameBtn) {
             sameBtn.addEventListener('click', () => {
                 const rows = [...block.querySelectorAll('[data-filter-photo]')];
                 if (!rows.length) return;
-                const value = rows[0].querySelector('[data-filter-value]')?.value || 'asli';
+                const value = activeRow(item)?.querySelector('[data-filter-value]')?.value || 'asli';
                 rows.forEach((row) => {
-                    const input = row.querySelector('[data-filter-value]');
-                    if (input) input.value = value;
+                    const local = rowIndex(row);
+                    setRowState(row, value);
+                    if (!Number.isNaN(local)) item.filters[local] = value;
                 });
-                paint();
-                showToast('Filter Foto 1 diterapkan ke semua foto.', 'success');
+                paint(item);
+                showToast('Filter diterapkan ke semua foto.', 'success');
             });
         }
 
-        paint();
+        // Tambah stiker dari palet admin.
+        block.querySelectorAll('[data-sticker-add]').forEach((button) => {
+            button.addEventListener('click', () => {
+                if (item.placements.length >= 30) {
+                    showToast('Maksimal 30 stiker per frame.', 'warning');
+                    return;
+                }
+
+                const index = item.placements.length;
+                item.placements.push({
+                    id: Number(button.dataset.stickerAdd),
+                    type: button.dataset.stickerType === 'image' ? 'image' : 'emoji',
+                    value: button.dataset.stickerValue || '',
+                    x: clampSticker(0.5 + ((index % 3) - 1) * 0.07, 0.02, 0.98, 0.5),
+                    y: clampSticker(0.5 + ((Math.floor(index / 3) % 3) - 1) * 0.07, 0.02, 0.98, 0.5),
+                    size: 0.16,
+                });
+                rebuildNodes(item);
+                syncStickers();
+            });
+        });
+
+        // Hapus satu stiker.
+        layer.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-sticker-remove]');
+            if (!button) return;
+            const node = button.closest('[data-sticker-index]');
+            const index = Number(node?.dataset.stickerIndex);
+            if (!Number.isFinite(index)) return;
+            item.placements.splice(index, 1);
+            rebuildNodes(item);
+            syncStickers();
+        });
+
+        const clearBtn = block.querySelector('[data-sticker-clear]');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                if (!item.placements.length) return;
+                item.placements = [];
+                rebuildNodes(item);
+                syncStickers();
+                showToast('Semua stiker dihapus.', 'success');
+            });
+        }
+
+        rebuildNodes(item);
+        paint(item);
+
+        if (typeof ResizeObserver !== 'undefined') {
+            new ResizeObserver(() => layoutItem(item)).observe(stage);
+        } else {
+            window.addEventListener('resize', () => layoutItem(item));
+        }
     });
+
+    // Pindah tab frame/keranjang.
+    panel.querySelectorAll('[data-filter-tab]').forEach((tab) => {
+        tab.addEventListener('click', () => {
+            const index = Number(tab.dataset.filterTab);
+            if (!Number.isFinite(index)) return;
+
+            panel.querySelectorAll('[data-filter-tab]').forEach((other) => {
+                other.setAttribute('aria-selected', other === tab ? 'true' : 'false');
+            });
+            items.forEach((item, itemIndex) => {
+                item.block.hidden = itemIndex !== index;
+            });
+
+            const item = items[index];
+            if (item) requestAnimationFrame(() => layoutItem(item));
+        });
+    });
+
+    syncStickers();
+    form.addEventListener('submit', syncStickers);
 }
 
 /* ---------------- Frame cart selection ---------------- */
@@ -697,13 +1109,14 @@ function initFrameCart() {
     const submitBtn = form.querySelector('[data-cart-submit]');
     const clearBtn = form.querySelector('[data-cart-clear]');
 
-    const fmt = (n) => 'Rp. ' + n.toLocaleString('id-ID');
+    const fmt = (n) => 'Rp ' + n.toLocaleString('id-ID');
 
     const FRAME_INFO = {};
     options.forEach((opt) => {
         FRAME_INFO[opt.dataset.frameOption] = {
             name: opt.dataset.name || opt.dataset.frameOption,
             price: parseInt(opt.dataset.price || '0', 10),
+            size: opt.dataset.sizeName || '',
             img: opt.querySelector('img')?.src || '',
         };
     });
@@ -719,19 +1132,15 @@ function initFrameCart() {
             const slug = opt.dataset.frameOption;
             const inCart = cart[slug] > 0;
             const badge = opt.querySelector('[data-add-badge]');
-            opt.classList.toggle('ring-2', inCart);
-            opt.classList.toggle('ring-rose-500', inCart);
-            opt.classList.toggle('shadow-lg', inCart);
-            opt.classList.toggle('shadow-rose-100', inCart);
             opt.setAttribute('aria-pressed', inCart ? 'true' : 'false');
-            if (badge) badge.classList.toggle('hidden', !inCart);
+            if (badge) badge.hidden = !inCart;
             const qtyEl = opt.querySelector('[data-add-qty]');
             if (qtyEl) qtyEl.textContent = cart[slug] || 0;
         });
 
         const entries = Object.entries(cart).filter(([, q]) => q > 0);
 
-        if (clearBtn) clearBtn.classList.toggle('hidden', entries.length === 0);
+        if (clearBtn) clearBtn.hidden = entries.length === 0;
 
         cartList.innerHTML = '';
         if (entries.length === 0 && cartEmpty) {
@@ -742,24 +1151,23 @@ function initFrameCart() {
         if (cartCount) cartCount.textContent = String(entries.length);
 
         entries.forEach(([slug, qty]) => {
-            const info = FRAME_INFO[slug] || { name: slug, price: 0, img: '' };
+            const info = FRAME_INFO[slug] || { name: slug, price: 0, size: '', img: '' };
             const row = document.createElement('div');
-            // Dua baris: info + tombol qty. Satu baris membuat nama jadi "K…"
-            // karena lebar aside hanya 230px.
-            row.className = 'rounded-2xl bg-white ring-1 ring-black/5 shadow-sm p-2.5 flex flex-col gap-2';
+            // Dua baris: info + tombol qty agar nama tidak terpotong.
+            row.className = 'k-cart-row';
             row.innerHTML = `
                 <div class="flex items-center gap-2.5">
                     <img src="${info.img}" alt="" class="w-9 h-11 rounded-lg object-contain bg-slate-50 shrink-0">
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-bold text-slate-800 truncate leading-tight">${info.name}</p>
-                        <p class="text-xs text-slate-400 truncate">${fmt(info.price)}</p>
+                        <p class="text-[13px] font-bold text-slate-800 truncate leading-tight">${info.name}</p>
+                        <p class="text-[11px] text-slate-400 truncate">${info.size ? info.size + ' · ' : ''}${fmt(info.price)}</p>
                     </div>
                     <button type="button" data-cart-remove="${slug}" class="text-slate-300 hover:text-rose-500 text-xl leading-none shrink-0" aria-label="Hapus" title="Hapus">×</button>
                 </div>
                 <div class="flex items-center justify-end gap-2">
-                    <button type="button" data-cart-dec="${slug}" aria-label="Kurangi" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold leading-none hover:bg-rose-50 hover:text-rose-600">−</button>
+                    <button type="button" data-cart-dec="${slug}" aria-label="Kurangi" class="k-cart-qty">−</button>
                     <span class="text-sm font-extrabold w-6 text-center tabular-nums">${qty}</span>
-                    <button type="button" data-cart-inc="${slug}" aria-label="Tambah" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold leading-none hover:bg-rose-50 hover:text-rose-600">+</button>
+                    <button type="button" data-cart-inc="${slug}" aria-label="Tambah" class="k-cart-qty">+</button>
                 </div>
             `;
             cartList.appendChild(row);
@@ -796,21 +1204,11 @@ function initFrameCart() {
 
     const applyFilter = (slug) => {
         cats.forEach((cat) => {
-            const active = cat.dataset.category === slug;
-            cat.setAttribute('aria-pressed', active ? 'true' : 'false');
-            cat.classList.toggle('bg-rose-500', active);
-            cat.classList.toggle('text-white', active);
-            cat.classList.toggle('ring-rose-500', active);
-            cat.classList.toggle('shadow-md', active);
-            cat.classList.toggle('shadow-rose-200', active);
-            cat.classList.toggle('bg-white/80', !active);
-            cat.classList.toggle('text-rose-600', !active);
-            cat.classList.toggle('ring-rose-200', !active);
+            cat.setAttribute('aria-pressed', cat.dataset.category === slug ? 'true' : 'false');
         });
 
         options.forEach((opt) => {
-            const show = slug === 'semua' || opt.dataset.category === slug;
-            opt.classList.toggle('hidden', !show);
+            opt.hidden = slug !== 'semua' && opt.dataset.category !== slug;
         });
     };
 
@@ -860,25 +1258,10 @@ function initMetodeSelect() {
         options.forEach((opt) => {
             const active = opt.dataset.metodeOption === input.value;
             opt.setAttribute('aria-pressed', active ? 'true' : 'false');
-            opt.classList.toggle('ring-2', active);
-            opt.classList.toggle('ring-rose-500', active);
-            opt.classList.toggle('shadow-lg', active);
-            opt.classList.toggle('shadow-rose-100', active);
-            opt.classList.toggle('ring-1', !active);
-            opt.classList.toggle('ring-rose-100', !active);
-
-            const check = opt.querySelector('[data-metode-check]');
-            if (check) {
-                check.classList.toggle('border-rose-500', active);
-                check.classList.toggle('bg-rose-500', active);
-                check.classList.toggle('border-slate-300', !active);
-                const dot = check.querySelector('span');
-                if (dot) dot.classList.toggle('hidden', !active);
-            }
         });
 
         const isVoucher = input.value === 'voucher';
-        voucherBox?.classList.toggle('hidden', !isVoucher);
+        if (voucherBox) voucherBox.hidden = !isVoucher;
         if (submitBtn) {
             const label = isVoucher ? 'Gunakan Voucher & Mulai Foto' : 'Lanjut Pilih Frame';
             const textNode = [...submitBtn.childNodes].find((n) => n.nodeType === 3 && n.textContent.trim() !== '');
@@ -911,7 +1294,7 @@ function initQr() {
 
     const queue = box.dataset.queue ?? '';
     const priceEl = document.querySelector('[data-qris-price]');
-    const price = (priceEl?.textContent ?? 'Rp. 30.000').replace(/\D/g, '') || '30000';
+    const price = (priceEl?.textContent ?? 'Rp 30.000').replace(/\D/g, '') || '30000';
     const nmid = box.dataset.nmid || '102020034073193';
     const merchant = box.dataset.merchant || 'PERKAKASKU';
     const payload = `QRIS|${merchant}|${nmid}|${price}|ANTRIAN${queue.replace('#', '')}`;
@@ -929,6 +1312,7 @@ async function loadImages(urls) {
         urls.map(
             (url) =>
                 new Promise((resolve) => {
+                    if (!url) { resolve(null); return; }
                     const img = new Image();
                     img.onload = () => resolve(img);
                     img.onerror = () => resolve(null);
@@ -946,7 +1330,7 @@ async function loadImages(urls) {
     );
 }
 
-async function buildStripFrame(canvas, photoUrls, filterKey, frameImageUrl, frameSlots) {
+async function buildStripFrame(canvas, photoUrls, filterKey, frameImageUrl, frameSlots, stickerPlacements, targetWidth) {
     // filterKey: string (satu filter utk semua, kompatibel lama) atau
     // array per-index foto (jalur per-foto).
     const isPerPhoto = Array.isArray(filterKey);
@@ -958,7 +1342,12 @@ async function buildStripFrame(canvas, photoUrls, filterKey, frameImageUrl, fram
     const photos = await loadImages(photoUrls);
     const frameImg = frameImageUrl ? (await loadImages([frameImageUrl]))[0] : null;
 
-    const scale = 2;
+    // Resolusi ekspor mengikuti lebar kertas (px), supaya hasil cetak/unduh
+    // cukup tajam untuk ukuran besar tanpa mengubah tata letak.
+    const exportWidth = Number(targetWidth) > 0
+        ? Math.max(720, Math.min(2480, Math.round(Number(targetWidth))))
+        : 0;
+    const scale = exportWidth ? Math.max(2, exportWidth / baseW) : 2;
     let baseH;
     if (frameImg) {
         baseH = Math.round((baseW * frameImg.naturalHeight) / frameImg.naturalWidth);
@@ -982,7 +1371,13 @@ async function buildStripFrame(canvas, photoUrls, filterKey, frameImageUrl, fram
     ctx.restore();
 
     if (slots) {
-        ctx.save();
+        // Foto dipotong mengikuti bentuk lubang pada PNG frame (bisa melengkung /
+        // tidak beraturan), bukan sekadar kotak yang ditimpa gambar frame.
+        let photoCanvas = null;
+        let photoCtx = null;
+        let maskCanvas = null;
+        let maskCtx = null;
+
         photos.forEach((img, i) => {
             if (!img || !slots[i]) return;
             const slot = slots[i];
@@ -990,6 +1385,7 @@ async function buildStripFrame(canvas, photoUrls, filterKey, frameImageUrl, fram
             const y = slot.y * baseH;
             const w = slot.w * baseW;
             const h = slot.h * baseH;
+            if (w <= 0 || h <= 0) return;
             const srcAspect = img.naturalWidth / img.naturalHeight;
             const dstAspect = w / h;
 
@@ -1003,11 +1399,69 @@ async function buildStripFrame(canvas, photoUrls, filterKey, frameImageUrl, fram
             }
 
             ctx.save();
-            ctx.filter = filterAt(i);
-            ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+            ctx.filter = 'none';
+
+            if (frameImg) {
+                const mw = Math.max(1, Math.round(w * scale));
+                const mh = Math.max(1, Math.round(h * scale));
+                if (!photoCanvas) {
+                    photoCanvas = document.createElement('canvas');
+                    photoCtx = photoCanvas.getContext('2d', { willReadFrequently: true });
+                    maskCanvas = document.createElement('canvas');
+                    maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+                }
+                if (photoCanvas.width !== mw) photoCanvas.width = mw;
+                if (photoCanvas.height !== mh) photoCanvas.height = mh;
+                if (maskCanvas.width !== mw) maskCanvas.width = mw;
+                if (maskCanvas.height !== mh) maskCanvas.height = mh;
+
+                // 1) Foto (dengan filter) ke kanvas sementara.
+                photoCtx.setTransform(1, 0, 0, 1, 0, 0);
+                photoCtx.globalCompositeOperation = 'source-over';
+                photoCtx.clearRect(0, 0, mw, mh);
+                photoCtx.filter = filterAt(i);
+                photoCtx.drawImage(img, sx, sy, sw, sh, 0, 0, mw, mh);
+                photoCtx.filter = 'none';
+
+                // 2) Ambil area frame untuk slot ini, lalu jadikan mask biner:
+                //    piksel transparan = lubang (foto dipertahankan), sisanya
+                //    dihapus. Alpha frame yang semi-transparan tetap dianggap
+                //    bagian frame agar foto tidak "membocor" sebagai kotak.
+                maskCtx.setTransform(1, 0, 0, 1, 0, 0);
+                maskCtx.globalCompositeOperation = 'source-over';
+                maskCtx.clearRect(0, 0, mw, mh);
+                maskCtx.drawImage(
+                    frameImg,
+                    slot.x * frameImg.naturalWidth,
+                    slot.y * frameImg.naturalHeight,
+                    slot.w * frameImg.naturalWidth,
+                    slot.h * frameImg.naturalHeight,
+                    0, 0, mw, mh
+                );
+
+                const maskData = maskCtx.getImageData(0, 0, mw, mh);
+                const px = maskData.data;
+                for (let p = 0; p < px.length; p += 4) {
+                    const isHole = px[p + 3] <= 40;
+                    px[p] = 0;
+                    px[p + 1] = 0;
+                    px[p + 2] = 0;
+                    px[p + 3] = isHole ? 255 : 0;
+                }
+                maskCtx.putImageData(maskData, 0, 0);
+
+                // 3) Potong foto dengan mask lubang.
+                photoCtx.globalCompositeOperation = 'destination-in';
+                photoCtx.drawImage(maskCanvas, 0, 0);
+                photoCtx.globalCompositeOperation = 'source-over';
+
+                ctx.drawImage(photoCanvas, 0, 0, mw, mh, x, y, w, h);
+            } else {
+                ctx.filter = filterAt(i);
+                ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+            }
             ctx.restore();
         });
-        ctx.restore();
     } else {
         // fallback: tanpa slots, susun foto vertikal
         const padding = 24;
@@ -1046,6 +1500,52 @@ async function buildStripFrame(canvas, photoUrls, filterKey, frameImageUrl, fram
         ctx.drawImage(frameImg, 0, 0, baseW, baseH);
         ctx.restore();
     }
+
+    // Stiker/emoji ditempel di atas frame. Koordinat & ukuran dinormalisasi
+    // terhadap lebar/tinggi strip agar hasil konsisten di layar mana pun.
+    const placements = Array.isArray(stickerPlacements) ? stickerPlacements : [];
+    if (placements.length) {
+        const imageUrls = placements.map((sticker) => (
+            sticker && sticker.type === 'image' ? sticker.value : null
+        ));
+        const stickerImages = imageUrls.some(Boolean) ? await loadImages(imageUrls) : [];
+        const clampUnit = (value, min, max, fallback) => {
+            const n = Number(value);
+            return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
+        };
+
+        placements.forEach((sticker, index) => {
+            if (!sticker || typeof sticker.value !== 'string' || sticker.value === '') return;
+
+            const cx = clampUnit(sticker.x, 0.02, 0.98, 0.5) * baseW;
+            const cy = clampUnit(sticker.y, 0.02, 0.98, 0.5) * baseH;
+            const side = clampUnit(sticker.size, 0.05, 0.5, 0.16) * baseW;
+            const rot = (clampUnit(sticker.rotation, -180, 180, 0) * Math.PI) / 180;
+            if (side <= 0) return;
+
+            ctx.save();
+            ctx.filter = 'none';
+            ctx.translate(cx, cy);
+            ctx.rotate(rot);
+
+            if (sticker.type === 'image') {
+                const img = stickerImages[index];
+                if (img) {
+                    const aspect = (img.naturalWidth || 1) / (img.naturalHeight || 1);
+                    const w = aspect > 1 ? side : side * aspect;
+                    const h = aspect > 1 ? side / aspect : side;
+                    ctx.drawImage(img, -w / 2, -h / 2, w, h);
+                }
+            } else {
+                ctx.font = `${Math.round(side * 0.92)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(sticker.value, 0, 0);
+            }
+
+            ctx.restore();
+        });
+    }
 }
 
 function initStrip() {
@@ -1055,11 +1555,15 @@ function initStrip() {
     // (agar cetak/unduh/email tidak ikut menyertakan kanvas panel filter yang tersembunyi).
     const canvases = [...document.querySelectorAll('[data-strip-canvas]')].filter((c) => {
         const panel = c.closest('[data-spa-panel]');
-        return !panel || !panel.classList.contains('hidden');
+        if (!panel) return true;
+        // Panel edit punya pratinjau sendiri dengan lapisan stiker interaktif;
+        // jangan pernah ikut diekspor sebagai strip final.
+        return panel.dataset.spaPanel !== 'filter' && !panel.classList.contains('hidden');
     });
     const ready = canvases.map((canvas) => {
         let photos = [];
         let slots = [];
+        let stickers = [];
         try {
             photos = JSON.parse(canvas.dataset.photos || '[]');
         } catch (e) {
@@ -1069,6 +1573,11 @@ function initStrip() {
             slots = JSON.parse(canvas.dataset.frameSlots || '[]');
         } catch (e) {
             slots = [];
+        }
+        try {
+            stickers = JSON.parse(canvas.dataset.stickers || '[]');
+        } catch (e) {
+            stickers = [];
         }
         if (!photos.length) {
             canvas.style.display = 'none';
@@ -1089,12 +1598,15 @@ function initStrip() {
         } catch (e) {
             // abaikan, pakai filter tunggal
         }
+        const printWidth = parseFloat(canvas.dataset.printWidth || '0');
         return buildStripFrame(
             canvas,
             photos,
             filterArg,
             canvas.dataset.frameImage,
-            slots
+            slots,
+            stickers,
+            printWidth > 0 ? printWidth * 100 : 0
         ).then(() => canvas);
     });
 
@@ -1157,13 +1669,13 @@ function initEmailForm() {
     const setError = (msg) => {
         if (!errorBox) return;
         errorBox.textContent = msg || '';
-        errorBox.classList.toggle('hidden', !msg);
+        errorBox.hidden = !msg;
         if (msg) showToast(msg);
     };
     const setSuccess = (msg) => {
         if (!successBox) return;
         successBox.textContent = msg || '';
-        successBox.classList.toggle('hidden', !msg);
+        successBox.hidden = !msg;
     };
 
     form.addEventListener('submit', async (e) => {
@@ -1229,6 +1741,57 @@ function initPrint() {
     const btn = document.querySelector('[data-print-btn]');
     const sheet = document.getElementById('print-sheet');
     if (!btn || !sheet) return;
+    const pageStyle = document.getElementById('print-page-style');
+
+    const printGroup = (groups, index) => {
+        if (index >= groups.length) {
+            sheet.innerHTML = '';
+            if (pageStyle) pageStyle.textContent = '';
+            return;
+        }
+
+        const group = groups[index];
+        if (pageStyle) {
+            pageStyle.textContent = group.width && group.height
+                ? '@page { size: ' + group.width + 'mm ' + group.height + 'mm; margin: 0; }'
+                : '@page { margin: 0; }';
+        }
+
+        sheet.innerHTML = '';
+        group.pages.forEach((src) => {
+            const page = document.createElement('div');
+            page.className = 'print-page';
+            if (group.width && group.height) {
+                page.style.width = group.width + 'mm';
+                page.style.height = group.height + 'mm';
+            }
+            const img = new Image();
+            img.src = src;
+            page.appendChild(img);
+            sheet.appendChild(page);
+        });
+
+        Promise.all([...sheet.querySelectorAll('img')].map((img) => (
+            img.decode ? img.decode().catch(() => {}) : Promise.resolve()
+        ))).then(() => {
+            let done = false;
+            const next = () => {
+                if (done) return;
+                done = true;
+                window.removeEventListener('afterprint', next);
+                if (groups.length > 1) {
+                    setTimeout(() => printGroup(groups, index + 1), 250);
+                } else {
+                    sheet.innerHTML = '';
+                    if (pageStyle) pageStyle.textContent = '';
+                }
+            };
+            window.addEventListener('afterprint', next);
+            window.print();
+            // Jaring pengaman bila browser tidak memicu afterprint.
+            setTimeout(next, 60000);
+        });
+    };
 
     btn.addEventListener('click', async () => {
         showModal('Menyiapkan cetakan…', '');
@@ -1239,25 +1802,38 @@ function initPrint() {
             // Setiap frame dicetak sebanyak jumlah (qty) yang dibayar.
             // Hanya ambil kartu di panel yang tampil; panel filter yang
             // tersembunyi juga menyimpan kanvas pratinjau.
+            const groups = [];
+            const bySize = new Map();
+
             document.querySelectorAll('[data-strip-container]').forEach((box) => {
                 const canvas = box.querySelector('[data-strip-canvas]');
                 if (!canvas || !canvas.width || box.classList.contains('hidden')) return;
                 if (box.closest('[data-spa-panel].hidden')) return;
                 const qty = Math.max(1, parseInt(box.dataset.qty || '1', 10) || 1);
+                const width = parseFloat(box.dataset.printWidth || '0');
+                const height = parseFloat(box.dataset.printHeight || '0');
+                const key = width && height ? width + 'x' + height : 'auto';
                 const src = canvas.toDataURL('image/png');
+
+                if (!bySize.has(key)) {
+                    bySize.set(key, { width, height, pages: [] });
+                    groups.push(bySize.get(key));
+                }
+
+                const group = bySize.get(key);
                 for (let i = 0; i < qty; i++) {
-                    const page = document.createElement('div');
-                    page.className = 'print-page';
-                    const img = new Image();
-                    img.src = src;
-                    page.appendChild(img);
-                    sheet.appendChild(page);
+                    group.pages.push(src);
                 }
             });
 
-            await Promise.all([...sheet.querySelectorAll('img')].map((img) => (img.decode ? img.decode().catch(() => {}) : Promise.resolve())));
             hideModal();
-            window.print();
+
+            if (groups.length === 0) {
+                showToast('Belum ada hasil foto untuk dicetak.');
+                return;
+            }
+
+            printGroup(groups, 0);
         } catch (err) {
             hideModal();
         }
@@ -1610,7 +2186,7 @@ function initAdminLogs() {
             const canvas = card.querySelector('[data-log-canvas]');
             const button = card.querySelector('[data-log-download-item]');
 
-            buildStripFrame(canvas, photos, group.filters || [], group.frame_url || null, group.slots || [])
+            buildStripFrame(canvas, photos, group.filters || [], group.frame_url || null, group.slots || [], group.stickers || [])
                 .then(() => {
                     if (button) button.disabled = false;
                 })
@@ -1739,6 +2315,222 @@ function initBulkDeleteModal() {
     });
 }
 
+/* ---------------- Voucher frame selection ---------------- */
+
+function initVoucherFrame() {
+    const form = document.querySelector('[data-voucher-frame-form]');
+    if (!form) return;
+
+    const options = form.querySelectorAll('[data-voucher-frame-option]');
+    const cartList = form.querySelector('[data-voucher-cart-list]');
+    const cartEmpty = form.querySelector('[data-cart-empty]');
+    const cartCount = form.querySelector('[data-cart-count]');
+    const clearBtn = form.querySelector('[data-cart-clear]');
+    const submitBtn = form.querySelector('[data-voucher-cart-submit]');
+    const printTotalEl = form.querySelector('[data-voucher-print-total]');
+    const printCountEl = form.querySelector('[data-voucher-print-count]');
+    const quotaChips = form.querySelectorAll('[data-voucher-quota-chip]');
+
+    const quotasJson = form.querySelector('[data-voucher-quotas]');
+    let quotas = {};
+    try { quotas = JSON.parse(quotasJson?.textContent || '{}'); } catch (e) { quotas = {}; }
+
+    const totalQuota = Object.values(quotas).reduce((a, b) => a + b, 0);
+
+    const FRAME_INFO = {};
+    options.forEach((opt) => {
+        FRAME_INFO[opt.dataset.voucherFrameOption] = {
+            name: opt.dataset.name || opt.dataset.voucherFrameOption,
+            sizeName: opt.dataset.sizeName || '',
+            sizeId: opt.dataset.sizeId || '',
+            photoCount: parseInt(opt.dataset.photoCount || '1', 10),
+            img: opt.querySelector('img')?.src || '',
+        };
+    });
+
+    const cart = {};
+    options.forEach((opt) => {
+        const qty = parseInt(opt.dataset.qty || '0', 10);
+        if (qty > 0) cart[opt.dataset.voucherFrameOption] = qty;
+    });
+
+    const totalsBySize = () => {
+        const totals = {};
+        Object.entries(cart).forEach(([slug, qty]) => {
+            if (qty <= 0) return;
+            const info = FRAME_INFO[slug];
+            if (!info) return;
+            totals[info.sizeId] = (totals[info.sizeId] || 0) + qty;
+        });
+        return totals;
+    };
+
+    const remainingForSize = (sizeId) => {
+        const quota = quotas[sizeId] || 0;
+        const totals = totalsBySize();
+        return quota - (totals[sizeId] || 0);
+    };
+
+    const fmt = (n) => 'Rp ' + n.toLocaleString('id-ID');
+
+    const render = () => {
+        const totals = totalsBySize();
+
+        options.forEach((opt) => {
+            const slug = opt.dataset.voucherFrameOption;
+            const inCart = (cart[slug] || 0) > 0;
+            const badge = opt.querySelector('[data-add-badge]');
+            opt.setAttribute('aria-pressed', inCart ? 'true' : 'false');
+            if (badge) badge.hidden = !inCart;
+            const qtyEl = opt.querySelector('[data-add-qty]');
+            if (qtyEl) qtyEl.textContent = cart[slug] || 0;
+
+            const sizeId = opt.dataset.sizeId;
+            const remaining = remainingForSize(sizeId);
+            const isFull = (quotas[sizeId] || 0) > 0 && remaining <= 0 && !inCart;
+            opt.classList.toggle('opacity-40', isFull);
+            opt.classList.toggle('pointer-events-none', isFull);
+        });
+
+        const entries = Object.entries(cart).filter(([, q]) => q > 0);
+
+        if (clearBtn) clearBtn.hidden = entries.length === 0;
+
+        cartList.innerHTML = '';
+        if (entries.length === 0 && cartEmpty) {
+            cartEmpty.classList.remove('hidden');
+            cartList.appendChild(cartEmpty);
+        }
+        if (cartCount) cartCount.textContent = String(entries.length);
+
+        entries.forEach(([slug, qty]) => {
+            const info = FRAME_INFO[slug] || { name: slug, sizeName: '', img: '' };
+            const row = document.createElement('div');
+            row.className = 'k-cart-row';
+            row.innerHTML = `
+                <div class="flex items-center gap-2.5">
+                    <img src="${info.img}" alt="" class="w-9 h-11 rounded-lg object-contain bg-slate-50 shrink-0">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[13px] font-bold text-slate-800 truncate leading-tight">${info.name}</p>
+                        <p class="text-[11px] text-slate-400 truncate">${info.sizeName ? info.sizeName + ' · ' : ''}${qty}x</p>
+                    </div>
+                    <button type="button" data-cart-remove="${slug}" class="text-slate-300 hover:text-rose-500 text-xl leading-none shrink-0" aria-label="Hapus" title="Hapus">×</button>
+                </div>
+                <div class="flex items-center justify-end gap-2">
+                    <button type="button" data-cart-dec="${slug}" aria-label="Kurangi" class="k-cart-qty">−</button>
+                    <span class="text-sm font-extrabold w-6 text-center tabular-nums">${qty}</span>
+                    <button type="button" data-cart-inc="${slug}" aria-label="Tambah" class="k-cart-qty">+</button>
+                </div>
+            `;
+            cartList.appendChild(row);
+        });
+
+        // picks
+        const picks = form.querySelector('#voucher-frame-picks');
+        if (picks) {
+            picks.innerHTML = '';
+            entries.forEach(([slug, qty]) => {
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'cart[' + slug + ']';
+                hidden.value = qty;
+                picks.appendChild(hidden);
+            });
+        }
+
+        // quota bar
+        quotaChips.forEach((chip) => {
+            const sizeId = chip.dataset.voucherQuotaChip;
+            const selectedEl = chip.querySelector('[data-voucher-quota-selected]');
+            if (selectedEl) selectedEl.textContent = totals[sizeId] || 0;
+        });
+        const totalSelected = Object.values(totals).reduce((a, b) => a + b, 0);
+        if (printTotalEl) printTotalEl.textContent = totalSelected + '/' + totalQuota;
+        if (printCountEl) printCountEl.textContent = totalSelected;
+
+        // submit enabled only if every quota matches exactly
+        let complete = totalQuota > 0 && totalSelected === totalQuota;
+        Object.keys(quotas).forEach((sizeId) => {
+            if ((totals[sizeId] || 0) !== quotas[sizeId]) complete = false;
+        });
+        if (submitBtn) submitBtn.disabled = !complete;
+    };
+
+    const add = (slug) => {
+        const info = FRAME_INFO[slug];
+        if (!info) return;
+        const sizeId = info.sizeId;
+        const remaining = remainingForSize(sizeId);
+        if (remaining <= 0) {
+            showToast('Kuota ukuran ini sudah terpenuhi.', 'warning');
+            return;
+        }
+        cart[slug] = (cart[slug] || 0) + 1;
+        render();
+    };
+
+    const dec = (slug) => {
+        cart[slug] = Math.max(0, (cart[slug] || 0) - 1);
+        if (cart[slug] === 0) delete cart[slug];
+        render();
+    };
+
+    const remove = (slug) => {
+        delete cart[slug];
+        render();
+    };
+
+    const applyFilter = (slug) => {
+        form.querySelectorAll('[data-category-chip]').forEach((cat) => {
+            cat.setAttribute('aria-pressed', cat.dataset.voucherCategory === slug ? 'true' : 'false');
+        });
+        options.forEach((opt) => {
+            opt.hidden = slug !== 'semua' && opt.dataset.category !== slug;
+        });
+    };
+
+    options.forEach((opt) => opt.addEventListener('click', () => add(opt.dataset.voucherFrameOption)));
+    form.querySelectorAll('[data-category-chip]').forEach((cat) => cat.addEventListener('click', () => applyFilter(cat.dataset.voucherCategory)));
+
+    if (cartList) {
+        cartList.addEventListener('click', (e) => {
+            const inc = e.target.closest('[data-cart-inc]');
+            const decBtn = e.target.closest('[data-cart-dec]');
+            const rm = e.target.closest('[data-cart-remove]');
+            if (inc) add(inc.dataset.cartInc);
+            else if (decBtn) dec(decBtn.dataset.cartDec);
+            else if (rm) remove(rm.dataset.cartRemove);
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            Object.keys(cart).forEach((key) => delete cart[key]);
+            render();
+            showToast('Keranjang dikosongkan.', 'success');
+        });
+    }
+
+    form.addEventListener('submit', (event) => {
+        const totals = totalsBySize();
+        let complete = totalQuota > 0;
+        Object.keys(quotas).forEach((sizeId) => {
+            if ((totals[sizeId] || 0) !== quotas[sizeId]) complete = false;
+        });
+        if (!complete) {
+            event.preventDefault();
+            showToast('Jumlah cetak per ukuran harus sesuai voucher.', 'warning');
+            return;
+        }
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Menyiapkan kamera…';
+        }
+    });
+
+    render();
+}
+
 /* ---------------- Boot ---------------- */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1747,6 +2539,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initFilterSelect();
     initFilterEditor();
     initFrameCart();
+    initVoucherFrame();
     initMetodeSelect();
     initQr();
     initStrip();
