@@ -2,12 +2,12 @@
 ' Aman dipanggil berulang: tidak menyalakan proses ganda jika port sudah aktif.
 Option Explicit
 
-Dim ws, fso, root, phpExe, foundPhp, cmd, xamppRoot, mysqlExe
+Dim ws, fso, root, phpExe, foundPhp, cmd, xamppRoot, mysqlExe, foundNgrok, ex2, candidate
 
 Set ws = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 
-' Root proyek bisa diberikan sebagai argumen (dipakai Tauri).
+' Root proyek bisa diberikan sebagai argumen (dipakai Electron).
 If WScript.Arguments.Count > 0 Then
     root = WScript.Arguments(0)
 Else
@@ -76,4 +76,26 @@ If Not PortListening(8000) Then
     ws.CurrentDirectory = root
     cmd = """" & phpExe & """ """ & root & "\artisan"" serve --host=127.0.0.1 --port=8000"
     ws.Run cmd, 0, False
+End If
+
+' Nyalakan ngrok dengan domain statis bila belum aktif (port 4040 = web interface ngrok).
+If Not PortListening(4040) Then
+    foundNgrok = ""
+    On Error Resume Next
+    Set ex2 = ws.Exec("where ngrok")
+    If Err.Number = 0 Then
+        If Not ex2.StdOut.AtEndOfStream Then foundNgrok = Trim(ex2.StdOut.ReadLine())
+    End If
+    On Error GoTo 0
+
+    If foundNgrok = "" Then
+        candidate = ws.ExpandEnvironmentStrings("%LOCALAPPDATA%\Microsoft\WindowsApps\ngrok.exe")
+        If fso.FileExists(candidate) Then foundNgrok = candidate
+    End If
+
+    If foundNgrok <> "" Then
+        ws.CurrentDirectory = root
+        cmd = """" & foundNgrok & """ http 8000 --url=https://metalinguistic-unvenerably-fernande.ngrok-free.dev"
+        ws.Run cmd, 0, False
+    End If
 End If

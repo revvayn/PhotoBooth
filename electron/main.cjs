@@ -7,9 +7,9 @@ const path = require('path');
 const rootFile = path.join(process.resourcesPath || '', 'app.asar.unpacked', 'photobooth-root.txt');
 const root = process.env.PHOTOBOOTH_ROOT
     || (app.isPackaged && fs.existsSync(rootFile) ? fs.readFileSync(rootFile, 'utf8').trim() : path.resolve(__dirname, '..'));
-const scriptDir = app.isPackaged
-    ? path.join(process.resourcesPath, 'app.asar.unpacked', 'scripts')
-    : path.join(__dirname, '..', 'scripts');
+const scriptDir = fs.existsSync(path.join(root, 'scripts', 'start-server.vbs'))
+    ? path.join(root, 'scripts')
+    : path.join(process.resourcesPath || '', 'app.asar.unpacked', 'scripts');
 const serverUrl = 'http://127.0.0.1:8000/admin';
 
 app.setAppUserModelId('com.photobooth.app');
@@ -96,6 +96,7 @@ async function createWindow() {
     startServices();
     await waitForPort(8000);
     await waitForPort(3306);
+    await waitForPort(4040, 10); // ngrok web interface - pastikan tunnel aktif
 
     const win = new BrowserWindow({
         width: 1366,

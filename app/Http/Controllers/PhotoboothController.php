@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\PhotoboothMail;
 use App\Models\ActivityLog;
 use App\Models\Frame;
 use App\Models\Setting;
@@ -10,13 +9,14 @@ use App\Models\Size;
 use App\Models\Sticker;
 use App\Models\Voucher;
 use App\Support\Brand;
+use App\Support\PaymentLogPresenter;
 use App\Support\QueueNumber;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class PhotoboothController extends Controller
@@ -38,7 +38,7 @@ class PhotoboothController extends Controller
     /** Durasi default sesi foto setelah pembayaran (detik). */
     private const DEFAULT_PHOTO_SECONDS = 300;
 
-    /** Durasi default review, cetak, kirim email setelah foto (detik). */
+    /** Durasi default review, cetak, dan unduh setelah foto (detik). */
     private const DEFAULT_REVIEW_SECONDS = 300;
 
     public function welcome(Request $request)
@@ -162,7 +162,7 @@ class PhotoboothController extends Controller
             'stickerPalette' => $this->stickerPalette(),
             'filter' => session('filter', 'asli'),
             'total' => $this->total(),
-            'email' => session('email'),
+            'downloadToken' => session('download_token'),
             'metode' => $metode,
             'voucher' => session('voucher'),
             'voucherQuotas' => $this->voucherQuotaDetails(),
@@ -430,7 +430,7 @@ class PhotoboothController extends Controller
         } catch (\Throwable $error) {
             report($error);
         }
-        // Pastikan masih ada waktu untuk edit, review, cetak, unduh, dan email.
+        // Pastikan masih ada waktu untuk edit, review, cetak, dan unduh.
         $remaining = $this->remainingSeconds();
         $request->session()->put('started_at', now()->timestamp);
         $request->session()->put('total_seconds', max($remaining, $this->sessionReviewSeconds()));
@@ -624,8 +624,11 @@ class PhotoboothController extends Controller
                 }
 
                 $availableFrameSizes = Frame::active()->whereIn('size_id', $quotaSizeIds)->distinct()->pluck('size_id')->map(fn ($id) => (int) $id)->all();
-                if (array_diff($quotaSizeIds, $availableFrameSizes)) {
-                    return ['error' => 'Frame pada voucher ini sudah tidak tersedia. Hubungi admin.'];
+                $missingFrameSizes = array_diff($quotaSizeIds, $availableFrameSizes);
+                if ($missingFrameSizes) {
+                    $sizeNames = Size::whereIn('id', $missingFrameSizes)->orderBy('sort_order')->pluck('name')->implode(', ');
+
+                    return ['error' => 'Frame untuk ukuran '.$sizeNames.' belum tersedia. Hubungi admin untuk menambahkan frame.'];
                 }
             } else {
                 // Mode frame: pastikan frame masih tersedia.
@@ -778,7 +781,7 @@ class PhotoboothController extends Controller
     {
         $this->requirePrereq($request, ['paid', 'photos']);
 
-        // Perpanjang timer khusus untuk tahap review, cetak, dan kirim email.
+        // Perpanjang timer khusus untuk tahap review, cetak, dan unduh.
         $request->session()->put('started_at', now()->timestamp);
         $request->session()->put('total_seconds', $this->sessionReviewSeconds());
 
@@ -803,66 +806,6 @@ class PhotoboothController extends Controller
         ]);
     }
 
-    public function emailStore(Request $request)
-    {
-        $this->requirePrereq($request, ['paid']);
-
-        $data = $request->validate([
-            'email' => ['required', 'email:rfc'],
-            // Strip hasil komposisi (JPEG data URL) dari kanvas klien, dilampirkan ke email.
-            'strips' => ['nullable', 'array', 'max:20'],
-            'strips.*' => [
-                'string',
-                'max:8000000',
-                'regex:/^data:image\/(?:jpe?g|png|webp);base64,[A-Za-z0-9+\/=\r\n]+$/',
-            ],
-        ]);
-
-        // Konfigurasi dinamis SMTP dari database Settings (jika diatur oleh Admin)
-        $mailHost = Setting::get('mail_host');
-        if (! empty($mailHost)) {
-            config([
-                'mail.default' => 'smtp',
-                'mail.mailers.smtp.host' => $mailHost,
-                'mail.mailers.smtp.port' => (int) Setting::get('mail_port', '587'),
-                'mail.mailers.smtp.username' => Setting::get('mail_username'),
-                'mail.mailers.smtp.password' => Setting::get('mail_password'),
-                'mail.mailers.smtp.encryption' => Setting::get('mail_encryption') === 'null' ? null : Setting::get('mail_encryption', 'tls'),
-                'mail.from.address' => Setting::get('mail_from_address', Setting::get('mail_username')),
-                'mail.from.name' => Setting::get('mail_from_name', 'Photobooth Studio'),
-            ]);
-        }
-
-        $attachments = [];
-        foreach ($data['strips'] ?? [] as $strip) {
-            $raw = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $strip), true);
-            if ($raw !== false && $raw !== '' && strlen($raw) <= 6 * 1024 * 1024 && @getimagesizefromstring($raw)) {
-                $attachments[] = $raw;
-            }
-        }
-
-        try {
-            Mail::to($data['email'])->send(new PhotoboothMail(session('queue'), $attachments));
-        } catch (\Throwable $e) {
-            report($e);
-
-            // Jangan pura-pura berhasil: kembalikan error agar kiosk bisa menampilkannya.
-            return response()->json([
-                'message' => 'Email gagal dikirim. Periksa alamat email lalu coba lagi, atau unduh softfile langsung.',
-            ], 422);
-        }
-
-        $request->session()->put('email', $data['email']);
-
-        // Tetap di halaman review agar pelanggan masih bisa mencetak/mengunduh
-        // setelah mengirim email (dulu langsung dilempar ke halaman selesai).
-        return response()->json([
-            'ok' => true,
-            'email' => $data['email'],
-            'message' => 'Softfile berhasil dikirim ke '.$data['email'].'.',
-        ]);
-    }
-
     public function selesai(Request $request)
     {
         $this->requirePrereq($request, ['paid']);
@@ -880,7 +823,7 @@ class PhotoboothController extends Controller
         return view('selesai', [
             'items' => $items,
             'filter' => session('filter', 'asli'),
-            'email' => session('email'),
+            'downloadToken' => session('download_token'),
             'queue' => session('queue'),
             'metode' => session('metode'),
             'voucher' => session('voucher'),
@@ -912,6 +855,36 @@ class PhotoboothController extends Controller
         return response()->streamDownload(function () use ($path) {
             readfile($path);
         }, $name, ['Content-Type' => 'image/jpeg']);
+    }
+
+    /**
+     * Halaman umum untuk pelanggan yang ingin mengunduh hasil lewat QR.
+     */
+    public function hasilIndex(Request $request)
+    {
+        $token = trim((string) $request->query('token', ''));
+        if ($token !== '') {
+            return redirect()->route('hasil.show', ['token' => $token]);
+        }
+
+        return view('public.hasil-index');
+    }
+
+    /**
+     * Halaman unduh per transaksi. Token disimpan di log pembayaran saat foto
+     * diarsipkan, jadi tidak memerlukan sesi kiosk atau login.
+     */
+    public function hasilShow(string $token)
+    {
+        $log = ActivityLog::payments()
+            ->whereJsonContains('metadata->download_token', $token)
+            ->latest('id')
+            ->firstOrFail();
+
+        return view('public.hasil', [
+            'log' => (new PaymentLogPresenter())->present($log),
+            'token' => $token,
+        ]);
     }
 
     /**
@@ -1098,7 +1071,7 @@ class PhotoboothController extends Controller
      */
     private function resetCartSession(Request $request, array $keep = []): void
     {
-        $forget = ['cart', 'photos', 'filter', 'filters', 'stickers', 'filter_done', 'metode', 'paid', 'email', 'voucher', 'voucher_value', 'payment_log_id'];
+        $forget = ['cart', 'photos', 'filter', 'filters', 'stickers', 'filter_done', 'metode', 'paid', 'voucher', 'voucher_value', 'payment_log_id', 'download_token'];
         $request->session()->forget(array_diff($forget, $keep));
     }
 
@@ -1271,7 +1244,7 @@ class PhotoboothController extends Controller
     }
 
     /**
-     * Durasi tahap review, cetak, unduh, dan kirim email setelah foto selesai.
+     * Durasi tahap review, cetak, dan unduh setelah foto selesai.
      */
     private function sessionReviewSeconds(): int
     {
@@ -1326,6 +1299,14 @@ class PhotoboothController extends Controller
         }
 
         $sessionId = $request->session()->getId();
+
+        // Token ini dipakai QR download: tidak bergantung pada sesi kiosk.
+        $downloadToken = $log->metadata['download_token'] ?? null;
+        if (! is_string($downloadToken) || $downloadToken === '') {
+            $downloadToken = Str::random(32);
+        }
+        $request->session()->put('download_token', $downloadToken);
+
         $existingArchive = $log->metadata['archive_dir'] ?? null;
         $directory = is_string($existingArchive) && str_starts_with($existingArchive, 'arsip/')
             ? $existingArchive
@@ -1398,6 +1379,7 @@ class PhotoboothController extends Controller
         $metadata['archive_dir'] = $directory;
         $metadata['filters'] = session('filters', []);
         $metadata['stickers'] = session('stickers', []);
+        $metadata['download_token'] = $downloadToken;
         $metadata['archived_at'] = now()->toIso8601String();
 
         $log->metadata = $metadata;

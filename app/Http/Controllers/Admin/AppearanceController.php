@@ -30,7 +30,7 @@ class AppearanceController extends Controller
         // Identitas brand
         'brand_name' => 'Photobooth',
         'brand_tagline' => 'Sesi foto kamu',
-        'brand_welcome' => 'Abadikan momen terbaikmu bareng teman dan keluarga. Foto langsung jadi — tinggal cetak atau kirim ke email.',
+        'brand_welcome' => 'Abadikan momen terbaikmu bareng teman dan keluarga. Foto langsung jadi — tinggal cetak atau unduh lewat QR.',
         'brand_footer' => 'Photobooth',
 
         // Warna teks

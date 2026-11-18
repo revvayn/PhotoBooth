@@ -90,6 +90,20 @@
                 </div>
             </div>
 
+            @if (! empty($downloadToken))
+                <div class="k-card p-3 flex items-center gap-3">
+                    <div class="shrink-0 rounded-xl bg-white p-1.5 ring-1 ring-slate-200">
+                        <canvas data-download-qr
+                                data-download-qr-url="{{ \App\Support\DownloadLink::show($downloadToken) }}"
+                                class="h-20 w-20"></canvas>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-bold text-slate-800">Scan untuk unduh di HP</p>
+                        <p class="mt-0.5 text-[10px] leading-tight text-slate-500">Pindai QR ini sebelum menekan Selesai. Token: <span class="font-mono font-semibold text-slate-700">{{ $downloadToken }}</span></p>
+                    </div>
+                </div>
+            @endif
+
             <div class="grid grid-cols-2 gap-3">
                 <button type="button" data-print-btn class="k-btn !px-4">
                     <x-icon name="printer" class="w-5 h-5 text-white" /> Cetak
@@ -98,19 +112,6 @@
                     <x-icon name="photo" class="w-5 h-5" /> Unduh
                 </button>
             </div>
-
-            <form method="POST" action="{{ route('email.send') }}" data-email-form class="k-card space-y-1.5 p-3.5">
-                @csrf
-                <label for="email-input" class="block text-xs font-semibold text-slate-700">Kirim ke email</label>
-                <div class="flex items-stretch gap-2">
-                    <input type="email" name="email" id="email-input" placeholder="email@contoh.com" required autocomplete="email" class="k-field min-w-0 flex-1">
-                    <button type="submit" data-email-submit class="k-btn k-btn-dark shrink-0 !px-4 !py-2.5" aria-label="Kirim ke email">
-                        <x-icon name="envelope" class="w-5 h-5 text-white" />
-                    </button>
-                </div>
-                <p hidden class="text-sm text-red-600" data-email-error aria-live="assertive"></p>
-                <p hidden class="text-sm text-emerald-600" data-email-success aria-live="polite"></p>
-            </form>
 
             <form method="POST" action="{{ route('selesai.store') }}" data-finish-form>
                 @csrf

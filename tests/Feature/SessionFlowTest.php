@@ -2,10 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Mail\PhotoboothMail;
+use App\Models\ActivityLog;
 use App\Models\Frame;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -84,18 +83,28 @@ class SessionFlowTest extends TestCase
         $this->assertFalse(session()->has('photos'));
     }
 
-    public function test_email_success_keeps_customer_on_review(): void
+    public function test_email_route_is_removed(): void
     {
-        Mail::fake();
+        $this->postJson('/email', ['email' => 'tamu@example.com'])->assertNotFound();
+    }
+
+    public function test_download_page_reads_token_from_payment_log(): void
+    {
+        Storage::fake('public');
         $this->payFlow();
 
-        $this->postJson('/email', ['email' => 'tamu@example.com'])
-            ->assertOk()
-            ->assertJsonPath('ok', true)
-            ->assertJsonPath('email', 'tamu@example.com')
-            ->assertJsonMissingPath('redirect');
+        $token = session('download_token');
+        $this->assertIsString($token);
+        $this->assertNotSame('', $token);
 
-        Mail::assertSent(PhotoboothMail::class);
-        $this->assertSame('tamu@example.com', session('email'));
+        $log = ActivityLog::payments()->latest('id')->firstOrFail();
+        $this->assertSame($token, $log->metadata['download_token'] ?? null);
+
+        $this->get('/hasil')->assertOk()->assertSee('Unduh Hasil Foto');
+        $this->get('/hasil?token='.$token)->assertRedirect('/hasil/'.$token);
+        $this->get('/hasil/'.$token)
+            ->assertOk()
+            ->assertSee('data-public-download-root')
+            ->assertSee('data-public-canvas');
     }
 }

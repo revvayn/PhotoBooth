@@ -141,11 +141,11 @@
                 </div>
 
                 <div>
-                    <label for="session_review_minutes" class="block text-sm font-medium text-slate-700 mb-1.5">Durasi Review &amp; Kirim (menit) <span class="text-red-500">*</span></label>
+                    <label for="session_review_minutes" class="block text-sm font-medium text-slate-700 mb-1.5">Durasi Review &amp; Unduh (menit) <span class="text-red-500">*</span></label>
                     <input type="number" id="session_review_minutes" name="session_review_minutes" min="1" max="60" required
                            value="{{ old('session_review_minutes', $settings['session_review_minutes']) }}"
                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 @error('session_review_minutes') border-red-300 @enderror">
-                    <p class="mt-1.5 text-xs text-slate-400">Waktu pelanggan untuk review, cetak, unduh, dan kirim email setelah foto selesai.</p>
+                    <p class="mt-1.5 text-xs text-slate-400">Waktu pelanggan untuk review, cetak, dan unduh setelah foto selesai.</p>
                     @error('session_review_minutes')
                         <p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>
                     @enderror
@@ -172,60 +172,20 @@
 
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="font-heading text-lg font-bold text-slate-800">Pengaturan Email (SMTP)</h2>
-                <p class="text-xs text-slate-400 mt-0.5">Digunakan untuk mengirimkan hasil foto ke email pengguna.</p>
+                <h2 class="font-heading text-lg font-bold text-slate-800">QR Download Hasil</h2>
+                <p class="text-xs text-slate-400 mt-0.5">Pelanggan memindai QR untuk membuka halaman unduh hasil.</p>
             </div>
-            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                    <label for="mail_host" class="block text-sm font-medium text-slate-700 mb-1.5">SMTP Host</label>
-                    <input type="text" id="mail_host" name="mail_host" value="{{ old('mail_host', $settings['mail_host']) }}"
-                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
-                           placeholder="Contoh: smtp.gmail.com">
+            <div class="p-6 flex flex-col sm:flex-row items-center gap-6">
+                <div class="shrink-0 rounded-2xl border border-gray-200 bg-white p-3">
+                    <canvas data-download-qr data-download-qr-url="{{ $settings['download_url'] }}" class="w-40 h-40"></canvas>
                 </div>
-
-                <div>
-                    <label for="mail_port" class="block text-sm font-medium text-slate-700 mb-1.5">SMTP Port</label>
-                    <input type="text" id="mail_port" name="mail_port" value="{{ old('mail_port', $settings['mail_port']) }}"
-                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
-                           placeholder="587 atau 465">
-                </div>
-
-                <div>
-                    <label for="mail_username" class="block text-sm font-medium text-slate-700 mb-1.5">SMTP Username / Email</label>
-                    <input type="text" id="mail_username" name="mail_username" value="{{ old('mail_username', $settings['mail_username']) }}"
-                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
-                           placeholder="emailanda@gmail.com">
-                </div>
-
-                <div>
-                    <label for="mail_password" class="block text-sm font-medium text-slate-700 mb-1.5">SMTP Password / App Password</label>
-                    <input type="password" id="mail_password" name="mail_password" value="" autocomplete="new-password"
-                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
-                           placeholder="{{ $settings['has_mail_password'] ? 'Tersimpan — kosongkan jika tidak diubah' : 'App Password 16 karakter' }}">
-                </div>
-
-                <div>
-                    <label for="mail_encryption" class="block text-sm font-medium text-slate-700 mb-1.5">Enkripsi</label>
-                    <select id="mail_encryption" name="mail_encryption"
-                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400">
-                        <option value="tls" {{ old('mail_encryption', $settings['mail_encryption']) === 'tls' ? 'selected' : '' }}>TLS (Port 587)</option>
-                        <option value="ssl" {{ old('mail_encryption', $settings['mail_encryption']) === 'ssl' ? 'selected' : '' }}>SSL (Port 465)</option>
-                        <option value="null" {{ old('mail_encryption', $settings['mail_encryption']) === 'null' ? 'selected' : '' }}>Tanpa Enkripsi</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="mail_from_address" class="block text-sm font-medium text-slate-700 mb-1.5">Pengirim (From Email)</label>
-                    <input type="email" id="mail_from_address" name="mail_from_address" value="{{ old('mail_from_address', $settings['mail_from_address']) }}"
-                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
-                           placeholder="no-reply@domain.com">
-                </div>
-
-                <div class="sm:col-span-2">
-                    <label for="mail_from_name" class="block text-sm font-medium text-slate-700 mb-1.5">Nama Pengirim (From Name)</label>
-                    <input type="text" id="mail_from_name" name="mail_from_name" value="{{ old('mail_from_name', $settings['mail_from_name']) }}"
-                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
-                           placeholder="Photobooth Studio">
+                <div class="min-w-0 text-sm text-slate-600 space-y-2">
+                    <p>QR ini membuka halaman <strong>Unduh Hasil</strong>. Pelanggan memasukkan token/kode antrian yang tersedia di kiosk.</p>
+                    <p>QR khusus per transaksi otomatis tampil di <strong>Log Pembayaran</strong> dan halaman <strong>Selesai</strong> setelah foto diambil.</p>
+                    <a href="{{ $settings['download_url'] }}" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold hover:bg-rose-100 transition">
+                        Buka halaman unduh
+                    </a>
                 </div>
             </div>
         </div>

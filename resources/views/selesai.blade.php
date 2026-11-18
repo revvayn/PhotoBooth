@@ -42,11 +42,19 @@
         </div>
     </div>
 
-    @if ($email)
-        <p class="text-xs text-slate-500 mb-3 text-center">
-            <x-icon name="envelope" class="w-4 h-4 inline-block align-middle" />
-            Softfile telah dikirim ke <span class="font-semibold text-slate-700">{{ $email }}</span>
-        </p>
+    @if ($downloadToken)
+        <div class="k-card w-full max-w-3xl p-3 mb-3 flex flex-col sm:flex-row items-center gap-4">
+            <div class="shrink-0 rounded-xl bg-white p-2 ring-1 ring-slate-200">
+                <canvas data-download-qr
+                        data-download-qr-url="{{ \App\Support\DownloadLink::show($downloadToken) }}"
+                        class="w-24 h-24"></canvas>
+            </div>
+            <div class="min-w-0 text-center sm:text-left">
+                <p class="text-sm font-bold text-slate-800">Unduh hasil lewat HP</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">Pindai QR ini, atau simpan token di bawah lalu masukkan di halaman unduh.</p>
+                <p class="mt-1 inline-block rounded-lg bg-slate-100 px-2 py-1 font-mono text-[11px] font-bold tracking-wide text-slate-700 break-all">{{ $downloadToken }}</p>
+            </div>
+        </div>
     @endif
 
     <div class="flex flex-wrap items-center justify-center gap-3">

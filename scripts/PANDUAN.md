@@ -21,10 +21,18 @@ Ini membuat:
 - Kalau port sudah aktif, script tidak menyalakan proses ganda.
 
 ## Catatan ngrok
-Ngrok **belum perlu dihapus** selama masih dipakai untuk testing user. Saat sudah tidak diperlukan:
-1. Hapus shortcut `Photobooth (Testing Ngrok)`.
+Ngrok sekarang **ikut aktif otomatis** setiap `Photobooth.exe` dibuka, memakai domain statis:
+```
+https://metalinguistic-unvenerably-fernande.ngrok-free.dev
+```
+Jadi device admin dan device photobooth cukup membuka URL itu, tidak perlu update link.
+
+Kalau sudah tidak diperlukan:
+1. Beri tanda `#` pada baris ngrok di `scripts\start-server.vbs`.
 2. Ubah `.env`: `APP_URL=http://127.0.0.1:8000`.
 3. Matikan proses ngrok.
+
+Catatan: ngrok gratis tetap menampilkan halaman konfirmasi “Visit Site” sekali per browser. Itu normal — klik saja tombol tersebut.
 
 ## Kalau PHP / MySQL tidak ditemukan
 Edit `scripts\start-server.vbs`:
@@ -51,15 +59,17 @@ Installer NSIS ada di:
 release\Photobooth-Setup-1.0.0.exe
 ```
 
-Shortcut **Photobooth** saat ini mengarah langsung ke hasil build:
+Shortcut **Photobooth** di Desktop & Start Menu mengarah ke aplikasi yang terpasang:
 ```
-D:\PROJEK\PhotoBooth\release\win-unpacked\Photobooth.exe
+%LOCALAPPDATA%\Programs\Photobooth\Photobooth.exe
 ```
-Jangan hapus folder `release\win-unpacked` selama shortcut masih dipakai. Setelah cleanup toolchain Tauri, drive C kembali lega (~2,8 GB), jadi installer `release\Photobooth-Setup-1.0.0.exe` juga bisa dicoba. Kalau install berhasil, jalankan ulang `scripts\create-electron-shortcut.ps1` setelah menyalin aplikasi ke `%LOCALAPPDATA%\Photobooth-App` agar shortcut memakai lokasi tersebut.
+Hasil build mentah ada di `release\win-unpacked\Photobooth.exe` (cadangan). Setelah rebuild, jalankan installer `release\Photobooth-Setup-1.0.0.exe` lalu `scripts\create-electron-shortcut.ps1` untuk memastikan shortcut tetap benar.
 
 Perilaku:
 - Jendela `Photobooth` 1366x768, ikon sendiri, tanpa address bar/tab browser.
-- Otomatis menjalankan MySQL + PHP server lewat `scripts/start-server.vbs` sebelum jendela muncul.
+- Otomatis menjalankan **MySQL + PHP server + ngrok** lewat `scripts/start-server.vbs` sebelum jendela muncul.
+- Ngrok memakai domain statis: `https://metalinguistic-unvenerably-fernande.ngrok-free.dev`. URL ini tidak berubah walaupun PC di-restart.
+- Cek tunnel: buka `http://127.0.0.1:4040` (web interface ngrok). Kalau port 4040 aktif, tunnel siap dipakai device lain.
 - Izin kamera diberikan otomatis untuk kebutuhan photobooth.
 - Menu kecil (Edit / Tampilan / Jendela) agar tetap terasa seperti software, bukan browser.
 - Klik “Buka Kiosk” membuka jendela localhost baru; link luar dibuka di browser default.

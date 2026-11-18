@@ -1552,7 +1552,7 @@ function initStrip() {
     const downloadLink = document.querySelector('[data-strip-download]');
 
     // Dokumen SPA memuat semua panel; hanya kanvas di panel yang tampil yang dipakai
-    // (agar cetak/unduh/email tidak ikut menyertakan kanvas panel filter yang tersembunyi).
+    // (agar cetak/unduh tidak ikut menyertakan kanvas panel filter yang tersembunyi).
     const canvases = [...document.querySelectorAll('[data-strip-canvas]')].filter((c) => {
         const panel = c.closest('[data-spa-panel]');
         if (!panel) return true;
@@ -1655,82 +1655,69 @@ function hideModal() {
     modal.classList.remove('flex');
 }
 
-/* ---------------- Email form ---------------- */
+/* ---------------- QR download hasil ---------------- */
 
-function initEmailForm() {
-    const form = document.querySelector('[data-email-form]');
-    if (!form) return;
+function renderDownloadQr(canvas, url, size = 160) {
+    if (!canvas || !url) return Promise.resolve(false);
+    return QRCode.toCanvas(canvas, url, {
+        width: size,
+        margin: 1,
+        color: { dark: '#0f172a', light: '#ffffff' },
+        errorCorrectionLevel: 'M',
+    }).then(() => true).catch(() => false);
+}
 
-    const errorBox = form.querySelector('[data-email-error]');
-    const successBox = form.querySelector('[data-email-success]');
-    const submitBtn = form.querySelector('[data-email-submit]');
-    const submitLabel = submitBtn ? submitBtn.innerHTML : '';
+function initDownloadQr() {
+    document.querySelectorAll('[data-download-qr]').forEach((canvas) => {
+        renderDownloadQr(canvas, canvas.dataset.downloadQrUrl || '', 160);
+    });
+}
 
-    const setError = (msg) => {
-        if (!errorBox) return;
-        errorBox.textContent = msg || '';
-        errorBox.hidden = !msg;
-        if (msg) showToast(msg);
-    };
-    const setSuccess = (msg) => {
-        if (!successBox) return;
-        successBox.textContent = msg || '';
-        successBox.hidden = !msg;
-    };
+/**
+ * Halaman unduh publik: gambar ulang strip memakai frame, filter, dan
+ * stiker/emoji yang tersimpan di metadata log pembayaran.
+ */
+function initPublicDownload() {
+    const root = document.querySelector('[data-public-download-root]');
+    if (!root) return;
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        setError('');
-        setSuccess('');
-        const email = document.getElementById('email-input');
-        if (!email.value || !email.checkValidity()) {
-            email.focus();
-            setError('Masukkan alamat email yang valid.');
-            return;
-        }
+    const queue = (root.dataset.queue || 'hasil').replace(/[^a-z0-9_-]+/gi, '-');
 
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Mengirim…';
-        }
-        showModal('Mengirim…', '');
+    root.querySelectorAll('[data-public-canvas]').forEach((canvas) => {
+        const parse = (key) => {
+            try {
+                return JSON.parse(canvas.dataset[key] || '[]');
+            } catch (e) {
+                return [];
+            }
+        };
 
-        try {
-            // Lampirkan strip yang sudah jadi (frame + filter), bukan foto mentah.
-            const built = await (window.__stripsReady || Promise.resolve([]));
-            const strips = built
-                .filter((c) => c && c.width)
-                .map((c) => c.toDataURL('image/jpeg', 0.9));
+        const photos = parse('photos');
+        const filters = parse('filters');
+        const slots = parse('slots');
+        const stickers = parse('stickers');
 
-            const res = await fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
-                },
-                body: JSON.stringify({ email: email.value, strips }),
+        if (!photos.length) return;
+
+        const filterArg = filters.length === photos.length ? filters : (filters[0] || 'asli');
+        const article = canvas.closest('article');
+        const button = article ? article.querySelector('[data-public-download]') : null;
+
+        buildStripFrame(canvas, photos, filterArg, canvas.dataset.frame || '', slots, stickers, 1200)
+            .then(() => {
+                if (button) button.disabled = false;
+            })
+            .catch(() => {
+                if (button) button.textContent = 'Gagal menyiapkan hasil';
             });
-            const data = await res.json().catch(() => ({}));
 
-            if (res.ok && (data.ok || data.redirect)) {
-                hideModal();
-                setSuccess(data.message || `Softfile dikirim ke ${email.value}.`);
-                showToast(data.message || 'Email berhasil dikirim.', 'success');
-                // Tetap di halaman ini agar pelanggan masih bisa mencetak/mengunduh.
-                return;
-            }
-
-            hideModal();
-            setError(data.message || data.errors?.email?.[0] || 'Gagal mengirim email. Coba lagi.');
-        } catch (err) {
-            hideModal();
-            setError('Koneksi bermasalah. Coba lagi.');
-        } finally {
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = submitLabel;
-            }
+        if (button) {
+            button.addEventListener('click', () => {
+                const link = document.createElement('a');
+                link.download = `photobooth-${queue}-${Date.now()}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.92);
+                link.click();
+            });
         }
     });
 }
@@ -2101,6 +2088,9 @@ function initAdminLogs() {
     const deleteForm = document.querySelector('[data-delete-form]');
     const deleteLabel = document.querySelector('[data-delete-label]');
     const template = root.dataset.downloadTemplate || '';
+    const hasilTemplate = root.dataset.hasilTemplate || '';
+    const qrWrap = document.querySelector('[data-log-qr-wrap]');
+    const qrCanvas = document.querySelector('[data-log-qr]');
 
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -2137,6 +2127,15 @@ function initAdminLogs() {
         if (zipLink) {
             zipLink.href = template.replace('__ID__', String(log.id));
             zipLink.style.display = log.has_photos ? '' : 'none';
+        }
+
+        if (qrWrap && qrCanvas) {
+            if (log.download_token && hasilTemplate) {
+                qrWrap.hidden = false;
+                renderDownloadQr(qrCanvas, hasilTemplate.replace('__TOKEN__', log.download_token), 80);
+            } else {
+                qrWrap.hidden = true;
+            }
         }
 
         body.innerHTML = '';
@@ -2543,7 +2542,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initMetodeSelect();
     initQr();
     initStrip();
-    initEmailForm();
+    initDownloadQr();
+    initPublicDownload();
     initPrint();
     initPayForm();
     initFinishForm();

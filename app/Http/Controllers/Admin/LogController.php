@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Support\DownloadLink;
 use App\Support\PaymentLogPresenter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -51,6 +52,7 @@ class LogController extends Controller
             'logs' => $logs,
             'filters' => $filters,
             'logData' => $presented->keyBy('id')->all(),
+            'downloadUrlTemplate' => DownloadLink::show('__TOKEN__'),
             'summary' => [
                 'count' => $payments->count(),
                 'revenue' => $sum($payments),

@@ -32,7 +32,9 @@
 @endphp
 
 @section('content')
-<div class="space-y-6" data-log-root data-download-template="{{ route('admin.logs.download', ['log' => '__ID__']) }}">
+<div class="space-y-6" data-log-root
+     data-download-template="{{ route('admin.logs.download', ['log' => '__ID__']) }}"
+     data-hasil-template="{{ $downloadUrlTemplate }}">
     {{-- Ringkasan sesuai filter --}}
     <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <div class="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -331,6 +333,10 @@
                 <p class="text-[11px] font-bold uppercase tracking-wider text-rose-500">Detail transaksi</p>
                 <h2 class="font-heading text-xl font-bold text-slate-800 mt-0.5" data-log-modal-queue>-</h2>
                 <p class="text-xs text-slate-400 mt-1" data-log-modal-meta>-</p>
+            </div>
+            <div class="shrink-0 text-center" data-log-qr-wrap hidden>
+                <canvas data-log-qr class="w-20 h-20 rounded-lg bg-white p-1 ring-1 ring-slate-200"></canvas>
+                <p class="mt-1 text-[10px] font-semibold text-slate-400">QR unduh pelanggan</p>
             </div>
             <button type="button" data-log-close class="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition shrink-0" aria-label="Tutup">
                 <x-icon name="x" class="w-4 h-4" />

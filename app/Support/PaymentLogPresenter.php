@@ -108,6 +108,7 @@ class PaymentLogPresenter
             'photo_count' => $log->payment_photo_count,
             'photo_total' => $photoTotal,
             'voucher_code' => $meta['voucher_code'] ?? null,
+            'download_token' => $meta['download_token'] ?? null,
             'groups' => $groups,
             'photos' => collect($groups)->flatMap(fn ($group) => $group['photos'])->values()->all(),
             'has_photos' => $photoTotal > 0,

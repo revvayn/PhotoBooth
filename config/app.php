@@ -56,6 +56,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Public URL
+    |--------------------------------------------------------------------------
+    |
+    | Base URL yang dipakai untuk tautan/QR yang dibuka dari perangkat lain
+    | (misalnya HP pelanggan). Bisa berupa domain statis ngrok.
+    |
+    */
+
+    'public_url' => env('PUBLIC_URL', env('APP_URL', 'http://localhost')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

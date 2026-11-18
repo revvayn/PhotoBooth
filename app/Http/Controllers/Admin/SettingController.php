@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Support\DownloadLink;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -23,14 +24,7 @@ class SettingController extends Controller
             'session_photo_minutes' => (string) ((int) (Setting::get('session_photo_seconds', '300') ?: 300) / 60),
             'session_review_minutes' => (string) ((int) (Setting::get('session_review_seconds', '300') ?: 300) / 60),
             'has_cashier_pin' => ! empty(Setting::get('cashier_pin_hash')),
-            'mail_host' => Setting::get('mail_host', ''),
-            'mail_port' => Setting::get('mail_port', '587'),
-            'mail_username' => Setting::get('mail_username', ''),
-            // Password SMTP tidak pernah dikirim balik ke browser.
-            'has_mail_password' => ! empty(Setting::get('mail_password')),
-            'mail_encryption' => Setting::get('mail_encryption', 'tls'),
-            'mail_from_address' => Setting::get('mail_from_address', ''),
-            'mail_from_name' => Setting::get('mail_from_name', 'Photobooth Studio'),
+            'download_url' => DownloadLink::index(),
         ];
 
         return view('admin.settings.index', compact('settings'));
@@ -51,13 +45,6 @@ class SettingController extends Controller
             'session_review_minutes' => 'required|integer|min:1|max:60',
             'cashier_pin' => 'nullable|digits_between:4,8',
             'remove_cashier_pin' => 'nullable|boolean',
-            'mail_host' => 'nullable|string|max:255',
-            'mail_port' => 'nullable|string|max:10',
-            'mail_username' => 'nullable|string|max:255',
-            'mail_password' => 'nullable|string|max:255',
-            'mail_encryption' => 'nullable|string|in:tls,ssl,null',
-            'mail_from_address' => 'nullable|email|max:255',
-            'mail_from_name' => 'nullable|string|max:255',
         ]);
 
         // Nilai khusus diproses terpisah dari loop generik di bawah.
@@ -72,11 +59,6 @@ class SettingController extends Controller
             Setting::set('cashier_pin_hash', '');
         } elseif (! empty($data['cashier_pin'])) {
             Setting::set('cashier_pin_hash', Hash::make($data['cashier_pin']));
-        }
-
-        // Password SMTP kosong = pertahankan yang sudah tersimpan.
-        if (($data['mail_password'] ?? '') === '') {
-            unset($data['mail_password']);
         }
 
         unset($data['session_selection_minutes'], $data['session_photo_minutes'], $data['session_review_minutes'], $data['cashier_pin'], $data['remove_cashier_pin'], $data['qris_image'], $data['remove_qris_image']);

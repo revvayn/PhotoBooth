@@ -37,12 +37,14 @@ Route::get('/pembayaran', [PhotoboothController::class, 'pembayaran'])->name('pe
 Route::post('/pembayaran', [PhotoboothController::class, 'pembayaranStore'])->name('pembayaran.store');
 
 Route::get('/review', [PhotoboothController::class, 'review'])->name('review');
-Route::post('/email', [PhotoboothController::class, 'emailStore'])->name('email.send');
 
 Route::get('/selesai', [PhotoboothController::class, 'selesai'])->name('selesai');
 Route::post('/selesai', [PhotoboothController::class, 'selesaiStore'])->name('selesai.store');
 
 Route::get('/softfile', [PhotoboothController::class, 'download'])->name('softfile.download');
+
+Route::get('/hasil', [PhotoboothController::class, 'hasilIndex'])->name('hasil.index');
+Route::get('/hasil/{token}', [PhotoboothController::class, 'hasilShow'])->name('hasil.show');
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

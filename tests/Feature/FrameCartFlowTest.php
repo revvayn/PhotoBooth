@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Frame;
 use App\Models\Sticker;
+use App\Support\DownloadLink;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -171,6 +172,8 @@ class FrameCartFlowTest extends TestCase
         $html = $this->get('/spa?step=review')->assertOk()->getContent();
         $this->assertStringContainsString('data-stickers=', $html);
         $this->assertStringContainsString($sticker->emoji, $html);
+        $this->assertStringContainsString('data-download-qr', $html);
+        $this->assertStringContainsString(DownloadLink::show(session('download_token')), $html);
     }
 
     public function test_review_panel_is_gated_until_filter_is_saved(): void

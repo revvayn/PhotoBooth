@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Setting;
 use App\Models\User;
+use App\Support\DownloadLink;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -43,6 +44,20 @@ class AppearanceTest extends TestCase
             ->assertOk()
             ->assertSee('Momen Kita')
             ->assertSee('Selamat datang di Momen Kita.');
+    }
+
+    public function test_admin_settings_shows_download_qr_and_no_email_fields(): void
+    {
+        $admin = User::factory()->create();
+
+        $this->actingAs($admin, 'auth')
+            ->get('/admin/settings')
+            ->assertOk()
+            ->assertSee('QR Download Hasil')
+            ->assertSee('data-download-qr', false)
+            ->assertSee('data-download-qr-url="'.e(DownloadLink::index()).'"', false)
+            ->assertDontSee('SMTP Host')
+            ->assertDontSee('name="mail_host"', false);
     }
 
     public function test_logo_upload_and_removal(): void

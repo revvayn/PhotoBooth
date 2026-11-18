@@ -26,7 +26,7 @@
                 <span class="shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 text-white font-bold flex items-center justify-center shadow-md">3</span>
                 <div class="pt-0.5">
                     <h3 class="font-semibold text-slate-800">Print & Download</h3>
-                    <p class="text-sm text-slate-500">Cetak fotomu dan unduh softfilenya langsung, atau kirim ke email.</p>
+                    <p class="text-sm text-slate-500">Cetak fotomu dan unduh softfilenya langsung, atau pindai QR untuk menyimpannya di HP.</p>
                 </div>
             </div>
         </div>

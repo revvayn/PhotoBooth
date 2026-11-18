@@ -12,7 +12,7 @@
         ['card', $brand['method_title'], 'Pilih QRIS atau masukkan kode voucher di awal, sebelum memilih frame.'],
         ['photo', $brand['frame_title'], 'Khusus QRIS: ketuk frame favorit dan atur jumlah cetak. Pemakai voucher memilih frame sendiri sesuai ukuran yang dipesan.'],
         ['camera', $brand['photo_title'], 'Berdiri di depan kamera dan ambil semua foto. Bisa diulang bila kurang pas.'],
-        ['printer', 'Cetak & Kirim', 'Cetak hasilnya, unduh softfile, atau kirim ke email.'],
+        ['printer', 'Cetak & Unduh', 'Cetak hasilnya atau unduh softfile lewat QR.'],
     ];
 @endphp
 <div class="flex-1 min-h-0 flex flex-col items-center justify-center py-1">

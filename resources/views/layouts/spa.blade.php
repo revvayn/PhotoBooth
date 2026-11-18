@@ -114,7 +114,7 @@
                 @include('partials.filter', ['step' => 5, 'brand' => $brand])
             </section>
             <section data-spa-panel="review" class="min-h-0 flex-1 flex flex-col overflow-y-auto overflow-x-hidden {{ $activeKey === 'review' ? '' : 'hidden' }}">
-                @include('partials.review', ['step' => 6, 'brand' => $brand])
+                @include('partials.review', ['step' => 6, 'brand' => $brand, 'downloadToken' => $downloadToken ?? null])
             </section>
         </main>
 

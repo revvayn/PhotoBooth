@@ -467,6 +467,10 @@ class VoucherController extends Controller
         }
 
         $validSizeIds = Size::pluck('id')->map(fn ($id) => (int) $id)->all();
+        $sizeIdsWithFrames = Size::whereHas('frames', fn ($query) => $query->where('is_active', true))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
         $validFrameSlugs = Frame::where('is_active', true)->pluck('slug')->all();
 
         $frameItems = [];
@@ -482,6 +486,24 @@ class VoucherController extends Controller
             $qty = (int) $qty;
             if ($qty > 0 && ctype_digit((string) $sizeId) && in_array((int) $sizeId, $validSizeIds, true)) {
                 $sizeItems[(int) $sizeId] = $qty;
+            }
+        }
+
+        if (! $frameItems) {
+            $requestedSizeIds = [];
+            foreach ((array) ($data['sizes'] ?? []) as $sizeId => $qty) {
+                if ((int) $qty > 0 && ctype_digit((string) $sizeId)) {
+                    $requestedSizeIds[] = (int) $sizeId;
+                }
+            }
+
+            $unavailable = array_values(array_diff($requestedSizeIds, $sizeIdsWithFrames));
+            if ($unavailable) {
+                $names = Size::whereIn('id', $unavailable)->orderBy('sort_order')->pluck('name')->implode(', ');
+
+                throw ValidationException::withMessages([
+                    'sizes' => 'Ukuran '.$names.' belum memiliki frame aktif. Tambahkan frame untuk ukuran tersebut di menu Frame, atau pilih ukuran lain.',
+                ]);
             }
         }
 

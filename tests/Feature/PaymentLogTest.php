@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Frame;
 use App\Models\Setting;
 use App\Models\User;
+use App\Support\DownloadLink;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -165,6 +166,7 @@ class PaymentLogTest extends TestCase
         Storage::disk('public')->assertExists($metadata['archive_dir'].'/frame-kpop.png');
         $this->assertStringStartsWith('/storage/'.$metadata['archive_dir'].'/', $metadata['items'][0]['photos'][0]);
         $this->assertStringStartsWith('/storage/'.$metadata['archive_dir'].'/', $metadata['items'][0]['image_url']);
+        $this->assertNotEmpty($metadata['download_token'] ?? null);
 
         $admin = User::factory()->create();
 
@@ -175,6 +177,8 @@ class PaymentLogTest extends TestCase
             ->assertSee('data-date-picker', false)
             ->assertSee('data-log-modal', false)
             ->assertSee('data-bulk-delete-modal', false)
+            ->assertSee('data-hasil-template="'.e(DownloadLink::show('__TOKEN__')).'"', false)
+            ->assertSee('data-log-qr', false)
             ->assertSee('Hapus filter')
             ->assertDontSee('<input type="date"', false);
     }

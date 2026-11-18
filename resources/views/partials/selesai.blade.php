@@ -23,10 +23,6 @@
         @endforelse
     </div>
 
-    @if ($email)
-        <p class="text-sm text-slate-500 mt-4">Softfile telah dikirim ke <span class="font-semibold text-slate-700">{{ $email }}</span></p>
-    @endif
-
     <div class="mt-8 flex flex-col sm:flex-row gap-3 w-full max-w-sm">
         <a href="{{ route('softfile.download') }}" data-strip-download class="flex-1 text-center rounded-full bg-gradient-to-r from-rose-500 to-violet-600 text-white font-display font-bold px-8 py-4 shadow-lg shadow-rose-200 hover:scale-105 transition-transform">
             Download Softfile
