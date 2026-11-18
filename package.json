@@ -1,20 +1,56 @@
 {
-    "$schema": "https://www.schemastore.org/package.json",
-    "private": true,
-    "type": "module",
-    "scripts": {
-        "build": "vite build",
-        "dev": "vite"
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "photobooth",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.cjs",
+  "description": "Aplikasi desktop Photobooth",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "electron:dev": "electron .",
+    "electron:build": "electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.photobooth.app",
+    "productName": "Photobooth",
+    "directories": { "output": "release" },
+    "files": [
+      "electron/**/*",
+      "scripts/**/*",
+      "photobooth-root.txt",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "scripts/**/*",
+      "photobooth-root.txt"
+    ],
+    "win": {
+      "icon": "electron/icon.ico",
+      "target": "nsis",
+      "artifactName": "Photobooth-Setup-${version}.${ext}"
     },
-    "devDependencies": {
-        "@tailwindcss/vite": "^4.3.3",
-        "axios": "^1.11.0",
-        "concurrently": "^9.0.1",
-        "laravel-vite-plugin": "^2.0.0",
-        "tailwindcss": "^4.3.3",
-        "vite": "^7.0.7"
-    },
-    "dependencies": {
-        "qrcode": "^1.5.4"
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Photobooth"
     }
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "axios": "^1.11.0",
+    "concurrently": "^9.0.1",
+    "electron": "^38.8.6",
+    "electron-builder": "^26.18.0",
+    "laravel-vite-plugin": "^2.0.0",
+    "tailwindcss": "^4.3.3",
+    "vite": "^7.0.7"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
 }
