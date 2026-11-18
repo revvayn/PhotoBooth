@@ -117,7 +117,28 @@
                     <span>Pengaturan</span>
                 </a>
             </div>
-        </nav>    </aside>
+        </nav>
+
+        {{-- Kiosk + Logout --}}
+        <div class="px-4 py-4 border-t border-white/5 space-y-1">
+            <a href="{{ route('home') }}" target="_blank" rel="noopener"
+               class="{{ $navBase }} {{ $navIdle }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                <span>Buka Kiosk</span>
+            </a>
+            <form action="{{ route('admin.logout') }}" method="POST" onsubmit="return confirm('Yakin ingin logout?');">
+                @csrf
+                <button type="submit" class="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-slate-300 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    <span>Logout</span>
+                </button>
+            </form>
+        </div>
+    </aside>
 
     {{-- Main Content --}}
     <div class="lg:ml-64 min-h-screen transition-all duration-300">
@@ -134,10 +155,16 @@
                 </div>
                 <div class="flex items-center gap-4">
                     <span class="hidden sm:block text-sm text-slate-500">{{ now()->format('d M Y') }}</span>
-                    <span class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium text-slate-600">
+                    <a href="{{ route('admin.profile.index') }}" class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium text-slate-600 hover:bg-gray-200 transition">
                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                         {{ Auth::guard('auth')->user()?->email ?? 'admin' }}
-                    </span>
+                    </a>
+                    <form action="{{ route('admin.logout') }}" method="POST" class="hidden sm:block" onsubmit="return confirm('Yakin ingin logout?');">
+                        @csrf
+                        <button type="submit" title="Logout" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        </button>
+                    </form>
                 </div>
             </div>
         </header>
